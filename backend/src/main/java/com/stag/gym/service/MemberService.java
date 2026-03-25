@@ -33,7 +33,24 @@ public class MemberService {
     }
 
     @Transactional
-    public Member updateMember(Member member) {
+    public Member updateMember(Long id, Member memberDetails) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Member not found with id: " + id));
+        
+        member.setName(memberDetails.getName());
+        member.setPhone(memberDetails.getPhone());
+        member.setGender(memberDetails.getGender());
+        member.setStatus(memberDetails.getStatus());
+        member.setBranch(memberDetails.getBranch());
+        
         return memberRepository.save(member);
+    }
+
+    @Transactional
+    public void softDeleteMember(Long id) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Member not found with id: " + id));
+        member.setStatus(Member.Status.INACTIVE);
+        memberRepository.save(member);
     }
 }

@@ -34,4 +34,15 @@ public class MemberController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Member> updateMember(@PathVariable Long id, @Valid @RequestBody Member member) {
+        return ResponseEntity.ok(memberService.updateMember(id, member));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
+        memberService.softDeleteMember(id);
+        return ResponseEntity.noContent().build();
+    }
 }

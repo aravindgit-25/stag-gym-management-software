@@ -53,6 +53,12 @@ public class SubscriptionService {
                 .collect(Collectors.toList());
     }
 
+    public List<SubscriptionResponseDTO> getSubscriptionsByMemberId(Long memberId) {
+        return subscriptionRepository.findByMemberId(memberId).stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     private SubscriptionResponseDTO mapToResponseDTO(Subscription subscription) {
         return SubscriptionResponseDTO.builder()
                 .id(subscription.getId())
