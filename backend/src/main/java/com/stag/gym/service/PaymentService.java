@@ -43,6 +43,12 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
+    public List<PaymentResponseDTO> getPaymentsBySubscriptionId(Long subscriptionId) {
+        return paymentRepository.findBySubscriptionId(subscriptionId).stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     private PaymentResponseDTO mapToResponseDTO(Payment payment) {
         return PaymentResponseDTO.builder()
                 .id(payment.getId())

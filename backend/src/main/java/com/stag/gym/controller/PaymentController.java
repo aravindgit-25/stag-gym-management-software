@@ -27,4 +27,9 @@ public class PaymentController {
     public ResponseEntity<List<PaymentResponseDTO>> getAllPayments() {
         return ResponseEntity.ok(paymentService.getAllPayments());
     }
+
+    @GetMapping("/subscription/{subscriptionId}")
+    public ResponseEntity<List<PaymentResponseDTO>> getPaymentsBySubscriptionId(@PathVariable Long subscriptionId) {
+        return ResponseEntity.ok(paymentService.getPaymentsBySubscriptionId(subscriptionId));
+    }
 }

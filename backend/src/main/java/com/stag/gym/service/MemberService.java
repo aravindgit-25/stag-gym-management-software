@@ -28,6 +28,14 @@ public class MemberService {
         return memberRepository.findAll();
     }
 
+    public List<Member> getActiveMembers() {
+        return memberRepository.findActiveMembers(LocalDate.now());
+    }
+
+    public List<Member> getExpiredMembers() {
+        return memberRepository.findExpiredMembers(LocalDate.now());
+    }
+
     public Optional<Member> getMemberById(Long id) {
         return memberRepository.findById(id);
     }
