@@ -1,0 +1,26 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+/mvnw
+/mvnw.cmd
+.mvn/
+.gradle/
+build/
+.settings/
+.classpath
+.project
+.factorypath
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+bin/
+out/
+.DS_Store
+.env
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
