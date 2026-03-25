@@ -27,4 +27,9 @@ public class SubscriptionController {
     public ResponseEntity<List<SubscriptionResponseDTO>> getAllSubscriptions() {
         return ResponseEntity.ok(subscriptionService.getAllSubscriptions());
     }
+
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<List<SubscriptionResponseDTO>> getSubscriptionsByMemberId(@PathVariable Long memberId) {
+        return ResponseEntity.ok(subscriptionService.getSubscriptionsByMemberId(memberId));
+    }
 }

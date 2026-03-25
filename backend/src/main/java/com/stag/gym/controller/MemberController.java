@@ -28,10 +28,31 @@ public class MemberController {
         return ResponseEntity.ok(memberService.getAllMembers());
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<Member>> getActiveMembers() {
+        return ResponseEntity.ok(memberService.getActiveMembers());
+    }
+
+    @GetMapping("/expired")
+    public ResponseEntity<List<Member>> getExpiredMembers() {
+        return ResponseEntity.ok(memberService.getExpiredMembers());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Member> getMemberById(@PathVariable Long id) {
         return memberService.getMemberById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Member> updateMember(@PathVariable Long id, @Valid @RequestBody Member member) {
+        return ResponseEntity.ok(memberService.updateMember(id, member));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
+        memberService.softDeleteMember(id);
+        return ResponseEntity.noContent().build();
     }
 }
