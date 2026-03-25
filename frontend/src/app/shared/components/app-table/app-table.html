@@ -1,0 +1,19 @@
+<div class="table-container">
+  <table class="app-table">
+    <thead>
+      <tr>
+        <th *ngFor="let col of columns">{{ col.header }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of data">
+        <td *ngFor="let col of columns">{{ row[col.field] }}</td>
+      </tr>
+      <tr *ngIf="data.length === 0">
+        <td [attr.colspan]="columns.length" class="empty-message">
+          {{ emptyMessage }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
