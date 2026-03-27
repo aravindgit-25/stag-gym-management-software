@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MemberService } from '../../services/member.service';
@@ -24,10 +24,19 @@ export class SubscriptionComponent implements OnInit {
   subscriptionsList = signal<Subscription[]>([]);
   loading = signal<boolean>(false);
 
+  // Computed signal to join IDs with Names for the table display
+  displayList = computed(() => {
+    return this.subscriptionsList().map(sub => ({
+      ...sub,
+      memberName: this.members().find(m => m.id === Number(sub.memberId))?.name || `Member ${sub.memberId}`,
+      planName: this.plans().find(p => p.id === Number(sub.planId))?.name || `Plan ${sub.planId}`
+    }));
+  });
+
   columns: TableColumn[] = [
     { field: 'id', header: 'ID' },
-    { field: 'memberId', header: 'Member ID' },
-    { field: 'planId', header: 'Plan ID' },
+    { field: 'memberName', header: 'Member Name' },
+    { field: 'planName', header: 'Plan Name' },
     { field: 'startDate', header: 'Start Date' }
   ];
 
@@ -50,13 +59,11 @@ export class SubscriptionComponent implements OnInit {
   }
 
   loadData(): void {
-    // Load members
     this.memberService.getMembers().subscribe({
       next: (data) => this.members.set(data),
       error: (err) => console.error('Error loading members', err)
     });
 
-    // Load plans
     this.planService.getPlans().subscribe({
       next: (data) => this.plans.set(data),
       error: (err) => console.error('Error loading plans', err)

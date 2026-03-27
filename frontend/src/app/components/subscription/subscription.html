@@ -48,7 +48,7 @@
     
     <app-table 
       [columns]="columns" 
-      [data]="subscriptionsList()"
+      [data]="displayList()"
       [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
     ></app-table>
   </div>

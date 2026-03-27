@@ -8,7 +8,7 @@
           <select id="subscriptionId" formControlName="subscriptionId">
             <option value="" disabled>Choose a subscription</option>
             <option *ngFor="let sub of subscriptions()" [value]="sub.id">
-              ID: {{ sub.id }} - Member: {{ sub.memberId }} (Plan: {{ sub.planId }})
+              {{ members().find(m => m.id === Number(sub.memberId))?.name || 'Sub ' + sub.id }}
             </option>
           </select>
         </div>
@@ -45,7 +45,7 @@
     
     <app-table 
       [columns]="columns" 
-      [data]="paymentsList()"
+      [data]="displayList()"
       [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
     ></app-table>
   </div>

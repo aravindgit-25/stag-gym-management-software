@@ -1,9 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SubscriptionService } from '../../services/subscription.service';
+import { MemberService } from '../../services/member.service';
 import { PaymentService } from '../../services/payment.service';
 import { Subscription } from '../../models/subscription.model';
+import { Member } from '../../models/member.model';
 import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
@@ -18,14 +20,27 @@ import { AppTableComponent, TableColumn } from '../../shared/components/app-tabl
 export class PaymentComponent implements OnInit {
   paymentForm: FormGroup;
   subscriptions = signal<any[]>([]); 
+  members = signal<Member[]>([]);
   paymentsList = signal<Payment[]>([]);
   loading = signal<boolean>(false);
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
 
+  // Join data to show Member Name instead of Subscription ID
+  displayList = computed(() => {
+    return this.paymentsList().map(pay => {
+      const sub = this.subscriptions().find(s => s.id === Number(pay.subscriptionId));
+      const member = this.members().find(m => m.id === Number(sub?.memberId));
+      return {
+        ...pay,
+        memberName: member?.name || `Sub ${pay.subscriptionId}`
+      };
+    });
+  });
+
   columns: TableColumn[] = [
     { field: 'id', header: 'ID' },
-    { field: 'subscriptionId', header: 'Subscription ID' },
+    { field: 'memberName', header: 'Member Name' },
     { field: 'amount', header: 'Amount (₹)' },
     { field: 'paymentMode', header: 'Mode' },
     { field: 'paymentDate', header: 'Date' }
@@ -34,6 +49,7 @@ export class PaymentComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private subscriptionService: SubscriptionService,
+    private memberService: MemberService,
     private paymentService: PaymentService
   ) {
     this.paymentForm = this.fb.group({
@@ -44,14 +60,18 @@ export class PaymentComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadSubscriptions();
+    this.loadInitialData();
     this.loadPayments();
   }
 
-  loadSubscriptions(): void {
+  loadInitialData(): void {
     this.subscriptionService.getSubscriptions().subscribe({
       next: (data) => this.subscriptions.set(data),
       error: (err) => console.error('Error loading subscriptions', err)
+    });
+    this.memberService.getMembers().subscribe({
+      next: (data) => this.members.set(data),
+      error: (err) => console.error('Error loading members', err)
     });
   }
 
