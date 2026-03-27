@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface TableColumn {
@@ -17,4 +17,8 @@ export class AppTableComponent {
   @Input() columns: TableColumn[] = [];
   @Input() data: any[] = [];
   @Input() emptyMessage: string = 'No records found.';
+  @Input() showActions: boolean = false;
+  
+  @Output() edit = new EventEmitter<any>();
+  @Output() delete = new EventEmitter<any>();
 }

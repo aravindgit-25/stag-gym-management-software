@@ -1,6 +1,6 @@
 <div class="container">
   <div class="card">
-    <h2>Define New Gym Plan</h2>
+    <h2>{{ isEditing() ? 'Edit Gym Plan' : 'Define New Gym Plan' }}</h2>
     <form [formGroup]="planForm" (ngSubmit)="onSubmit()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
@@ -21,7 +21,14 @@
 
       <div class="form-actions">
         <app-button 
-          label="Save Plan" 
+          *ngIf="isEditing()"
+          label="Cancel" 
+          variant="secondary" 
+          (onClick)="cancelEdit()"
+          class="mr-10"
+        ></app-button>
+        <app-button 
+          [label]="isEditing() ? 'Update Plan' : 'Save Plan'" 
           type="submit" 
           [disabled]="planForm.invalid"
           variant="primary"
@@ -39,6 +46,9 @@
     <app-table 
       [columns]="columns" 
       [data]="plans()"
+      [showActions]="true"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
       [emptyMessage]="loading() ? 'Loading plans...' : 'No plans configured.'"
     ></app-table>
   </div>

@@ -3,11 +3,16 @@
     <thead>
       <tr>
         <th *ngFor="let col of columns">{{ col.header }}</th>
+        <th *ngIf="showActions">Actions</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let row of data">
         <td *ngFor="let col of columns">{{ row[col.field] }}</td>
+        <td *ngIf="showActions" class="actions-cell">
+          <button class="btn-edit" (click)="edit.emit(row)">Edit</button>
+          <button class="btn-delete" (click)="delete.emit(row)">Delete</button>
+        </td>
       </tr>
       <tr *ngIf="data.length === 0">
         <td [attr.colspan]="columns.length" class="empty-message">

@@ -119,3 +119,6 @@ body {
   border-radius: 10px;
   text-transform: uppercase;
 }
+
+.mr-10 { margin-right: 10px; }
+.mt-20 { margin-top: 20px; }

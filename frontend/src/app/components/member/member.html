@@ -1,6 +1,6 @@
 <div class="container">
   <div class="card">
-    <h2>Add New Member</h2>
+    <h2>{{ isEditing() ? 'Edit Member' : 'Add New Member' }}</h2>
     <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
@@ -29,9 +29,15 @@
       </div>
 
       <div class="form-actions">
-        <!-- For submit buttons, we don't need (onClick) as the form handles (ngSubmit) -->
         <app-button 
-          label="Add Member" 
+          *ngIf="isEditing()"
+          label="Cancel" 
+          variant="secondary" 
+          (onClick)="cancelEdit()"
+          class="mr-10"
+        ></app-button>
+        <app-button 
+          [label]="isEditing() ? 'Update Member' : 'Add Member'" 
           type="submit" 
           [disabled]="memberForm.invalid"
           variant="primary"
@@ -53,6 +59,9 @@
     <app-table 
       [columns]="columns" 
       [data]="members()"
+      [showActions]="true"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
       [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
     ></app-table>
   </div>

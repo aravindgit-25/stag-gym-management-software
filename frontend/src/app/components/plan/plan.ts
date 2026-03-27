@@ -17,8 +17,11 @@ export class PlanComponent implements OnInit {
   planForm: FormGroup;
   plans = signal<Plan[]>([]);
   loading = signal<boolean>(false);
+  isEditing = signal<boolean>(false);
+  editingId = signal<number | null>(null);
 
   columns: TableColumn[] = [
+    { field: 'id', header: 'ID' },
     { field: 'name', header: 'Plan Name' },
     { field: 'duration', header: 'Duration (Days)' },
     { field: 'price', header: 'Price (₹)' }
@@ -50,15 +53,54 @@ export class PlanComponent implements OnInit {
     });
   }
 
+  onEdit(plan: Plan): void {
+    this.isEditing.set(true);
+    this.editingId.set(plan.id || null);
+    this.planForm.patchValue(plan);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  onDelete(plan: Plan): void {
+    if (confirm(`Are you sure you want to delete plan: ${plan.name}?`)) {
+      this.planService.deletePlan(plan.id!).subscribe({
+        next: () => {
+          alert('Plan deleted successfully!');
+          this.plans.update(prev => prev.filter(p => p.id !== plan.id));
+        },
+        error: (err) => alert('Failed to delete plan.')
+      });
+    }
+  }
+
+  cancelEdit(): void {
+    this.isEditing.set(false);
+    this.editingId.set(null);
+    this.planForm.reset();
+  }
+
   onSubmit(): void {
     if (this.planForm.valid) {
-      this.planService.addPlan(this.planForm.value).subscribe({
-        next: (newPlan) => {
-          this.plans.update(prev => [...prev, newPlan]);
-          this.planForm.reset();
-        },
-        error: (err) => console.error('Error adding plan', err)
-      });
+      const planData = this.planForm.value;
+      
+      if (this.isEditing()) {
+        this.planService.updatePlan(this.editingId()!, planData).subscribe({
+          next: (updated) => {
+            alert('Plan updated successfully!');
+            this.plans.update(prev => prev.map(p => p.id === updated.id ? updated : p));
+            this.cancelEdit();
+          },
+          error: (err) => alert('Error updating plan.')
+        });
+      } else {
+        this.planService.addPlan(planData).subscribe({
+          next: (newPlan) => {
+            alert('Plan added successfully!');
+            this.plans.update(prev => [...prev, newPlan]);
+            this.planForm.reset();
+          },
+          error: (err) => alert('Error adding plan.')
+        });
+      }
     }
   }
 }
