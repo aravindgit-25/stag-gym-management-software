@@ -35,7 +35,7 @@ export class MemberComponent implements OnInit {
   private confirm = inject(ConfirmService);
 
   columns: TableColumn[] = [
-    { field: 'id', header: 'ID' },
+    { field: 'registrationId', header: 'Reg ID' },
     { field: 'name', header: 'Name' },
     { field: 'phone', header: 'Phone' },
     { field: 'expiryDisplay', header: 'Expiry Date' }

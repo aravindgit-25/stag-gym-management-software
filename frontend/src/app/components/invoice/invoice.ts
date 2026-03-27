@@ -49,7 +49,7 @@ export class InvoiceComponent implements OnInit {
 
                 this.invoiceData.set({
                   receiptNo: `REC-${payment.id?.toString().padStart(4, '0')}`,
-                  regId: `SG-${member?.id?.toString().padStart(3, '0')}`,
+                  regId: member?.registrationId || `SG-${member?.id?.toString().padStart(3, '0')}`,
                   memberName: member?.name,
                   phone: member?.phone,
                   planName: plan?.name,
