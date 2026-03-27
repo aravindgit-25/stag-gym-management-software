@@ -1,9 +1,10 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SubscriptionService } from '../../services/subscription.service';
 import { MemberService } from '../../services/member.service';
 import { PaymentService } from '../../services/payment.service';
+import { NotificationService } from '../../services/notification.service';
 import { Subscription } from '../../models/subscription.model';
 import { Member } from '../../models/member.model';
 import { Payment } from '../../models/payment.model';
@@ -25,6 +26,7 @@ export class PaymentComponent implements OnInit {
   loading = signal<boolean>(false);
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
+  private notif = inject(NotificationService);
 
   // Join data to show Member Name instead of Subscription ID
   displayList = computed(() => {
@@ -89,7 +91,7 @@ export class PaymentComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error loading payments', err);
+        this.notif.show('Error loading payments', 'error');
         this.loading.set(false);
       }
     });
@@ -99,13 +101,12 @@ export class PaymentComponent implements OnInit {
     if (this.paymentForm.valid) {
       this.paymentService.addPayment(this.paymentForm.value).subscribe({
         next: (newPayment) => {
-          alert('Payment recorded successfully!');
+          this.notif.show('Payment recorded successfully!', 'success');
           this.paymentsList.update(prev => [...prev, newPayment]);
           this.paymentForm.reset({ paymentMode: 'Cash' });
         },
         error: (err) => {
-          console.error('Error saving payment', err);
-          alert('Failed to save payment.');
+          this.notif.show('Failed to save payment.', 'error');
         }
       });
     }

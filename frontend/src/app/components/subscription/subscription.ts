@@ -6,6 +6,7 @@ import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { PaymentService } from '../../services/payment.service';
+import { NotificationService } from '../../services/notification.service';
 import { Member } from '../../models/member.model';
 import { Plan } from '../../models/plan.model';
 import { Subscription } from '../../models/subscription.model';
@@ -33,14 +34,32 @@ export class SubscriptionComponent implements OnInit {
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private route = inject(ActivatedRoute);
+  private notif = inject(NotificationService);
 
-  // Normalized display list with proper naming and status
+  // Filtered display list showing ONLY the latest subscription per member
   displayList = computed(() => {
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    return this.subscriptionsList().map(sub => {
-      // Handle both camelCase and snake_case from backend
+    const list = this.subscriptionsList();
+    
+    // Step 1: Map to find the latest subscription for each member
+    const latestMap = new Map<number, any>();
+    
+    list.forEach(sub => {
+      const mId = Number(sub.memberId || (sub as any).member_id);
+      const sDate = new Date(sub.startDate || (sub as any).start_date).getTime();
+      const sId = sub.id!;
+
+      const existing = latestMap.get(mId);
+      if (!existing || sDate > existing.dateTime || (sDate === existing.dateTime && sId > existing.id)) {
+        latestMap.set(mId, { id: sId, dateTime: sDate, sub });
+      }
+    });
+
+    // Step 2: Only process and return the latest records
+    return Array.from(latestMap.values()).map(item => {
+      const sub = item.sub;
       const sId = sub.id;
       const sPlanId = sub.planId || (sub as any).plan_id;
       const sMemberId = sub.memberId || (sub as any).member_id;
@@ -86,7 +105,7 @@ export class SubscriptionComponent implements OnInit {
         memberId: sMemberId,
         planId: sPlanId
       };
-    });
+    }).sort((a, b) => b.id! - a.id!);
   });
 
   columns: TableColumn[] = [
@@ -119,7 +138,6 @@ export class SubscriptionComponent implements OnInit {
       paymentMode: ['Cash', Validators.required]
     });
 
-    // Automatically update price when plan changes in renewal popup
     this.renewalForm.get('planId')?.valueChanges.subscribe(planId => {
       const plan = this.plans().find(p => p.id === Number(planId));
       if (plan) {
@@ -132,7 +150,6 @@ export class SubscriptionComponent implements OnInit {
     this.loadData();
     this.loadSubscriptions();
     
-    // Handle query param from Member screen
     this.route.queryParams.subscribe(params => {
       if (params['memberId']) {
         this.subscriptionForm.patchValue({ memberId: params['memberId'] });
@@ -153,7 +170,7 @@ export class SubscriptionComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error loading subscriptions', err);
+        this.notif.show('Error loading subscriptions', 'error');
         this.loading.set(false);
       }
     });
@@ -193,14 +210,14 @@ export class SubscriptionComponent implements OnInit {
 
           this.paymentService.addPayment(paymentData).subscribe({
             next: () => {
-              alert('Membership renewed and payment recorded!');
-              this.loadSubscriptions(); // Refresh list to show latest status
+              this.notif.show('Membership renewed and payment recorded!', 'success');
+              this.loadSubscriptions();
               this.closeModal();
             },
-            error: (err) => alert('Subscription created but Payment failed.')
+            error: (err) => this.notif.show('Subscription created but Payment failed.', 'error')
           });
         },
-        error: (err) => alert('Failed to create new subscription.')
+        error: (err) => this.notif.show('Failed to create new subscription.', 'error')
       });
     }
   }
@@ -209,13 +226,13 @@ export class SubscriptionComponent implements OnInit {
     if (this.subscriptionForm.valid) {
       this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({
         next: (newSub) => {
-          alert('Subscription saved successfully!');
+          this.notif.show('Subscription saved successfully!', 'success');
           this.loadSubscriptions();
           this.subscriptionForm.reset({
             startDate: new Date().toISOString().split('T')[0]
           });
         },
-        error: (err) => alert('Failed to save subscription.')
+        error: (err) => this.notif.show('Failed to save subscription.', 'error')
       });
     }
   }

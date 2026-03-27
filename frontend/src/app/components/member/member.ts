@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { PlanService } from '../../services/plan.service';
+import { NotificationService } from '../../services/notification.service';
 import { Member } from '../../models/member.model';
 import { Subscription } from '../../models/subscription.model';
 import { Plan } from '../../models/plan.model';
@@ -29,6 +30,7 @@ export class MemberComponent implements OnInit {
   editingId = signal<number | null>(null);
   
   private router = inject(Router);
+  private notif = inject(NotificationService);
 
   columns: TableColumn[] = [
     { field: 'id', header: 'ID' },
@@ -45,10 +47,7 @@ export class MemberComponent implements OnInit {
     return this.members()
       .filter(m => m.name.toLowerCase().includes(term) || m.phone.includes(term))
       .map(m => {
-        // Normalize member ID
         const mId = m.id;
-        
-        // Find latest subscription
         const memberSubs = this.subscriptions()
           .filter(s => {
             const sMemberId = s.memberId || (s as any).member_id;
@@ -88,7 +87,7 @@ export class MemberComponent implements OnInit {
               rowClass = 'near-expiry';
               canRenew = true;
             } else {
-              canRenew = false; // Plan is active and not near expiry
+              canRenew = false;
             }
           }
         }
@@ -125,7 +124,7 @@ export class MemberComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching data', err);
+        this.notif.show('Error fetching data', 'error');
         this.loading.set(false);
       }
     });
@@ -150,10 +149,10 @@ export class MemberComponent implements OnInit {
     if (confirm(`Are you sure you want to delete member: ${member.name}?`)) {
       this.memberService.deleteMember(member.id!).subscribe({
         next: () => {
-          alert('Member deleted successfully!');
+          this.notif.show('Member deleted successfully!', 'error');
           this.members.update(prev => prev.filter(m => m.id !== member.id));
         },
-        error: (err) => alert('Failed to delete member.')
+        error: (err) => this.notif.show('Failed to delete member.', 'error')
       });
     }
   }
@@ -171,20 +170,20 @@ export class MemberComponent implements OnInit {
       if (this.isEditing()) {
         this.memberService.updateMember(this.editingId()!, memberData).subscribe({
           next: (updated) => {
-            alert('Member updated successfully!');
+            this.notif.show('Member updated successfully!', 'success');
             this.members.update(prev => prev.map(m => m.id === updated.id ? updated : m));
             this.cancelEdit();
           },
-          error: (err) => alert('Error updating member.')
+          error: (err) => this.notif.show('Error updating member.', 'error')
         });
       } else {
         this.memberService.addMember(memberData).subscribe({
           next: (newMember) => {
-            alert('Member added successfully!');
+            this.notif.show('Member added successfully!', 'success');
             this.members.update(prev => [...prev, newMember]);
             this.memberForm.reset({ gender: 'Male', branchId: 1 });
           },
-          error: (err) => alert('Error adding member.')
+          error: (err) => this.notif.show('Error adding member.', 'error')
         });
       }
     }

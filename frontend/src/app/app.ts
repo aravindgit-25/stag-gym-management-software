@@ -2,12 +2,15 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { NotificationComponent } from './shared/components/notification/notification';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, NotificationComponent],
   template: `
+    <app-notification></app-notification>
+    
     <div class="app-wrapper" *ngIf="authService.isLoggedIn(); else loginView">
       <!-- Sidebar -->
       <aside class="app-sidebar">

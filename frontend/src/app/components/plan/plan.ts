@@ -1,7 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PlanService } from '../../services/plan.service';
+import { NotificationService } from '../../services/notification.service';
 import { Plan } from '../../models/plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
@@ -19,6 +20,8 @@ export class PlanComponent implements OnInit {
   loading = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
+  
+  private notif = inject(NotificationService);
 
   columns: TableColumn[] = [
     { field: 'id', header: 'ID' },
@@ -47,7 +50,7 @@ export class PlanComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching plans', err);
+        this.notif.show('Error fetching plans', 'error');
         this.loading.set(false);
       }
     });
@@ -64,10 +67,10 @@ export class PlanComponent implements OnInit {
     if (confirm(`Are you sure you want to delete plan: ${plan.name}?`)) {
       this.planService.deletePlan(plan.id!).subscribe({
         next: () => {
-          alert('Plan deleted successfully!');
+          this.notif.show('Plan deleted successfully!', 'error');
           this.plans.update(prev => prev.filter(p => p.id !== plan.id));
         },
-        error: (err) => alert('Failed to delete plan.')
+        error: (err) => this.notif.show('Failed to delete plan.', 'error')
       });
     }
   }
@@ -85,20 +88,20 @@ export class PlanComponent implements OnInit {
       if (this.isEditing()) {
         this.planService.updatePlan(this.editingId()!, planData).subscribe({
           next: (updated) => {
-            alert('Plan updated successfully!');
+            this.notif.show('Plan updated successfully!', 'success');
             this.plans.update(prev => prev.map(p => p.id === updated.id ? updated : p));
             this.cancelEdit();
           },
-          error: (err) => alert('Error updating plan.')
+          error: (err) => this.notif.show('Error updating plan.', 'error')
         });
       } else {
         this.planService.addPlan(planData).subscribe({
           next: (newPlan) => {
-            alert('Plan added successfully!');
+            this.notif.show('Plan added successfully!', 'success');
             this.plans.update(prev => [...prev, newPlan]);
             this.planForm.reset();
           },
-          error: (err) => alert('Error adding plan.')
+          error: (err) => this.notif.show('Error adding plan.', 'error')
         });
       }
     }
