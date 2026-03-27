@@ -5,10 +5,12 @@ import { PlanComponent } from './components/plan/plan';
 import { SubscriptionComponent } from './components/subscription/subscription';
 import { PaymentComponent } from './components/payment/payment';
 import { LoginComponent } from './components/login/login';
+import { InvoiceComponent } from './components/invoice/invoice';
 import { authGuard, adminGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'invoice/:id', component: InvoiceComponent },
   { 
     path: '', 
     canActivate: [authGuard],

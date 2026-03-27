@@ -46,6 +46,8 @@
     <app-table 
       [columns]="columns" 
       [data]="displayList()"
+      [showPrint]="true"
+      (print)="onPrintReceipt($event)"
       [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
     ></app-table>
   </div>

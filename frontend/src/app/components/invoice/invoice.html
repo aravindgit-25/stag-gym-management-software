@@ -1,0 +1,72 @@
+<div class="invoice-wrapper" *ngIf="invoiceData()">
+  <div class="invoice-card">
+    <div class="header">
+      <div class="gym-info">
+        <h1>STAG FITNESS</h1>
+        <p>Premium Gym & Fitness Center</p>
+      </div>
+      <div class="receipt-label">
+        <h2>RECEIPT</h2>
+        <p>No: {{ invoiceData().receiptNo }}</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="info-row">
+        <span class="label">Member ID:</span>
+        <span class="value">{{ invoiceData().regId }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Member Name:</span>
+        <span class="value">{{ invoiceData().memberName }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Phone:</span>
+        <span class="value">{{ invoiceData().phone }}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Plan Details</div>
+    <div class="section">
+      <div class="info-row">
+        <span class="label">Membership Plan:</span>
+        <span class="value">{{ invoiceData().planName }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Validity Period:</span>
+        <span class="value">{{ invoiceData().startDate }} to {{ invoiceData().endDate }}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Payment Summary</div>
+    <div class="section">
+      <div class="info-row">
+        <span class="label">Plan Price:</span>
+        <span class="value">₹{{ invoiceData().planPrice | number }}</span>
+      </div>
+      <div class="info-row highlight">
+        <span class="label">Amount Paid:</span>
+        <span class="value">₹{{ invoiceData().amountPaid | number }}</span>
+      </div>
+      <div class="info-row" *ngIf="invoiceData().balance > 0">
+        <span class="label">Balance Due:</span>
+        <span class="value danger">₹{{ invoiceData().balance | number }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Payment Mode:</span>
+        <span class="value">{{ invoiceData().paymentMode }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Date:</span>
+        <span class="value">{{ invoiceData().date }}</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for choosing STAG FITNESS!</p>
+      <p class="small">This is a computer-generated receipt.</p>
+    </div>
+  </div>
+</div>

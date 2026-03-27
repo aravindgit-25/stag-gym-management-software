@@ -81,6 +81,12 @@
 }
 .btn-renew:hover { background: #faf089; }
 
+.btn-print {
+  background: #edf2f7;
+  color: #4a5568;
+}
+.btn-print:hover { background: #e2e8f0; }
+
 tr.expired { background-color: #fff5f5 !important; }
 tr.expired:hover { background-color: #fed7d7 !important; }
 

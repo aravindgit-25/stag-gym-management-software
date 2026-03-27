@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { SubscriptionService } from '../../services/subscription.service';
 import { MemberService } from '../../services/member.service';
 import { PaymentService } from '../../services/payment.service';
@@ -29,6 +30,7 @@ export class PaymentComponent implements OnInit {
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
+  private router = inject(Router);
 
   // Join data to show Member Name instead of Subscription ID
   displayList = computed(() => {
@@ -97,6 +99,13 @@ export class PaymentComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  onPrintReceipt(payment: any): void {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/invoice', payment.id])
+    );
+    window.open(url, '_blank');
   }
 
   async onSubmit() {
