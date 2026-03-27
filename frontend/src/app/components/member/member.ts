@@ -45,38 +45,52 @@ export class MemberComponent implements OnInit {
     return this.members()
       .filter(m => m.name.toLowerCase().includes(term) || m.phone.includes(term))
       .map(m => {
-        // Calculate expiry date from subscriptions
+        // Normalize member ID
+        const mId = m.id;
+        
+        // Find latest subscription
         const memberSubs = this.subscriptions()
-          .filter(s => Number(s.memberId) === m.id)
-          .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+          .filter(s => {
+            const sMemberId = s.memberId || (s as any).member_id;
+            return Number(sMemberId) === mId;
+          })
+          .sort((a, b) => {
+            const dateA = a.startDate || (a as any).start_date;
+            const dateB = b.startDate || (b as any).start_date;
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+          });
 
-        let expiryDate: Date | null = null;
+        let expiryDisplay = 'No Plan';
+        let rowClass = '';
+        let canRenew = true;
+
         if (memberSubs.length > 0) {
           const lastSub = memberSubs[0];
-          const plan = this.plans().find(p => p.id === Number(lastSub.planId));
-          if (plan) {
-            expiryDate = new Date(lastSub.startDate);
-            expiryDate.setDate(expiryDate.getDate() + plan.duration);
+          const sPlanId = lastSub.planId || (lastSub as any).plan_id;
+          const plan = this.plans().find(p => p.id === Number(sPlanId));
+          const sDate = lastSub.startDate || (lastSub as any).start_date;
+
+          if (plan && sDate) {
+            const expDate = new Date(sDate);
+            expDate.setDate(expDate.getDate() + (plan.duration || 0));
+            expiryDisplay = expDate.toISOString().split('T')[0];
+            
+            const expMidnight = new Date(expDate);
+            expMidnight.setHours(0,0,0,0);
+            
+            const diffTime = expMidnight.getTime() - today.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+              rowClass = 'expired';
+              canRenew = true;
+            } else if (diffDays <= 3) {
+              rowClass = 'near-expiry';
+              canRenew = true;
+            } else {
+              canRenew = false; // Plan is active and not near expiry
+            }
           }
-        }
-
-        let rowClass = '';
-        let canRenew = false;
-        let expiryDisplay = 'No Plan';
-
-        if (expiryDate) {
-          expiryDisplay = expiryDate.toISOString().split('T')[0];
-          const diffDays = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-          if (diffDays < 0) {
-            rowClass = 'expired';
-            canRenew = true;
-          } else if (diffDays <= 3) {
-            rowClass = 'near-expiry';
-            canRenew = true;
-          }
-        } else {
-          canRenew = true; // No plan means they can subscribe
         }
 
         return { ...m, expiryDisplay, rowClass, canRenew };
@@ -103,8 +117,6 @@ export class MemberComponent implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
-    
-    // Load everything needed for expiry calculation
     this.memberService.getMembers().subscribe(data => this.members.set(data));
     this.planService.getPlans().subscribe(data => this.plans.set(data));
     this.subscriptionService.getSubscriptions().subscribe({
