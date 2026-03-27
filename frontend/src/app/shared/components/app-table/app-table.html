@@ -10,8 +10,10 @@
       <tr *ngFor="let row of data">
         <td *ngFor="let col of columns">{{ row[col.field] }}</td>
         <td *ngIf="showActions" class="actions-cell">
-          <button class="btn-edit" (click)="edit.emit(row)">Edit</button>
-          <button class="btn-delete" (click)="delete.emit(row)">Delete</button>
+          <button class="btn-edit" (click)="edit.emit(row)">
+            {{ row.memberId ? 'Renew' : 'Edit' }}
+          </button>
+          <button *ngIf="!row.memberId" class="btn-delete" (click)="delete.emit(row)">Delete</button>
         </td>
       </tr>
       <tr *ngIf="data.length === 0">

@@ -75,6 +75,12 @@ export class PaymentComponent implements OnInit {
     });
   }
 
+  getMemberName(subId: any): string {
+    const sub = this.subscriptions().find(s => s.id === Number(subId));
+    const member = this.members().find(m => m.id === Number(sub?.memberId));
+    return member?.name || `Sub ${subId}`;
+  }
+
   loadPayments(): void {
     this.loading.set(true);
     this.paymentService.getPayments().subscribe({

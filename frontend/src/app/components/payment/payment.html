@@ -8,7 +8,7 @@
           <select id="subscriptionId" formControlName="subscriptionId">
             <option value="" disabled>Choose a subscription</option>
             <option *ngFor="let sub of subscriptions()" [value]="sub.id">
-              {{ members().find(m => m.id === Number(sub.memberId))?.name || 'Sub ' + sub.id }}
+              {{ getMemberName(sub.id) }}
             </option>
           </select>
         </div>
