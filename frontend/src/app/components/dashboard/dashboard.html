@@ -1,0 +1,36 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>Business Overview</h1>
+    <button class="refresh-btn" (click)="loadStats()" [disabled]="loading()">Refresh Stats</button>
+  </div>
+
+  <div class="stats-grid">
+    <!-- Total Members Card -->
+    <div class="stat-card">
+      <div class="stat-label">Total Members</div>
+      <div class="stat-value">{{ totalMembers() }}</div>
+      <div class="stat-footer">All time registered</div>
+    </div>
+
+    <!-- Active Members Card -->
+    <div class="stat-card active">
+      <div class="stat-label">Active Members</div>
+      <div class="stat-value">{{ activeMembers() }}</div>
+      <div class="stat-footer">Current active plans</div>
+    </div>
+
+    <!-- Total Revenue Card -->
+    <div class="stat-card revenue">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-value">₹{{ totalRevenue() | number:'1.0-0' }}</div>
+      <div class="stat-footer">Gross collection</div>
+    </div>
+
+    <!-- Today Revenue Card -->
+    <div class="stat-card today">
+      <div class="stat-label">Today's Revenue</div>
+      <div class="stat-value">₹{{ todayRevenue() | number:'1.0-0' }}</div>
+      <div class="stat-footer">Collected today</div>
+    </div>
+  </div>
+</div>

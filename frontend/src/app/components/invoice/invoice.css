@@ -1,0 +1,186 @@
+/* Professional Invoice Styles */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+.invoice-container {
+  background: #f4f4f4;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+  font-family: 'Poppins', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.invoice-sheet {
+  background: white;
+  width: 210mm;
+  height: 297mm;
+  padding: 25mm;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40mm;
+}
+
+.gym-brand {
+  margin: 0;
+  font-size: 32pt;
+  font-weight: 800;
+  color: #8B0000; /* Dark Red Highlight */
+  letter-spacing: -1pt;
+  line-height: 1;
+}
+
+.tagline {
+  margin: 4pt 0 0 0;
+  font-size: 10pt;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 2pt;
+}
+
+.header-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4pt;
+}
+
+.meta-row {
+  white-space: nowrap;
+  font-size: 10pt;
+}
+
+.m-label {
+  color: #94a3b8;
+  font-weight: 600;
+  margin-right: 5pt;
+}
+
+.m-val {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.member-section {
+  margin-bottom: 25mm;
+}
+
+.section-title {
+  font-size: 9pt;
+  font-weight: 800;
+  color: #8B0000;
+  letter-spacing: 1pt;
+  margin-bottom: 8pt;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 4pt;
+}
+
+.member-name {
+  font-size: 18pt;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.member-sub {
+  font-size: 11pt;
+  color: #64748b;
+  margin-top: 2pt;
+  white-space: nowrap;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20mm;
+}
+
+.invoice-table th {
+  text-align: left;
+  background: #f8fafc;
+  color: #8B0000;
+  font-size: 9pt;
+  font-weight: 700;
+  padding: 12pt 10pt;
+  border-bottom: 2pt solid #8B0000;
+}
+
+.invoice-table td {
+  padding: 15pt 10pt;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 11pt;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.plan-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.summary-section {
+  width: 85mm;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8pt;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11pt;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.summary-row.highlight {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 13pt;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 8pt;
+}
+
+.summary-row.balance {
+  color: #8B0000;
+  font-weight: 800;
+  font-size: 14pt;
+}
+
+.invoice-footer {
+  margin-top: auto;
+  text-align: center;
+}
+
+.thank-you {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 1pt;
+}
+
+.disclaimer {
+  font-size: 8pt;
+  color: #94a3b8;
+  margin-top: 5pt;
+}
+
+.text-right { text-align: right; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  body { margin: 0; }
+  .invoice-container { background: white; padding: 0; display: block; }
+  .invoice-sheet { box-shadow: none; border: none; width: 100%; height: 100vh; padding: 20mm; }
+  .invoice-table th { -webkit-print-color-adjust: exact; background-color: #f8fafc !important; }
+  .gym-brand, .summary-row.balance, .section-title, .invoice-table th { color: #8B0000 !important; }
+}

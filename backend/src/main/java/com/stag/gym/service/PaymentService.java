@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,6 +49,17 @@ public class PaymentService {
         return paymentRepository.findBySubscriptionId(subscriptionId).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Double sumTotal() {
+        Double total = paymentRepository.sumTotalRevenue();
+        return total != null ? total : 0.0;
+    }
+
+    public Double sumToday() {
+        LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        Double todayTotal = paymentRepository.sumTodayRevenue(startOfDay);
+        return todayTotal != null ? todayTotal : 0.0;
     }
 
     private PaymentResponseDTO mapToResponseDTO(Payment payment) {

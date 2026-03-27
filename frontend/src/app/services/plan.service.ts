@@ -18,4 +18,12 @@ export class PlanService {
   addPlan(plan: Plan): Observable<Plan> {
     return this.http.post<Plan>(this.apiUrl, plan);
   }
+
+  updatePlan(id: number, plan: Plan): Observable<Plan> {
+    return this.http.put<Plan>(`${this.apiUrl}/${id}`, plan);
+  }
+
+  deletePlan(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

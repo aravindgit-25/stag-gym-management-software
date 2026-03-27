@@ -65,13 +65,33 @@ h2 {
   display: flex;
   justify-content: flex-end;
 }
-
 .header-with-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 15px;
 }
+
+.search-container {
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.member-form {
 
 .header-with-actions h2 {
   margin-bottom: 0;

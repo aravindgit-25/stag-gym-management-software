@@ -2,6 +2,8 @@ package com.stag.gym.service;
 
 import com.stag.gym.model.Member;
 import com.stag.gym.repository.MemberRepository;
+import com.stag.gym.repository.SubscriptionRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.util.Optional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Transactional
     public Member registerMember(Member member) {
@@ -58,7 +61,20 @@ public class MemberService {
     public void softDeleteMember(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Member not found with id: " + id));
+        
+        if (subscriptionRepository.existsByMemberId(id)) {
+            throw new RuntimeException("Cannot deactivate member: active subscriptions exist.");
+        }
+
         member.setStatus(Member.Status.INACTIVE);
         memberRepository.save(member);
+    }
+
+    public long countAll() {
+        return memberRepository.count();
+    }
+
+    public long getActiveCount() {
+        return memberRepository.countByStatus(Member.Status.ACTIVE);
     }
 }

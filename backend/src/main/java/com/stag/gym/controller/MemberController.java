@@ -38,6 +38,16 @@ public class MemberController {
         return ResponseEntity.ok(memberService.getExpiredMembers());
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<Long> getMemberCount() {
+        return ResponseEntity.ok(memberService.countAll());
+    }
+
+    @GetMapping("/active/count")
+    public ResponseEntity<Long> getActiveMemberCount() {
+        return ResponseEntity.ok(memberService.getActiveCount());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Member> getMemberById(@PathVariable Long id) {
         return memberService.getMemberById(id)

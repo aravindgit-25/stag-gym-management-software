@@ -4,6 +4,8 @@ import com.stag.gym.dto.PlanRequestDTO;
 import com.stag.gym.dto.PlanResponseDTO;
 import com.stag.gym.model.Plan;
 import com.stag.gym.repository.PlanRepository;
+import com.stag.gym.repository.SubscriptionRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 public class PlanService {
 
     private final PlanRepository planRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Transactional
     public PlanResponseDTO createPlan(PlanRequestDTO requestDTO) {
@@ -59,6 +62,11 @@ public class PlanService {
         if (!planRepository.existsById(id)) {
             throw new RuntimeException("Plan not found with id: " + id);
         }
+
+        if (subscriptionRepository.existsByPlanId(id)) {
+            throw new RuntimeException("Cannot delete plan: active subscriptions exist.");
+        }
+
         planRepository.deleteById(id);
     }
 

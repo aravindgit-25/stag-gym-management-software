@@ -39,4 +39,62 @@
       </div>
     </form>
   </div>
+
+  <div class="card mt-20">
+    <div class="header-with-actions">
+      <h2>Subscription List</h2>
+      <app-button label="Refresh" variant="secondary" (onClick)="loadSubscriptions()"></app-button>
+    </div>
+    
+    <app-table 
+      [columns]="columns" 
+      [data]="displayList()"
+      [showRenew]="true"
+      (renew)="openRenewPopup($event)"
+      [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
+    ></app-table>
+  </div>
+</div>
+
+<!-- Renewal Modal -->
+<div class="modal-overlay" *ngIf="showRenewalModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Renew Membership: {{ selectedMemberName() }}</h3>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+    
+    <form [formGroup]="renewalForm" (ngSubmit)="onSaveRenewal()" class="modal-body">
+      <div class="form-group mb-15">
+        <label>Select New Plan</label>
+        <select formControlName="planId">
+          <option *ngFor="let plan of plans()" [value]="plan.id">
+            {{ plan.name }} - ₹{{ plan.price }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group mb-15">
+        <label>New Start Date</label>
+        <input type="date" formControlName="startDate">
+      </div>
+
+      <div class="form-group mb-15">
+        <label>Payment Amount (₹)</label>
+        <input type="number" formControlName="amount" placeholder="Enter amount paid">
+      </div>
+
+      <div class="form-group mb-15">
+        <label>Payment Mode</label>
+        <select formControlName="paymentMode">
+          <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
+        <app-button label="Save Renewal & Payment" type="submit" [disabled]="renewalForm.invalid" variant="primary"></app-button>
+      </div>
+    </form>
+  </div>
 </div>

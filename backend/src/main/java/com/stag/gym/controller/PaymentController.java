@@ -32,4 +32,14 @@ public class PaymentController {
     public ResponseEntity<List<PaymentResponseDTO>> getPaymentsBySubscriptionId(@PathVariable Long subscriptionId) {
         return ResponseEntity.ok(paymentService.getPaymentsBySubscriptionId(subscriptionId));
     }
+
+    @GetMapping("/total")
+    public ResponseEntity<Double> getTotalRevenue() {
+        return ResponseEntity.ok(paymentService.sumTotal());
+    }
+
+    @GetMapping("/today")
+    public ResponseEntity<Double> getTodayRevenue() {
+        return ResponseEntity.ok(paymentService.sumToday());
+    }
 }

@@ -1,0 +1,54 @@
+<div class="container">
+  <div class="card">
+    <h2>Record Payment</h2>
+    <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()" class="member-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="subscriptionId">Select Subscription</label>
+          <select id="subscriptionId" formControlName="subscriptionId">
+            <option value="" disabled>Choose a subscription</option>
+            <option *ngFor="let sub of subscriptions()" [value]="sub.id">
+              {{ getMemberName(sub.id) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" type="number" formControlName="amount" placeholder="e.g. 1500">
+        </div>
+
+        <div class="form-group">
+          <label for="paymentMode">Payment Mode</label>
+          <select id="paymentMode" formControlName="paymentMode">
+            <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <app-button 
+          label="Record Payment" 
+          type="submit" 
+          [disabled]="paymentForm.invalid || loading()"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card mt-20">
+    <div class="header-with-actions">
+      <h2>Payment History</h2>
+      <app-button label="Refresh" variant="secondary" (onClick)="loadPayments()"></app-button>
+    </div>
+    
+    <app-table 
+      [columns]="columns" 
+      [data]="displayList()"
+      [showPrint]="true"
+      (print)="onPrintReceipt($event)"
+      [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
+    ></app-table>
+  </div>
+</div>

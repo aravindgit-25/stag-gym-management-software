@@ -46,3 +46,49 @@
   color: #6c757d;
   padding: 30px !important;
 }
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-edit, .btn-delete, .btn-renew {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-edit {
+  background: #ebf8ff;
+  color: #2b6cb0;
+}
+.btn-edit:hover { background: #bee3f8; }
+
+.btn-delete {
+  background: #fff5f5;
+  color: #c53030;
+}
+.btn-delete:hover { background: #fed7d7; }
+
+.btn-renew {
+  background: #fefcbf;
+  color: #b7791f;
+}
+.btn-renew:hover { background: #faf089; }
+
+.btn-print {
+  background: #edf2f7;
+  color: #4a5568;
+}
+.btn-print:hover { background: #e2e8f0; }
+
+tr.expired { background-color: #fff5f5 !important; }
+tr.expired:hover { background-color: #fed7d7 !important; }
+
+tr.near-expiry { background-color: #fffaf0 !important; }
+tr.near-expiry:hover { background-color: #feebc8 !important; }

@@ -3,11 +3,18 @@
     <thead>
       <tr>
         <th *ngFor="let col of columns">{{ col.header }}</th>
+        <th *ngIf="showActions">Actions</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of data">
+      <tr *ngFor="let row of data" [ngClass]="row.rowClass">
         <td *ngFor="let col of columns">{{ row[col.field] }}</td>
+        <td *ngIf="showActions || showRenew || showPrint" class="actions-cell">
+          <button *ngIf="showActions" class="btn-edit" (click)="edit.emit(row)">Edit</button>
+          <button *ngIf="showRenew && row.canRenew" class="btn-renew" (click)="renew.emit(row)">Renew</button>
+          <button *ngIf="showPrint" class="btn-print" (click)="print.emit(row)">Print</button>
+          <button *ngIf="showActions" class="btn-delete" (click)="delete.emit(row)">Delete</button>
+        </td>
       </tr>
       <tr *ngIf="data.length === 0">
         <td [attr.colspan]="columns.length" class="empty-message">
