@@ -3,5 +3,5 @@ export interface Member {
   name: string;
   phone: string;
   gender: string;
-  branch_id: number;
+  branchId: number;
 }

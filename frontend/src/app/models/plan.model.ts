@@ -1,6 +1,6 @@
 export interface Plan {
   id?: number;
   name: string;
-  duration_days: number;
+  duration: number;
   price: number;
 }
