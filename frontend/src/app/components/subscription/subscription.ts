@@ -84,17 +84,6 @@ export class SubscriptionComponent implements OnInit {
     });
   }
 
-  onRenew(sub: any): void {
-    // Populate form with member ID to start a fresh subscription
-    this.subscriptionForm.patchValue({
-      memberId: sub.memberId,
-      planId: sub.planId,
-      startDate: new Date().toISOString().split('T')[0]
-    });
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
   onSubmit(): void {
     if (this.subscriptionForm.valid) {
       this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({

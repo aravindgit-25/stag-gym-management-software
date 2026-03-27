@@ -49,8 +49,6 @@
     <app-table 
       [columns]="columns" 
       [data]="displayList()"
-      [showActions]="true"
-      (edit)="onRenew($event)"
       [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
     ></app-table>
   </div>

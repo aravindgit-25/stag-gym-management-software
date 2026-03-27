@@ -18,7 +18,9 @@ export class AppTableComponent {
   @Input() data: any[] = [];
   @Input() emptyMessage: string = 'No records found.';
   @Input() showActions: boolean = false;
+  @Input() showRenew: boolean = false;
   
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
+  @Output() renew = new EventEmitter<any>();
 }

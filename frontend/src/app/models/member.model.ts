@@ -4,4 +4,5 @@ export interface Member {
   phone: string;
   gender: string;
   branchId: number;
+  expiryDate?: string; // Format: YYYY-MM-DD
 }

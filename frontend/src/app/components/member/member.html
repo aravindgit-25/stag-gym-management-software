@@ -49,6 +49,15 @@
   <div class="card mt-20">
     <div class="header-with-actions">
       <h2>Member List</h2>
+      <div class="search-container">
+        <input 
+          type="text" 
+          [ngModel]="searchTerm()" 
+          (ngModelChange)="searchTerm.set($event)"
+          placeholder="Search by name or phone..."
+          class="search-input"
+        >
+      </div>
       <app-button 
         label="Refresh" 
         variant="secondary" 
@@ -58,10 +67,12 @@
     
     <app-table 
       [columns]="columns" 
-      [data]="members()"
+      [data]="filteredMembers()"
       [showActions]="true"
+      [showRenew]="true"
       (edit)="onEdit($event)"
       (delete)="onDelete($event)"
+      (renew)="onRenew($event)"
       [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
     ></app-table>
   </div>
