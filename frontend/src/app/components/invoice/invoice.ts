@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { PaymentService } from '../../services/payment.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { MemberService } from '../../services/member.service';
@@ -27,6 +27,11 @@ export class InvoiceComponent implements OnInit {
     this.loadInvoiceData(paymentId);
   }
 
+  formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    return dateStr.split('T')[0];
+  }
+
   loadInvoiceData(paymentId: string) {
     this.paymentService.getPayments().subscribe(payments => {
       const payment = payments.find(p => p.id === Number(paymentId));
@@ -39,7 +44,6 @@ export class InvoiceComponent implements OnInit {
               this.planService.getPlans().subscribe(plans => {
                 const plan = plans.find(p => p.id === Number(sub.planId));
                 
-                // Calculate Expiry
                 const expDate = new Date(sub.startDate || (sub as any).start_date);
                 expDate.setDate(expDate.getDate() + (plan?.duration || 0));
 
@@ -50,16 +54,16 @@ export class InvoiceComponent implements OnInit {
                   phone: member?.phone,
                   planName: plan?.name,
                   planPrice: plan?.price || 0,
-                  startDate: sub.startDate || (sub as any).start_date,
+                  startDate: this.formatDate(sub.startDate || (sub as any).start_date),
                   endDate: expDate.toISOString().split('T')[0],
                   amountPaid: payment.amount,
                   balance: (plan?.price || 0) - payment.amount,
                   paymentMode: payment.paymentMode,
-                  date: payment.paymentDate || new Date().toISOString().split('T')[0]
+                  date: this.formatDate(payment.paymentDate || new Date().toISOString())
                 });
 
-                // Auto print after small delay for rendering
-                setTimeout(() => window.print(), 500);
+                // Trigger print dialog
+                setTimeout(() => window.print(), 1000);
               });
             });
           }
