@@ -1,0 +1,39 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo">STAG FITNESS</div>
+      <p>Enter your credentials to access the portal</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div *ngIf="error()" class="error-alert">
+        {{ error() }}
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input id="email" type="email" formControlName="email" placeholder="e.g. admin@stag.com">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" placeholder="••••••••">
+      </div>
+
+      <div class="form-actions">
+        <app-button 
+          label="Login to System" 
+          type="submit" 
+          [disabled]="loginForm.invalid"
+          variant="primary"
+          style="width: 100%"
+        ></app-button>
+      </div>
+    </form>
+
+    <div class="login-footer">
+      <p>Demo Admin: admin@stag.com / admin123</p>
+      <p>Demo Staff: staff@stag.com / staff123</p>
+    </div>
+  </div>
+</div>
