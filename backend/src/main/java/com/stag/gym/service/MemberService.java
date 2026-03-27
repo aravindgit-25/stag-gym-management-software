@@ -61,4 +61,12 @@ public class MemberService {
         member.setStatus(Member.Status.INACTIVE);
         memberRepository.save(member);
     }
+
+    public long getTotalMembersCount() {
+        return memberRepository.count();
+    }
+
+    public long getActiveMembersCount() {
+        return memberRepository.countActiveMembers(LocalDate.now());
+    }
 }
