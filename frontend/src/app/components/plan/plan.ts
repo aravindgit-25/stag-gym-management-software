@@ -20,14 +20,14 @@ export class PlanComponent implements OnInit {
 
   columns: TableColumn[] = [
     { field: 'name', header: 'Plan Name' },
-    { field: 'duration_days', header: 'Duration (Days)' },
+    { field: 'duration', header: 'Duration (Days)' },
     { field: 'price', header: 'Price (₹)' }
   ];
 
   constructor(private fb: FormBuilder, private planService: PlanService) {
     this.planForm = this.fb.group({
       name: ['', Validators.required],
-      duration_days: ['', [Validators.required, Validators.min(1)]],
+      duration: ['', [Validators.required, Validators.min(1)]],
       price: ['', [Validators.required, Validators.min(0)]]
     });
   }

@@ -27,7 +27,7 @@ export class MemberComponent implements OnInit {
     { field: 'name', header: 'Name' },
     { field: 'phone', header: 'Phone' },
     { field: 'gender', header: 'Gender' },
-    { field: 'branch_id', header: 'Branch ID' }
+    { field: 'branchId', header: 'Branch ID' }
   ];
 
   constructor(
@@ -38,53 +38,38 @@ export class MemberComponent implements OnInit {
       name: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       gender: ['Male', Validators.required],
-      branch_id: [1, Validators.required]
+      branchId: [1, Validators.required]
     });
   }
 
   ngOnInit(): void {
-    console.log('MemberComponent Initialized');
     this.loadMembers();
   }
 
   loadMembers(): void {
-    console.log('Loading members...');
     this.loading.set(true);
     this.memberService.getMembers().subscribe({
       next: (data) => {
-        console.log('Members loaded successfully:', data);
         this.members.set(data);
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching members:', err);
+        console.error('Error fetching members', err);
         this.loading.set(false);
       }
     });
   }
 
   onSubmit(): void {
-    console.log('Submit Clicked');
     if (this.memberForm.valid) {
-      console.log('Form Data:', this.memberForm.value);
       this.memberService.addMember(this.memberForm.value).subscribe({
         next: (newMember) => {
-          console.log('Member added successfully:', newMember);
           this.members.update(prev => [...prev, newMember]);
-          this.memberForm.reset({ gender: 'Male', branch_id: 1 });
+          this.memberForm.reset({ gender: 'Male', branchId: 1 });
         },
         error: (err) => {
-          console.error('Error adding member:', err);
-          alert('Failed to add member. Check console for details.');
-        }
-      });
-    } else {
-      console.warn('Form is invalid:', this.memberForm.errors);
-      // Log individual field errors
-      Object.keys(this.memberForm.controls).forEach(key => {
-        const controlErrors = this.memberForm.get(key)?.errors;
-        if (controlErrors != null) {
-          console.warn(`Field ${key} has errors:`, controlErrors);
+          console.error('Error adding member', err);
+          alert('Failed to add member. Check backend logs.');
         }
       });
     }
