@@ -21,5 +21,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findExpiredMembers(@Param("today") LocalDate today);
 
     @Query("SELECT COUNT(DISTINCT m) FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.status = 'ACTIVE' AND s.endDate >= :today")
-    long countActiveMembers(@Param("today") LocalDate today);
+    long countActiveSubscriptionMembers(@Param("today") LocalDate today);
+
+    long countByStatus(Member.Status status);
 }

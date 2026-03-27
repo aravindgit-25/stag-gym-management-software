@@ -51,14 +51,14 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
-    public Double getTotalRevenue() {
-        Double total = paymentRepository.getTotalRevenue();
+    public Double sumTotal() {
+        Double total = paymentRepository.sumTotalRevenue();
         return total != null ? total : 0.0;
     }
 
-    public Double getTodayRevenue() {
+    public Double sumToday() {
         LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        Double todayTotal = paymentRepository.getTodayRevenue(startOfDay);
+        Double todayTotal = paymentRepository.sumTodayRevenue(startOfDay);
         return todayTotal != null ? todayTotal : 0.0;
     }
 

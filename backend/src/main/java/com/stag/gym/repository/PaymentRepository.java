@@ -14,8 +14,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findBySubscriptionId(Long subscriptionId);
 
     @Query("SELECT SUM(p.amount) FROM Payment p")
-    Double getTotalRevenue();
+    Double sumTotalRevenue();
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate >= :startOfDay")
-    Double getTodayRevenue(@Param("startOfDay") LocalDateTime startOfDay);
+    Double sumTodayRevenue(@Param("startOfDay") LocalDateTime startOfDay);
 }

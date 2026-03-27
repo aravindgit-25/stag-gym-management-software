@@ -62,11 +62,11 @@ public class MemberService {
         memberRepository.save(member);
     }
 
-    public long getTotalMembersCount() {
+    public long countAll() {
         return memberRepository.count();
     }
 
-    public long getActiveMembersCount() {
-        return memberRepository.countActiveMembers(LocalDate.now());
+    public long getActiveCount() {
+        return memberRepository.countByStatus(Member.Status.ACTIVE);
     }
 }

@@ -39,13 +39,13 @@ public class MemberController {
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> getTotalMembersCount() {
-        return ResponseEntity.ok(memberService.getTotalMembersCount());
+    public ResponseEntity<Long> getMemberCount() {
+        return ResponseEntity.ok(memberService.countAll());
     }
 
     @GetMapping("/active/count")
-    public ResponseEntity<Long> getActiveMembersCount() {
-        return ResponseEntity.ok(memberService.getActiveMembersCount());
+    public ResponseEntity<Long> getActiveMemberCount() {
+        return ResponseEntity.ok(memberService.getActiveCount());
     }
 
     @GetMapping("/{id}")

@@ -35,11 +35,11 @@ public class PaymentController {
 
     @GetMapping("/total")
     public ResponseEntity<Double> getTotalRevenue() {
-        return ResponseEntity.ok(paymentService.getTotalRevenue());
+        return ResponseEntity.ok(paymentService.sumTotal());
     }
 
     @GetMapping("/today")
     public ResponseEntity<Double> getTodayRevenue() {
-        return ResponseEntity.ok(paymentService.getTodayRevenue());
+        return ResponseEntity.ok(paymentService.sumToday());
     }
 }
