@@ -39,4 +39,17 @@
       </div>
     </form>
   </div>
+
+  <div class="card mt-20">
+    <div class="header-with-actions">
+      <h2>Subscription List</h2>
+      <app-button label="Refresh" variant="secondary" (onClick)="loadSubscriptions()"></app-button>
+    </div>
+    
+    <app-table 
+      [columns]="columns" 
+      [data]="subscriptionsList()"
+      [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
+    ></app-table>
+  </div>
 </div>

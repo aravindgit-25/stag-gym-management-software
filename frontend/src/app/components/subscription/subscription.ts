@@ -6,12 +6,14 @@ import { PlanService } from '../../services/plan.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { Member } from '../../models/member.model';
 import { Plan } from '../../models/plan.model';
+import { Subscription } from '../../models/subscription.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
+import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppTableComponent],
   templateUrl: './subscription.html',
   styleUrl: './subscription.css'
 })
@@ -19,7 +21,15 @@ export class SubscriptionComponent implements OnInit {
   subscriptionForm: FormGroup;
   members = signal<Member[]>([]);
   plans = signal<Plan[]>([]);
+  subscriptionsList = signal<Subscription[]>([]);
   loading = signal<boolean>(false);
+
+  columns: TableColumn[] = [
+    { field: 'id', header: 'ID' },
+    { field: 'memberId', header: 'Member ID' },
+    { field: 'planId', header: 'Plan ID' },
+    { field: 'startDate', header: 'Start Date' }
+  ];
 
   constructor(
     private fb: FormBuilder,
@@ -36,28 +46,32 @@ export class SubscriptionComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+    this.loadSubscriptions();
   }
 
   loadData(): void {
-    this.loading.set(true);
     // Load members
     this.memberService.getMembers().subscribe({
-      next: (data) => {
-        console.log('Members loaded:', data);
-        this.members.set(data);
-      },
+      next: (data) => this.members.set(data),
       error: (err) => console.error('Error loading members', err)
     });
 
     // Load plans
     this.planService.getPlans().subscribe({
+      next: (data) => this.plans.set(data),
+      error: (err) => console.error('Error loading plans', err)
+    });
+  }
+
+  loadSubscriptions(): void {
+    this.loading.set(true);
+    this.subscriptionService.getSubscriptions().subscribe({
       next: (data) => {
-        console.log('Plans loaded:', data);
-        this.plans.set(data);
+        this.subscriptionsList.set(data);
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error loading plans', err);
+        console.error('Error loading subscriptions', err);
         this.loading.set(false);
       }
     });
@@ -65,10 +79,10 @@ export class SubscriptionComponent implements OnInit {
 
   onSubmit(): void {
     if (this.subscriptionForm.valid) {
-      console.log('Saving subscription:', this.subscriptionForm.value);
       this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({
-        next: (res) => {
+        next: (newSub) => {
           alert('Subscription saved successfully!');
+          this.subscriptionsList.update(prev => [...prev, newSub]);
           this.subscriptionForm.reset({
             startDate: new Date().toISOString().split('T')[0]
           });

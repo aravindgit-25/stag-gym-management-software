@@ -36,4 +36,17 @@
       </div>
     </form>
   </div>
+
+  <div class="card mt-20">
+    <div class="header-with-actions">
+      <h2>Payment History</h2>
+      <app-button label="Refresh" variant="secondary" (onClick)="loadPayments()"></app-button>
+    </div>
+    
+    <app-table 
+      [columns]="columns" 
+      [data]="paymentsList()"
+      [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
+    ></app-table>
+  </div>
 </div>
