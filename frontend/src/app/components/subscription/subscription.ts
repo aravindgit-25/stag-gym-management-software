@@ -1,6 +1,7 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
 import { SubscriptionService } from '../../services/subscription.service';
@@ -31,24 +32,29 @@ export class SubscriptionComponent implements OnInit {
   selectedMemberName = signal<string>('');
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
+  private route = inject(ActivatedRoute);
 
+  // Normalized display list with proper naming and status
   displayList = computed(() => {
     const today = new Date();
     today.setHours(0,0,0,0);
 
     return this.subscriptionsList().map(sub => {
+      // Handle both camelCase and snake_case from backend
+      const sId = sub.id;
       const sPlanId = sub.planId || (sub as any).plan_id;
       const sMemberId = sub.memberId || (sub as any).member_id;
       const sDate = sub.startDate || (sub as any).start_date;
 
       const plan = this.plans().find(p => p.id === Number(sPlanId));
       let expiryDateStr = 'N/A';
+      let status = 'Active';
       let rowClass = '';
       let canRenew = false;
 
       if (plan && sDate) {
         const expDate = new Date(sDate);
-        expDate.setDate(expDate.getDate() + (plan.duration || 0));
+        expDate.setDate(expDate.getDate() + Number(plan.duration || 0));
         expiryDateStr = expDate.toISOString().split('T')[0];
 
         const expMidnight = new Date(expDate);
@@ -58,21 +64,27 @@ export class SubscriptionComponent implements OnInit {
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) {
+          status = 'Expired';
           rowClass = 'expired';
           canRenew = true;
         } else if (diffDays <= 3) {
+          status = 'Expiring Soon';
           rowClass = 'near-expiry';
           canRenew = true;
         }
       }
 
       return {
-        ...sub,
+        id: sId,
         memberName: this.members().find(m => m.id === Number(sMemberId))?.name || `Member ${sMemberId}`,
         planName: plan?.name || `Plan ${sPlanId}`,
+        startDate: sDate,
         expiryDate: expiryDateStr,
+        status,
         rowClass,
-        canRenew
+        canRenew,
+        memberId: sMemberId,
+        planId: sPlanId
       };
     });
   });
@@ -82,7 +94,8 @@ export class SubscriptionComponent implements OnInit {
     { field: 'memberName', header: 'Member Name' },
     { field: 'planName', header: 'Plan Name' },
     { field: 'startDate', header: 'Start Date' },
-    { field: 'expiryDate', header: 'Expiry Date' }
+    { field: 'expiryDate', header: 'Expiry Date' },
+    { field: 'status', header: 'Status' }
   ];
 
   constructor(
@@ -105,11 +118,26 @@ export class SubscriptionComponent implements OnInit {
       amount: ['', [Validators.required, Validators.min(1)]],
       paymentMode: ['Cash', Validators.required]
     });
+
+    // Automatically update price when plan changes in renewal popup
+    this.renewalForm.get('planId')?.valueChanges.subscribe(planId => {
+      const plan = this.plans().find(p => p.id === Number(planId));
+      if (plan) {
+        this.renewalForm.patchValue({ amount: plan.price }, { emitEvent: false });
+      }
+    });
   }
 
   ngOnInit(): void {
     this.loadData();
     this.loadSubscriptions();
+    
+    // Handle query param from Member screen
+    this.route.queryParams.subscribe(params => {
+      if (params['memberId']) {
+        this.subscriptionForm.patchValue({ memberId: params['memberId'] });
+      }
+    });
   }
 
   loadData(): void {
@@ -132,18 +160,11 @@ export class SubscriptionComponent implements OnInit {
   }
 
   openRenewPopup(sub: any): void {
-    const sMemberId = sub.memberId || (sub as any).member_id;
-    const sPlanId = sub.planId || (sub as any).plan_id;
-
-    const member = this.members().find(m => m.id === Number(sMemberId));
-    const plan = this.plans().find(p => p.id === Number(sPlanId));
-    
-    this.selectedMemberName.set(member?.name || 'Unknown');
+    this.selectedMemberName.set(sub.memberName);
     this.renewalForm.patchValue({
-      memberId: sMemberId,
-      planId: sPlanId,
-      startDate: new Date().toISOString().split('T')[0],
-      amount: plan?.price || ''
+      memberId: sub.memberId,
+      planId: sub.planId,
+      startDate: new Date().toISOString().split('T')[0]
     });
     this.showRenewalModal.set(true);
   }
@@ -173,7 +194,7 @@ export class SubscriptionComponent implements OnInit {
           this.paymentService.addPayment(paymentData).subscribe({
             next: () => {
               alert('Membership renewed and payment recorded!');
-              this.subscriptionsList.update(prev => [...prev, newSub]);
+              this.loadSubscriptions(); // Refresh list to show latest status
               this.closeModal();
             },
             error: (err) => alert('Subscription created but Payment failed.')
@@ -189,7 +210,7 @@ export class SubscriptionComponent implements OnInit {
       this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({
         next: (newSub) => {
           alert('Subscription saved successfully!');
-          this.subscriptionsList.update(prev => [...prev, newSub]);
+          this.loadSubscriptions();
           this.subscriptionForm.reset({
             startDate: new Date().toISOString().split('T')[0]
           });
