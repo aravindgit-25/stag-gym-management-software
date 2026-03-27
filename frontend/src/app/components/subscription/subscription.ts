@@ -7,6 +7,7 @@ import { PlanService } from '../../services/plan.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { PaymentService } from '../../services/payment.service';
 import { NotificationService } from '../../services/notification.service';
+import { ConfirmService } from '../../services/confirm.service';
 import { Member } from '../../models/member.model';
 import { Plan } from '../../models/plan.model';
 import { Subscription } from '../../models/subscription.model';
@@ -35,6 +36,7 @@ export class SubscriptionComponent implements OnInit {
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private route = inject(ActivatedRoute);
   private notif = inject(NotificationService);
+  private confirm = inject(ConfirmService);
 
   // Filtered display list showing ONLY the latest subscription per member
   displayList = computed(() => {
@@ -191,8 +193,11 @@ export class SubscriptionComponent implements OnInit {
     this.renewalForm.reset({ paymentMode: 'Cash' });
   }
 
-  onSaveRenewal(): void {
+  async onSaveRenewal() {
     if (this.renewalForm.valid) {
+      const confirmed = await this.confirm.ask('Are you sure you want to renew this membership and record payment?');
+      if (!confirmed) return;
+
       const formVal = this.renewalForm.value;
       const subData = {
         memberId: formVal.memberId,
@@ -222,8 +227,11 @@ export class SubscriptionComponent implements OnInit {
     }
   }
 
-  onSubmit(): void {
+  async onSubmit() {
     if (this.subscriptionForm.valid) {
+      const confirmed = await this.confirm.ask('Are you sure you want to save this subscription?');
+      if (!confirmed) return;
+
       this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({
         next: (newSub) => {
           this.notif.show('Subscription saved successfully!', 'success');

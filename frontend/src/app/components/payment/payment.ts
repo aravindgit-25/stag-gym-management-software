@@ -5,6 +5,7 @@ import { SubscriptionService } from '../../services/subscription.service';
 import { MemberService } from '../../services/member.service';
 import { PaymentService } from '../../services/payment.service';
 import { NotificationService } from '../../services/notification.service';
+import { ConfirmService } from '../../services/confirm.service';
 import { Subscription } from '../../models/subscription.model';
 import { Member } from '../../models/member.model';
 import { Payment } from '../../models/payment.model';
@@ -27,6 +28,7 @@ export class PaymentComponent implements OnInit {
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private notif = inject(NotificationService);
+  private confirm = inject(ConfirmService);
 
   // Join data to show Member Name instead of Subscription ID
   displayList = computed(() => {
@@ -97,8 +99,11 @@ export class PaymentComponent implements OnInit {
     });
   }
 
-  onSubmit(): void {
+  async onSubmit() {
     if (this.paymentForm.valid) {
+      const confirmed = await this.confirm.ask('Are you sure you want to record this payment?');
+      if (!confirmed) return;
+
       this.paymentService.addPayment(this.paymentForm.value).subscribe({
         next: (newPayment) => {
           this.notif.show('Payment recorded successfully!', 'success');

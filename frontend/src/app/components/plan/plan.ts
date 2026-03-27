@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
+import { ConfirmService } from '../../services/confirm.service';
 import { Plan } from '../../models/plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
@@ -22,6 +23,7 @@ export class PlanComponent implements OnInit {
   editingId = signal<number | null>(null);
   
   private notif = inject(NotificationService);
+  private confirm = inject(ConfirmService);
 
   columns: TableColumn[] = [
     { field: 'id', header: 'ID' },
@@ -63,8 +65,9 @@ export class PlanComponent implements OnInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  onDelete(plan: Plan): void {
-    if (confirm(`Are you sure you want to delete plan: ${plan.name}?`)) {
+  async onDelete(plan: Plan) {
+    const confirmed = await this.confirm.ask(`Are you sure you want to delete plan: ${plan.name}?`);
+    if (confirmed) {
       this.planService.deletePlan(plan.id!).subscribe({
         next: () => {
           this.notif.show('Plan deleted successfully!', 'error');
@@ -81,10 +84,14 @@ export class PlanComponent implements OnInit {
     this.planForm.reset();
   }
 
-  onSubmit(): void {
+  async onSubmit() {
     if (this.planForm.valid) {
       const planData = this.planForm.value;
+      const action = this.isEditing() ? 'update' : 'save';
       
+      const confirmed = await this.confirm.ask(`Are you sure you want to ${action} this plan?`);
+      if (!confirmed) return;
+
       if (this.isEditing()) {
         this.planService.updatePlan(this.editingId()!, planData).subscribe({
           next: (updated) => {

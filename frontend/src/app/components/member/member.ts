@@ -6,6 +6,7 @@ import { MemberService } from '../../services/member.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
+import { ConfirmService } from '../../services/confirm.service';
 import { Member } from '../../models/member.model';
 import { Subscription } from '../../models/subscription.model';
 import { Plan } from '../../models/plan.model';
@@ -31,6 +32,7 @@ export class MemberComponent implements OnInit {
   
   private router = inject(Router);
   private notif = inject(NotificationService);
+  private confirm = inject(ConfirmService);
 
   columns: TableColumn[] = [
     { field: 'id', header: 'ID' },
@@ -145,8 +147,9 @@ export class MemberComponent implements OnInit {
     this.router.navigate(['/subscriptions'], { queryParams: { memberId: member.id } });
   }
 
-  onDelete(member: Member): void {
-    if (confirm(`Are you sure you want to delete member: ${member.name}?`)) {
+  async onDelete(member: Member) {
+    const confirmed = await this.confirm.ask(`Are you sure you want to delete member: ${member.name}?`);
+    if (confirmed) {
       this.memberService.deleteMember(member.id!).subscribe({
         next: () => {
           this.notif.show('Member deleted successfully!', 'error');
@@ -163,10 +166,14 @@ export class MemberComponent implements OnInit {
     this.memberForm.reset({ gender: 'Male', branchId: 1 });
   }
 
-  onSubmit(): void {
+  async onSubmit() {
     if (this.memberForm.valid) {
       const memberData = this.memberForm.value;
+      const action = this.isEditing() ? 'update' : 'add';
       
+      const confirmed = await this.confirm.ask(`Are you sure you want to ${action} this member?`);
+      if (!confirmed) return;
+
       if (this.isEditing()) {
         this.memberService.updateMember(this.editingId()!, memberData).subscribe({
           next: (updated) => {
