@@ -210,6 +210,8 @@ export class SubscriptionComponent implements OnInit {
           const paymentData = {
             subscriptionId: newSub.id!,
             amount: formVal.amount,
+            paidAmount: formVal.amount,
+            balanceAmount: 0,
             paymentMode: formVal.paymentMode
           };
 

@@ -133,8 +133,23 @@
     <form *ngIf="currentStep() === 3" [formGroup]="paymentForm" (ngSubmit)="onSubmitPayment()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
-          <label for="amount">Payment Amount (₹)</label>
-          <input id="amount" type="number" formControlName="amount" readonly class="readonly-input">
+          <label for="amount">Total Plan Amount (₹)</label>
+          <input id="amount" type="number" formControlName="amount" placeholder="Total amount">
+        </div>
+
+        <div class="form-group">
+          <label for="paidAmount">Amount Paid Now (₹)</label>
+          <input id="paidAmount" type="number" formControlName="paidAmount" placeholder="Enter amount paid">
+        </div>
+
+        <div class="form-group">
+          <label for="balanceAmount">Balance Amount (₹)</label>
+          <input id="balanceAmount" type="number" [value]="paymentForm.get('balanceAmount')?.value" readonly class="readonly-input">
+        </div>
+
+        <div class="form-group">
+          <label for="balanceDueDate">Balance Due Date</label>
+          <input id="balanceDueDate" type="date" formControlName="balanceDueDate" [attr.disabled]="paymentForm.get('balanceAmount')?.value <= 0 ? true : null">
         </div>
 
         <div class="form-group">

@@ -85,6 +85,9 @@ export class MemberComponent implements OnInit {
 
     this.paymentForm = this.fb.group({
       amount: ['', [Validators.required, Validators.min(1)]],
+      paidAmount: ['', [Validators.required, Validators.min(0)]],
+      balanceAmount: [{ value: 0, disabled: true }],
+      balanceDueDate: [''],
       paymentMode: ['Cash', Validators.required]
     });
 
@@ -92,7 +95,29 @@ export class MemberComponent implements OnInit {
     this.subscriptionForm.get('planId')?.valueChanges.subscribe(planId => {
       const plan = this.plans().find(p => p.id === Number(planId));
       if (plan) {
-        this.paymentForm.patchValue({ amount: plan.price });
+        this.paymentForm.patchValue({ 
+          amount: plan.price,
+          paidAmount: plan.price,
+          balanceAmount: 0
+        });
+      }
+    });
+
+    // Auto-calculate balance
+    this.paymentForm.valueChanges.subscribe(() => {
+      const total = this.paymentForm.get('amount')?.value || 0;
+      const paid = this.paymentForm.get('paidAmount')?.value || 0;
+      const balance = total - paid;
+      
+      this.paymentForm.get('balanceAmount')?.setValue(balance, { emitEvent: false });
+      
+      // If balance exists, set a default due date (e.g., 7 days from now) if empty
+      if (balance > 0 && !this.paymentForm.get('balanceDueDate')?.value) {
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        this.paymentForm.get('balanceDueDate')?.setValue(nextWeek.toISOString().split('T')[0], { emitEvent: false });
+      } else if (balance <= 0) {
+        this.paymentForm.get('balanceDueDate')?.setValue('', { emitEvent: false });
       }
     });
   }

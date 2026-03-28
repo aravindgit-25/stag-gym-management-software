@@ -61,7 +61,12 @@ export class PaymentComponent implements OnInit {
     this.paymentForm = this.fb.group({
       subscriptionId: ['', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
+      paidAmount: ['', [Validators.required, Validators.min(0)]],
       paymentMode: ['Cash', Validators.required]
+    });
+
+    this.paymentForm.get('amount')?.valueChanges.subscribe(val => {
+      this.paymentForm.get('paidAmount')?.setValue(val, { emitEvent: false });
     });
   }
 
@@ -113,7 +118,13 @@ export class PaymentComponent implements OnInit {
       const confirmed = await this.confirm.ask('Are you sure you want to record this payment?');
       if (!confirmed) return;
 
-      this.paymentService.addPayment(this.paymentForm.value).subscribe({
+      const formVal = this.paymentForm.value;
+      const paymentData = {
+        ...formVal,
+        balanceAmount: Number(formVal.amount) - Number(formVal.paidAmount)
+      };
+
+      this.paymentService.addPayment(paymentData).subscribe({
         next: (newPayment) => {
           this.notif.show('Payment recorded successfully!', 'success');
           this.paymentsList.update(prev => [...prev, newPayment]);
