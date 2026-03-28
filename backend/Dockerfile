@@ -5,7 +5,7 @@ WORKDIR /home/gradle/src
 RUN ./gradlew clean bootJar --no-daemon
 
 # Step 2: Run the application
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-alpine
 EXPOSE 8080
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar", "--spring.profiles.active=prod"]
