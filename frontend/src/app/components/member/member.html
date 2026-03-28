@@ -1,16 +1,62 @@
-<div class="container">
-  <div class="card">
-    <h2>{{ isEditing() ? 'Edit Member' : 'Add New Member' }}</h2>
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <h1>Members</h1>
+      <p class="subtitle">Manage your gym members and their subscriptions</p>
+    </div>
+    <div class="header-right">
+      <app-button 
+        label="Refresh" 
+        variant="secondary" 
+        (onClick)="loadMembers()"
+        class="mr-10"
+      ></app-button>
+      <app-button 
+        label="Add Member" 
+        variant="primary" 
+        (onClick)="openAddModal()"
+      ></app-button>
+    </div>
+  </div>
+
+  <div class="table-container-card">
+    <app-stag-table 
+      [columns]="tableColumns()" 
+      [data]="filteredMembers()"
+      [height]="tableHeight()"
+      [showActions]="true"
+      [showRenew]="true"
+      [loading]="loading()"
+      [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
+      [showSelectionColumn]="true"
+      [enableBulkActions]="false"
+      [storageKey]="'member-table-columns'"
+      [editingRowIndex]="editingRowIndex()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      (renew)="onRenew($event)"
+      (selectionChange)="onTableSelectionChange($event)"
+      (rowClick)="onRowClick($event)"
+      (globalSearchChange)="onMemberGlobalSearch($event)"
+    ></app-stag-table>
+  </div>
+
+  <!-- Add/Edit Member Modal -->
+  <app-modal 
+    [isOpen]="showModal()" 
+    [title]="isEditing() ? 'Edit Member' : 'Add New Member'"
+    (close)="closeModal()"
+  >
     <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
           <label for="name">Full Name</label>
-          <input id="name" type="text" formControlName="name" placeholder="Enter name">
+          <input id="name" type="text" formControlName="name" placeholder="Enter full name">
         </div>
 
         <div class="form-group">
           <label for="phone">Phone Number</label>
-          <input id="phone" type="text" formControlName="phone" placeholder="10-digit number">
+          <input id="phone" type="text" formControlName="phone" placeholder="10-digit mobile number">
         </div>
 
         <div class="form-group">
@@ -30,50 +76,18 @@
 
       <div class="form-actions">
         <app-button 
-          *ngIf="isEditing()"
           label="Cancel" 
           variant="secondary" 
-          (onClick)="cancelEdit()"
+          (onClick)="closeModal()"
           class="mr-10"
         ></app-button>
         <app-button 
-          [label]="isEditing() ? 'Update Member' : 'Add Member'" 
+          [label]="isEditing() ? 'Update Member' : 'Save Member'" 
           type="submit" 
           [disabled]="memberForm.invalid"
           variant="primary"
         ></app-button>
       </div>
     </form>
-  </div>
-
-  <div class="card mt-20">
-    <div class="header-with-actions">
-      <h2>Member List</h2>
-      <div class="search-container">
-        <input 
-          type="text" 
-          [ngModel]="searchTerm()" 
-          (ngModelChange)="searchTerm.set($event)"
-          placeholder="Search by name or phone..."
-          class="search-input"
-        >
-      </div>
-      <app-button 
-        label="Refresh" 
-        variant="secondary" 
-        (onClick)="loadMembers()"
-      ></app-button>
-    </div>
-    
-    <app-table 
-      [columns]="columns" 
-      [data]="filteredMembers()"
-      [showActions]="true"
-      [showRenew]="true"
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-      (renew)="onRenew($event)"
-      [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
-    ></app-table>
-  </div>
+  </app-modal>
 </div>

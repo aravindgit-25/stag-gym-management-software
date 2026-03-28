@@ -1,0 +1,98 @@
+<div class="stag-table-container">
+  <div class="stag-table-header" *ngIf="enableBulkActions || globalSearchChange.observed">
+    <div class="left-header">
+      <div class="bulk-actions" *ngIf="enableBulkActions && selectedItems().length > 0">
+        <span class="selected-count">{{ selectedItems().length }} selected</span>
+        <div class="action-chips">
+          <button 
+            *ngFor="let action of bulkActions" 
+            class="btn-bulk" 
+            [ngClass]="'btn-' + (action.variant || 'primary')"
+            (click)="action.action(selectedItems())"
+          >
+            {{ action.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="right-header">
+      <div class="table-search" *ngIf="globalSearchChange.observed">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            [ngModel]="searchTerm()" 
+            (ngModelChange)="onGlobalSearch($event)" 
+            placeholder="Search entries..."
+            class="search-input"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-scroll-area" [style.max-height]="height">
+    <table class="stag-table">
+      <thead>
+        <tr>
+          <th *ngIf="showSelectionColumn" class="selection-col">
+            <input type="checkbox" (change)="toggleAll($event)" [checked]="data.length > 0 && selectedItems().length === data.length">
+          </th>
+          <th *ngFor="let col of columns" [style.width]="col.width">
+            {{ col.header }}
+          </th>
+          <th *ngIf="showActions || showRenew || showPrint" class="actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions ? 1 : 0)" class="loading-cell">
+            <div class="shimmer-row" *ngFor="let i of [1,2,3]"></div>
+          </td>
+        </tr>
+        
+        <tr *ngFor="let row of data; let i = index" 
+            [ngClass]="row.rowClass" 
+            (click)="onRowClickInternal(row)"
+            [class.selected]="isSelected(row)"
+            [class.editing]="editingRowIndex === i"
+        >
+          <td *ngIf="showSelectionColumn" class="selection-col" (click)="$event.stopPropagation()">
+            <input type="checkbox" [checked]="isSelected(row)" (change)="toggleSelection(row, $event)">
+          </td>
+          
+          <td *ngFor="let col of columns">
+            <span class="cell-content">{{ row[col.field] }}</span>
+          </td>
+
+          <td *ngIf="showActions || showRenew || showPrint" class="actions-cell" (click)="$event.stopPropagation()">
+            <div class="action-group">
+              <button *ngIf="showRenew && row.canRenew" class="action-icon renew" (click)="renew.emit(row)" title="Renew">
+                Renew
+              </button>
+              <button *ngIf="showPrint" class="action-icon print" (click)="print.emit(row)" title="Print">
+                Print
+              </button>
+              <button *ngIf="showActions" class="action-icon edit" (click)="edit.emit(row)" title="Edit">
+                Edit
+              </button>
+              <button *ngIf="showActions" class="action-icon delete" (click)="delete.emit(row)" title="Delete">
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="!loading && data.length === 0">
+          <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions ? 1 : 0)" class="empty-cell">
+            <div class="empty-state">
+              <span class="empty-icon">📭</span>
+              <p>{{ emptyMessage }}</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

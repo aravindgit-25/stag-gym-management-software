@@ -11,12 +11,13 @@ import { Member } from '../../models/member.model';
 import { Subscription } from '../../models/subscription.model';
 import { Plan } from '../../models/plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
-import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
+import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
+import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
 
 @Component({
   selector: 'app-member',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, AppButtonComponent, AppTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AppButtonComponent, AppStagTableComponent, AppModalComponent],
   templateUrl: './member.html',
   styleUrl: './member.css'
 })
@@ -29,17 +30,42 @@ export class MemberComponent implements OnInit {
   loading = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
+  editingRowIndex = signal<number | null>(null);
+  tableHeight = signal<string>('calc(100vh - 200px)');
+  showModal = signal<boolean>(false);
   
   private router = inject(Router);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
 
-  columns: TableColumn[] = [
-    { field: 'registrationId', header: 'Reg ID' },
-    { field: 'name', header: 'Name' },
-    { field: 'phone', header: 'Phone' },
-    { field: 'expiryDisplay', header: 'Expiry Date' }
-  ];
+  tableColumns = computed<StagTableColumn[]>(() => [
+    { field: 'registrationId', header: this.getFieldDisplayName('registrationId'), width: '100px' },
+    { field: 'name', header: this.getFieldDisplayName('name') },
+    { field: 'phone', header: this.getFieldDisplayName('phone'), width: '150px' },
+    { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' }
+  ]);
+
+  private getFieldDisplayName(fieldName: string): string {
+    const fieldNames: { [key: string]: string } = {
+      registrationId: 'Reg ID',
+      name: 'Full Name',
+      phone: 'Phone Number',
+      expiryDisplay: 'Expiry Date',
+    };
+    return fieldNames[fieldName] || fieldName;
+  }
+
+  onTableSelectionChange(selected: any[]) {
+    console.log('Selected members:', selected);
+  }
+
+  onMemberGlobalSearch(term: string) {
+    this.searchTerm.set(term);
+  }
+
+  onRowClick(member: any) {
+    console.log('Row clicked:', member);
+  }
 
   filteredMembers = computed(() => {
     const term = this.searchTerm().toLowerCase();
@@ -136,11 +162,18 @@ export class MemberComponent implements OnInit {
     this.loadData();
   }
 
+  openAddModal() {
+    this.isEditing.set(false);
+    this.editingId.set(null);
+    this.memberForm.reset({ gender: 'Male', branchId: 1 });
+    this.showModal.set(true);
+  }
+
   onEdit(member: Member): void {
     this.isEditing.set(true);
     this.editingId.set(member.id || null);
     this.memberForm.patchValue(member);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.showModal.set(true);
   }
 
   onRenew(member: any): void {
@@ -160,6 +193,11 @@ export class MemberComponent implements OnInit {
     }
   }
 
+  closeModal(): void {
+    this.showModal.set(false);
+    this.cancelEdit();
+  }
+
   cancelEdit(): void {
     this.isEditing.set(false);
     this.editingId.set(null);
@@ -169,17 +207,13 @@ export class MemberComponent implements OnInit {
   async onSubmit() {
     if (this.memberForm.valid) {
       const memberData = this.memberForm.value;
-      const action = this.isEditing() ? 'update' : 'add';
       
-      const confirmed = await this.confirm.ask(`Are you sure you want to ${action} this member?`);
-      if (!confirmed) return;
-
       if (this.isEditing()) {
         this.memberService.updateMember(this.editingId()!, memberData).subscribe({
           next: (updated) => {
             this.notif.show('Member updated successfully!', 'success');
             this.members.update(prev => prev.map(m => m.id === updated.id ? updated : m));
-            this.cancelEdit();
+            this.showModal.set(false);
           },
           error: (err) => this.notif.show('Error updating member.', 'error')
         });
@@ -188,7 +222,7 @@ export class MemberComponent implements OnInit {
           next: (newMember) => {
             this.notif.show('Member added successfully!', 'success');
             this.members.update(prev => [...prev, newMember]);
-            this.memberForm.reset({ gender: 'Male', branchId: 1 });
+            this.showModal.set(false);
           },
           error: (err) => this.notif.show('Error adding member.', 'error')
         });
