@@ -84,7 +84,7 @@ export class MemberComponent implements OnInit {
     });
 
     this.paymentForm = this.fb.group({
-      amount: ['', [Validators.required, Validators.min(1)]],
+      amount: [{ value: '', disabled: true }, [Validators.required, Validators.min(1)]],
       paidAmount: ['', [Validators.required, Validators.min(0)]],
       balanceAmount: [{ value: 0, disabled: true }],
       balanceDueDate: [''],
@@ -265,12 +265,27 @@ export class MemberComponent implements OnInit {
 
   onSubmitPayment() {
     if (this.paymentForm.valid) {
+      const rawForm = this.paymentForm.getRawValue();
+      const subId = Number(this.createdSubId());
+      
       const payData = {
-        ...this.paymentForm.value,
-        subscriptionId: this.createdSubId()
+        // camelCase
+        subscriptionId: subId,
+        amount: Number(rawForm.amount),
+        paidAmount: Number(rawForm.paidAmount),
+        balanceAmount: Number(rawForm.balanceAmount),
+        balanceDueDate: rawForm.balanceDueDate || null,
+        paymentMode: rawForm.paymentMode,
+        
+        // snake_case (Backwards compatibility/Spring naming)
+        subscription_id: subId,
+        paid_amount: Number(rawForm.paidAmount),
+        balance_amount: Number(rawForm.balanceAmount),
+        balance_due_date: rawForm.balanceDueDate || null,
+        payment_mode: rawForm.paymentMode
       };
 
-      this.paymentService.addPayment(payData).subscribe({
+      this.paymentService.addPayment(payData as any).subscribe({
         next: (newPay) => {
           this.notif.show('Payment successful! Generating invoice...', 'success');
           this.showModal.set(false);

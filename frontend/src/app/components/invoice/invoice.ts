@@ -56,8 +56,8 @@ export class InvoiceComponent implements OnInit {
                   planPrice: plan?.price || 0,
                   startDate: this.formatDate(sub.startDate || (sub as any).start_date),
                   endDate: expDate.toISOString().split('T')[0],
-                  amountPaid: payment.amount,
-                  balance: (plan?.price || 0) - payment.amount,
+                  amountPaid: payment.paidAmount || payment.amount,
+                  balance: payment.balanceAmount ?? ((plan?.price || 0) - payment.amount),
                   paymentMode: payment.paymentMode,
                   date: this.formatDate(payment.paymentDate || new Date().toISOString())
                 });

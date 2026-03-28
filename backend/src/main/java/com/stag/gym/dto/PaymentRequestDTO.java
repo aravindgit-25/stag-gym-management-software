@@ -23,6 +23,12 @@ public class PaymentRequestDTO {
     @Min(value = 0, message = "Amount must be at least 0")
     private Double amount;
 
+    private Double paidAmount;
+
+    private Double balanceAmount;
+
+    private LocalDateTime balanceDueDate;
+
     @NotNull(message = "Payment mode is required")
     private Payment.PaymentMode paymentMode;
 
