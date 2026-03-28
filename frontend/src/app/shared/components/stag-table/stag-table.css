@@ -156,6 +156,37 @@
 .action-icon.print { background: #f8fafc; color: #475569; }
 .action-icon.print:hover { background: #f1f5f9; }
 
+/* Status Action Buttons */
+.btn-status-action {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-status-action.btn-yellow {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.btn-status-action.btn-yellow:hover {
+  background-color: #fcd34d;
+}
+
+.btn-status-action.btn-red {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.btn-status-action.btn-red:hover {
+  background-color: #fecaca;
+}
+
 /* Selection */
 .selection-col {
   width: 48px;

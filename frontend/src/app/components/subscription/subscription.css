@@ -185,3 +185,17 @@ input:focus, select:focus {
 
 .mt-15 { margin-top: 15px; }
 .mt-20 { margin-top: 20px; }
+
+/* Payment Status Highlighting */
+:host ::ng-deep tr.payment-pending td {
+  background-color: #fffaf0 !important;
+}
+
+:host ::ng-deep tr.payment-pending td:last-child {
+  color: #dd6b20;
+  font-weight: 700;
+}
+
+:host ::ng-deep tr.payment-pending:hover td {
+  background-color: #feebc8 !important;
+}

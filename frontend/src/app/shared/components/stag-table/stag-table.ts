@@ -6,7 +6,7 @@ export interface StagTableColumn {
   field: string;
   header: string;
   width?: string;
-  type?: 'text' | 'date' | 'number' | 'boolean' | 'template';
+  type?: 'text' | 'date' | 'number' | 'boolean' | 'template' | 'action-button';
   sortable?: boolean;
 }
 

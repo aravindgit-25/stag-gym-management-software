@@ -11,6 +11,7 @@ import { ConfirmService } from '../../services/confirm.service';
 import { Member } from '../../models/member.model';
 import { Plan } from '../../models/plan.model';
 import { Subscription } from '../../models/subscription.model';
+import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
 
@@ -27,6 +28,7 @@ export class SubscriptionComponent implements OnInit {
   members = signal<Member[]>([]);
   plans = signal<Plan[]>([]);
   subscriptionsList = signal<Subscription[]>([]);
+  paymentsList = signal<Payment[]>([]);
   loading = signal<boolean>(false);
   
   showRenewalModal = signal<boolean>(false);
@@ -48,8 +50,8 @@ export class SubscriptionComponent implements OnInit {
     today.setHours(0,0,0,0);
 
     const list = this.subscriptionsList();
+    const payments = this.paymentsList();
     
-    // Step 1: Map to find the latest subscription for each member
     const latestMap = new Map<number, any>();
     
     list.forEach(sub => {
@@ -63,7 +65,6 @@ export class SubscriptionComponent implements OnInit {
       }
     });
 
-    // Step 2: Only process and return the latest records
     return Array.from(latestMap.values()).map(item => {
       const sub = item.sub;
       const sId = sub.id;
@@ -72,10 +73,17 @@ export class SubscriptionComponent implements OnInit {
       const sDate = sub.startDate || (sub as any).start_date;
 
       const plan = this.plans().find(p => p.id === Number(sPlanId));
+      
+      const hasPayment = payments.some(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(sId));
+      const paymentStatus = hasPayment ? 'Paid' : 'Pending';
+
       let expiryDateStr = 'N/A';
       let status = 'Active';
-      let rowClass = '';
+      let rowClass = hasPayment ? '' : 'payment-pending';
       let canRenew = false;
+      
+      let renewal = '';
+      let renewalClass = '';
 
       if (plan && sDate) {
         const expDate = new Date(sDate);
@@ -92,10 +100,14 @@ export class SubscriptionComponent implements OnInit {
           status = 'Expired';
           rowClass = 'expired';
           canRenew = true;
+          renewal = 'Renew Now';
+          renewalClass = 'btn-red';
         } else if (diffDays <= 3) {
           status = 'Expiring Soon';
           rowClass = 'near-expiry';
           canRenew = true;
+          renewal = `${diffDays === 0 ? 'Today' : diffDays + ' Days'}`;
+          renewalClass = 'btn-yellow';
         }
       }
 
@@ -106,6 +118,9 @@ export class SubscriptionComponent implements OnInit {
         startDate: sDate,
         expiryDate: expiryDateStr,
         status,
+        paymentStatus,
+        renewal,
+        renewalClass,
         rowClass,
         canRenew,
         memberId: sMemberId,
@@ -115,12 +130,14 @@ export class SubscriptionComponent implements OnInit {
   });
 
   columns: StagTableColumn[] = [
-    { field: 'id', header: 'ID' },
+    { field: 'id', header: 'ID', width: '70px' },
     { field: 'memberName', header: 'Member Name' },
     { field: 'planName', header: 'Plan Name' },
     { field: 'startDate', header: 'Start Date' },
     { field: 'expiryDate', header: 'Expiry Date' },
-    { field: 'status', header: 'Status' }
+    { field: 'status', header: 'Status' },
+    { field: 'paymentStatus', header: 'Payment', width: '100px' },
+    { field: 'renewal', header: 'Renewal', width: '120px', type: 'action-button' }
   ];
 
   constructor(
@@ -154,6 +171,7 @@ export class SubscriptionComponent implements OnInit {
   loadData(): void {
     this.memberService.getMembers().subscribe(data => this.members.set(data));
     this.planService.getPlans().subscribe(data => this.plans.set(data));
+    this.paymentService.getPayments().subscribe(data => this.paymentsList.set(data));
   }
 
   loadSubscriptions(): void {
@@ -181,6 +199,7 @@ export class SubscriptionComponent implements OnInit {
     
     this.paymentService.getPayments().subscribe({
       next: (payments) => {
+        this.paymentsList.set(payments);
         const payment = payments.find(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(sub.id));
         
         this.selectedSubDetails.set({
@@ -189,6 +208,7 @@ export class SubscriptionComponent implements OnInit {
           plan,
           payment
         });
+        
         this.showViewModal.set(true);
         this.loading.set(false);
       },
@@ -245,6 +265,7 @@ export class SubscriptionComponent implements OnInit {
       this.paymentService.addPayment(paymentData as any).subscribe({
         next: (pay) => {
           this.notif.show('Payment recorded successfully!', 'success');
+          this.loadData();
           this.loadSubscriptions();
           this.closeCompletePaymentModal();
           this.router.navigate(['/invoice', pay.id]);
@@ -299,6 +320,7 @@ export class SubscriptionComponent implements OnInit {
           this.paymentService.addPayment(paymentData).subscribe({
             next: () => {
               this.notif.show('Membership renewed and payment recorded!', 'success');
+              this.loadData();
               this.loadSubscriptions();
               this.closeModal();
             },
