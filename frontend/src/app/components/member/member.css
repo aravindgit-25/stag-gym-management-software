@@ -1,25 +1,21 @@
-.container {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 20px;
-}
-
 .container.full-width {
   max-width: 100%;
-  margin: 20px auto;
-  padding: 0 40px;
+  margin: 0;
+  padding: 24px 40px;
+  background-color: #f8fafc;
+  min-height: 100vh;
 }
 
 .table-header-section {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 30px;
+  align-items: center;
+  margin-bottom: 32px;
 }
 
 .header-left h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.025em;
@@ -31,13 +27,55 @@
   font-size: 0.95rem;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
+.table-container-card {
+  background: white;
+  border-radius: 12px;
 }
 
-.table-container-card {
-  background: transparent;
+/* Step Indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  padding: 0 20px;
+}
+
+.step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.step.active {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.step.completed {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 12px;
+  max-width: 60px;
 }
 
 /* Modal Form Styles */
@@ -76,6 +114,12 @@
   border-color: #4f46e5;
   background-color: #ffffff;
   box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.readonly-input {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  cursor: not-allowed;
 }
 
 .form-actions {

@@ -7,6 +7,7 @@ import { SubscriptionService } from '../../services/subscription.service';
 import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
+import { PaymentService } from '../../services/payment.service';
 import { Member } from '../../models/member.model';
 import { Subscription } from '../../models/subscription.model';
 import { Plan } from '../../models/plan.model';
@@ -23,6 +24,9 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
 })
 export class MemberComponent implements OnInit {
   memberForm: FormGroup;
+  subscriptionForm: FormGroup;
+  paymentForm: FormGroup;
+
   members = signal<Member[]>([]);
   subscriptions = signal<Subscription[]>([]);
   plans = signal<Plan[]>([]);
@@ -31,15 +35,25 @@ export class MemberComponent implements OnInit {
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
   editingRowIndex = signal<number | null>(null);
-  tableHeight = signal<string>('calc(100vh - 200px)');
+  tableHeight = signal<string>('calc(100vh - 220px)');
   showModal = signal<boolean>(false);
   
+  // Wizard State
+  currentStep = signal<number>(1);
+  createdMemberId = signal<number | null>(null);
+  createdSubId = signal<number | null>(null);
+  paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
+
   private router = inject(Router);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
+  private memberService = inject(MemberService);
+  private subscriptionService = inject(SubscriptionService);
+  private paymentService = inject(PaymentService);
+  private planService = inject(PlanService);
 
   tableColumns = computed<StagTableColumn[]>(() => [
-    { field: 'registrationId', header: this.getFieldDisplayName('registrationId'), width: '100px' },
+    { field: 'registrationId', header: this.getFieldDisplayName('registrationId'), width: '120px' },
     { field: 'name', header: this.getFieldDisplayName('name') },
     { field: 'phone', header: this.getFieldDisplayName('phone'), width: '150px' },
     { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' }
@@ -53,6 +67,198 @@ export class MemberComponent implements OnInit {
       expiryDisplay: 'Expiry Date',
     };
     return fieldNames[fieldName] || fieldName;
+  }
+
+  constructor(private fb: FormBuilder) {
+    this.memberForm = this.fb.group({
+      registrationId: ['Fetching...'],
+      name: ['', Validators.required],
+      phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      gender: ['Male', Validators.required],
+      branchId: [1, Validators.required]
+    });
+
+    this.subscriptionForm = this.fb.group({
+      planId: ['', Validators.required],
+      startDate: [new Date().toISOString().split('T')[0], Validators.required]
+    });
+
+    this.paymentForm = this.fb.group({
+      amount: ['', [Validators.required, Validators.min(1)]],
+      paymentMode: ['Cash', Validators.required]
+    });
+
+    // Auto-fill amount when plan changes
+    this.subscriptionForm.get('planId')?.valueChanges.subscribe(planId => {
+      const plan = this.plans().find(p => p.id === Number(planId));
+      if (plan) {
+        this.paymentForm.patchValue({ amount: plan.price });
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.loading.set(true);
+    this.memberService.getMembers().subscribe(data => this.members.set(data));
+    this.planService.getPlans().subscribe(data => this.plans.set(data));
+    this.subscriptionService.getSubscriptions().subscribe({
+      next: (data) => {
+        this.subscriptions.set(data);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.notif.show('Error fetching data', 'error');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  loadMembers(): void {
+    this.loadData();
+  }
+
+  openAddModal() {
+    this.isEditing.set(false);
+    this.editingId.set(null);
+    this.currentStep.set(1);
+    this.memberForm.reset({ 
+      registrationId: 'Fetching...',
+      gender: 'Male', 
+      branchId: 1 
+    });
+    this.subscriptionForm.reset({
+      startDate: new Date().toISOString().split('T')[0]
+    });
+    this.paymentForm.reset({
+      paymentMode: 'Cash'
+    });
+    
+    this.memberService.generateRegistrationId().subscribe({
+      next: (id) => {
+        this.memberForm.patchValue({ registrationId: id });
+      },
+      error: (err) => {
+        console.error('Registration ID fetch failed:', err);
+        this.notif.show('Error fetching registration ID', 'error');
+        this.memberForm.patchValue({ registrationId: 'SG-ERR' });
+      }
+    });
+    
+    this.showModal.set(true);
+  }
+
+  onEdit(member: Member): void {
+    this.isEditing.set(true);
+    this.editingId.set(member.id || null);
+    this.currentStep.set(1);
+    this.memberForm.patchValue({
+      registrationId: member.registrationId,
+      name: member.name,
+      phone: member.phone,
+      gender: member.gender,
+      branchId: member.branchId
+    });
+    this.showModal.set(true);
+  }
+
+  onRenew(member: any): void {
+    this.isEditing.set(false);
+    this.createdMemberId.set(member.id);
+    this.currentStep.set(2); // Jump to Plan selection
+    this.subscriptionForm.reset({
+      startDate: new Date().toISOString().split('T')[0]
+    });
+    this.showModal.set(true);
+  }
+
+  async onDelete(member: Member) {
+    const confirmed = await this.confirm.ask(`Are you sure you want to delete member: ${member.name}?`);
+    if (confirmed) {
+      this.memberService.deleteMember(member.id!).subscribe({
+        next: () => {
+          this.notif.show('Member deleted successfully!', 'error');
+          this.members.update(prev => prev.filter(m => m.id !== member.id));
+        },
+        error: (err) => this.notif.show('Failed to delete member.', 'error')
+      });
+    }
+  }
+
+  closeModal(): void {
+    this.showModal.set(false);
+    this.currentStep.set(1);
+  }
+
+  async onSubmitMember() {
+    if (this.memberForm.valid) {
+      const memberData = this.memberForm.getRawValue(); // use getRawValue to include registrationId
+      
+      if (this.isEditing()) {
+        this.memberService.updateMember(this.editingId()!, memberData).subscribe({
+          next: (updated) => {
+            this.notif.show('Member updated successfully!', 'success');
+            this.loadData();
+            this.showModal.set(false);
+          },
+          error: (err) => this.notif.show('Error updating member.', 'error')
+        });
+      } else {
+        this.memberService.addMember(memberData).subscribe({
+          next: (newMember) => {
+            this.notif.show('Member registered! Now select a plan.', 'success');
+            this.createdMemberId.set(newMember.id!);
+            this.loadData();
+            this.currentStep.set(2); 
+          },
+          error: (err) => this.notif.show('Error adding member.', 'error')
+        });
+      }
+    }
+  }
+
+  onSubmitSubscription() {
+    if (this.subscriptionForm.valid) {
+      const subData = {
+        ...this.subscriptionForm.value,
+        memberId: this.createdMemberId()
+      };
+
+      this.subscriptionService.addSubscription(subData).subscribe({
+        next: (newSub) => {
+          this.notif.show('Plan selected! Proceed to payment.', 'success');
+          this.createdSubId.set(newSub.id!);
+          this.currentStep.set(3); 
+        },
+        error: (err) => this.notif.show('Error saving subscription.', 'error')
+      });
+    }
+  }
+
+  onSubmitPayment() {
+    if (this.paymentForm.valid) {
+      const payData = {
+        ...this.paymentForm.value,
+        subscriptionId: this.createdSubId()
+      };
+
+      this.paymentService.addPayment(payData).subscribe({
+        next: (newPay) => {
+          this.notif.show('Payment successful! Generating invoice...', 'success');
+          this.showModal.set(false);
+          this.loadData();
+          
+          const url = this.router.serializeUrl(
+            this.router.createUrlTree(['/invoice', newPay.id])
+          );
+          window.open(url, '_blank');
+        },
+        error: (err) => this.notif.show('Error saving payment.', 'error')
+      });
+    }
   }
 
   onTableSelectionChange(selected: any[]) {
@@ -124,133 +330,4 @@ export class MemberComponent implements OnInit {
         return { ...m, registrationId: regId, expiryDisplay, rowClass, canRenew };
       });
   });
-
-  constructor(
-    private fb: FormBuilder, 
-    private memberService: MemberService,
-    private subscriptionService: SubscriptionService,
-    private planService: PlanService
-  ) {
-    this.memberForm = this.fb.group({
-      registrationId: ['Fetching...'],
-      name: ['', Validators.required],
-      phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
-      gender: ['Male', Validators.required],
-      branchId: [1, Validators.required]
-    });
-  }
-
-  ngOnInit(): void {
-    this.loadData();
-  }
-
-  loadData(): void {
-    this.loading.set(true);
-    this.memberService.getMembers().subscribe(data => this.members.set(data));
-    this.planService.getPlans().subscribe(data => this.plans.set(data));
-    this.subscriptionService.getSubscriptions().subscribe({
-      next: (data) => {
-        this.subscriptions.set(data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.notif.show('Error fetching data', 'error');
-        this.loading.set(false);
-      }
-    });
-  }
-
-  loadMembers(): void {
-    this.loadData();
-  }
-
-  openAddModal() {
-    this.isEditing.set(false);
-    this.editingId.set(null);
-    this.memberForm.reset({ 
-      registrationId: 'Fetching...',
-      gender: 'Male', 
-      branchId: 1 
-    });
-    
-    this.memberService.generateRegistrationId().subscribe({
-      next: (id) => {
-        this.memberForm.patchValue({ registrationId: id });
-      },
-      error: (err) => {
-        console.error('Registration ID fetch failed:', err);
-        this.notif.show('Error fetching registration ID', 'error');
-        this.memberForm.patchValue({ registrationId: 'SG-ERR' });
-      }
-    });
-    
-    this.showModal.set(true);
-  }
-
-  onEdit(member: Member): void {
-    this.isEditing.set(true);
-    this.editingId.set(member.id || null);
-    this.memberForm.patchValue({
-      registrationId: member.registrationId,
-      name: member.name,
-      phone: member.phone,
-      gender: member.gender,
-      branchId: member.branchId
-    });
-    this.showModal.set(true);
-  }
-
-  onRenew(member: any): void {
-    this.router.navigate(['/subscriptions'], { queryParams: { memberId: member.id } });
-  }
-
-  async onDelete(member: Member) {
-    const confirmed = await this.confirm.ask(`Are you sure you want to delete member: ${member.name}?`);
-    if (confirmed) {
-      this.memberService.deleteMember(member.id!).subscribe({
-        next: () => {
-          this.notif.show('Member deleted successfully!', 'error');
-          this.members.update(prev => prev.filter(m => m.id !== member.id));
-        },
-        error: (err) => this.notif.show('Failed to delete member.', 'error')
-      });
-    }
-  }
-
-  closeModal(): void {
-    this.showModal.set(false);
-    this.cancelEdit();
-  }
-
-  cancelEdit(): void {
-    this.isEditing.set(false);
-    this.editingId.set(null);
-    this.memberForm.reset({ gender: 'Male', branchId: 1 });
-  }
-
-  async onSubmit() {
-    if (this.memberForm.valid) {
-      const memberData = this.memberForm.value;
-      
-      if (this.isEditing()) {
-        this.memberService.updateMember(this.editingId()!, memberData).subscribe({
-          next: (updated) => {
-            this.notif.show('Member updated successfully!', 'success');
-            this.members.update(prev => prev.map(m => m.id === updated.id ? updated : m));
-            this.showModal.set(false);
-          },
-          error: (err) => this.notif.show('Error updating member.', 'error')
-        });
-      } else {
-        this.memberService.addMember(memberData).subscribe({
-          next: (newMember) => {
-            this.notif.show('Member added successfully!', 'success');
-            this.members.update(prev => [...prev, newMember]);
-            this.showModal.set(false);
-          },
-          error: (err) => this.notif.show('Error adding member.', 'error')
-        });
-      }
-    }
-  }
 }

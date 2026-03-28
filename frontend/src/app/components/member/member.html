@@ -41,17 +41,27 @@
     ></app-stag-table>
   </div>
 
-  <!-- Add/Edit Member Modal -->
+  <!-- Unified Onboarding Modal -->
   <app-modal 
     [isOpen]="showModal()" 
-    [title]="isEditing() ? 'Edit Member' : 'Add New Member'"
+    [title]="isEditing() ? 'Edit Member' : (currentStep() === 1 ? 'Step 1: Member Registration' : (currentStep() === 2 ? 'Step 2: Select Plan' : 'Step 3: Payment Details'))"
     (close)="closeModal()"
   >
-    <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" class="member-form">
+    <!-- Step Indicator -->
+    <div class="step-indicator" *ngIf="!isEditing()">
+      <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">1</div>
+      <div class="step-line"></div>
+      <div class="step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">2</div>
+      <div class="step-line"></div>
+      <div class="step" [class.active]="currentStep() >= 3">3</div>
+    </div>
+
+    <!-- STEP 1: Member Form -->
+    <form *ngIf="currentStep() === 1" [formGroup]="memberForm" (ngSubmit)="onSubmitMember()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
           <label for="registrationId">Registration ID</label>
-          <input id="registrationId" type="text" formControlName="registrationId" readonly>
+          <input id="registrationId" type="text" formControlName="registrationId" readonly class="readonly-input">
         </div>
 
         <div class="form-group">
@@ -80,16 +90,66 @@
       </div>
 
       <div class="form-actions">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()" class="mr-10"></app-button>
         <app-button 
-          label="Cancel" 
-          variant="secondary" 
-          (onClick)="closeModal()"
-          class="mr-10"
-        ></app-button>
-        <app-button 
-          [label]="isEditing() ? 'Update Member' : 'Save Member'" 
+          [label]="isEditing() ? 'Update Details' : 'Save & Continue'" 
           type="submit" 
           [disabled]="memberForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+
+    <!-- STEP 2: Plan Selection -->
+    <form *ngIf="currentStep() === 2" [formGroup]="subscriptionForm" (ngSubmit)="onSubmitSubscription()" class="member-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="planId">Select Membership Plan</label>
+          <select id="planId" formControlName="planId">
+            <option value="" disabled selected>Choose a plan...</option>
+            <option *ngFor="let plan of plans()" [value]="plan.id">
+              {{ plan.name }} - ₹{{ plan.price }} ({{ plan.duration }} days)
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="startDate">Start Date</label>
+          <input id="startDate" type="date" formControlName="startDate">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <app-button 
+          [label]="'Confirm & Proceed to Payment'" 
+          type="submit" 
+          [disabled]="subscriptionForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+
+    <!-- STEP 3: Payment Details -->
+    <form *ngIf="currentStep() === 3" [formGroup]="paymentForm" (ngSubmit)="onSubmitPayment()" class="member-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="amount">Payment Amount (₹)</label>
+          <input id="amount" type="number" formControlName="amount" readonly class="readonly-input">
+        </div>
+
+        <div class="form-group">
+          <label for="paymentMode">Payment Mode</label>
+          <select id="paymentMode" formControlName="paymentMode">
+            <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <app-button 
+          [label]="'Finalize & Generate Invoice'" 
+          type="submit" 
+          [disabled]="paymentForm.invalid"
           variant="primary"
         ></app-button>
       </div>
