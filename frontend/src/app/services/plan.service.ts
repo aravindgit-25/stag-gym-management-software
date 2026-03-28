@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Plan } from '../models/plan.model';
 
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class PlanService {
-  private apiUrl = 'http://localhost:8080/api/v1/plans';
+  private apiUrl = `${environment.apiUrl}/plans`;
 
   constructor(private http: HttpClient) { }
 
