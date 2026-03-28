@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Subscription } from '../models/subscription.model';
 
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private apiUrl = 'http://localhost:8080/api/v1/subscriptions';
+  private apiUrl = `${environment.apiUrl}/subscriptions`;
 
   constructor(private http: HttpClient) { }
 
