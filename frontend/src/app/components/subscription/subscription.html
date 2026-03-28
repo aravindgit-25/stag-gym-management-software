@@ -1,21 +1,24 @@
 <div class="container">
-  <div class="card">
-    <div class="header-with-actions">
-      <h2>Subscription List</h2>
+  <div class="table-header-section">
+    <div class="header-left">
+      <h1>Subscriptions</h1>
+      <p class="subtitle">Manage and track member subscriptions</p>
+    </div>
+    <div class="header-right">
       <app-button label="Refresh" variant="secondary" (onClick)="loadSubscriptions()"></app-button>
     </div>
-    
-    <app-stag-table 
-      [columns]="columns" 
-      [data]="displayList()"
-      [showRenew]="true"
-      [showView]="true"
-      (renew)="openRenewPopup($event)"
-      (view)="openViewModal($event)"
-      [loading]="loading()"
-      [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
-    ></app-stag-table>
   </div>
+  
+  <app-stag-table 
+    [columns]="columns" 
+    [data]="displayList()"
+    [showRenew]="true"
+    [showView]="true"
+    (renew)="openRenewPopup($event)"
+    (view)="openViewModal($event)"
+    [loading]="loading()"
+    [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
+  ></app-stag-table>
 </div>
 
 <!-- View Details Modal -->

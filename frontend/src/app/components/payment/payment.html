@@ -1,17 +1,20 @@
 <div class="container">
-  <div class="card">
-    <div class="header-with-actions">
-      <h2>Payment History</h2>
+  <div class="table-header-section">
+    <div class="header-left">
+      <h1>Payments</h1>
+      <p class="subtitle">History of all transactions and receipts</p>
+    </div>
+    <div class="header-right">
       <app-button label="Refresh" variant="secondary" (onClick)="loadPayments()"></app-button>
     </div>
-    
-    <app-stag-table 
-      [columns]="columns" 
-      [data]="displayList()"
-      [showPrint]="true"
-      (print)="onPrintReceipt($event)"
-      [loading]="loading()"
-      [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
-    ></app-stag-table>
   </div>
+  
+  <app-stag-table 
+    [columns]="columns" 
+    [data]="displayList()"
+    [showPrint]="true"
+    (print)="onPrintReceipt($event)"
+    [loading]="loading()"
+    [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
+  ></app-stag-table>
 </div>

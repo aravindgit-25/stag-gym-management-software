@@ -19,17 +19,15 @@
     </div>
   </div>
 
-  <div class="table-container-card">
-    <app-stag-table 
-      [columns]="columns" 
-      [data]="plans()"
-      [showActions]="true"
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-      [loading]="loading()"
-      [emptyMessage]="loading() ? 'Loading plans...' : 'No plans configured.'"
-    ></app-stag-table>
-  </div>
+  <app-stag-table 
+    [columns]="columns" 
+    [data]="plans()"
+    [showActions]="true"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+    [loading]="loading()"
+    [emptyMessage]="loading() ? 'Loading plans...' : 'No plans configured.'"
+  ></app-stag-table>
 
   <app-modal 
     [isOpen]="showModal()" 
