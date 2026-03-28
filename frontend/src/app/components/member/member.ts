@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
@@ -45,6 +45,7 @@ export class MemberComponent implements OnInit {
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
 
   private router = inject(Router);
+  private location = inject(Location);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
   private memberService = inject(MemberService);
@@ -311,6 +312,10 @@ export class MemberComponent implements OnInit {
 
   onRowClick(member: any) {
     console.log('Row clicked:', member);
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   filteredMembers = computed(() => {

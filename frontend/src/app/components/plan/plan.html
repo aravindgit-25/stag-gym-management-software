@@ -1,8 +1,15 @@
 <div class="container">
   <div class="table-header-section">
     <div class="header-left">
-      <h1>Active Plans</h1>
-      <p class="subtitle">Manage gym membership plans and durations</p>
+      <div class="title-with-back">
+        <button class="btn-back" (click)="goBack()" title="Go Back">
+          <span class="back-icon">←</span>
+        </button>
+        <div>
+          <h1>Active Plans</h1>
+          <p class="subtitle">Manage gym membership plans and durations</p>
+        </div>
+      </div>
     </div>
     <div class="header-right">
       <app-button 

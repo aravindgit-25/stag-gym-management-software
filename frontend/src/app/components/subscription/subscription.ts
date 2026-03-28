@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
@@ -37,6 +37,7 @@ export class SubscriptionComponent implements OnInit {
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private location = inject(Location);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
 
@@ -166,6 +167,10 @@ export class SubscriptionComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   openViewModal(sub: any): void {

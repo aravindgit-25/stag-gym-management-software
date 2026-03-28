@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
@@ -26,6 +26,7 @@ export class PlanComponent implements OnInit {
   
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
+  private location = inject(Location);
 
   columns: StagTableColumn[] = [
     { field: 'id', header: 'ID', width: '80px' },
@@ -58,6 +59,10 @@ export class PlanComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   openAddModal() {

@@ -1,8 +1,15 @@
 <div class="container">
   <div class="table-header-section">
     <div class="header-left">
-      <h1>Subscriptions</h1>
-      <p class="subtitle">Manage and track member subscriptions</p>
+      <div class="title-with-back">
+        <button class="btn-back" (click)="goBack()" title="Go Back">
+          <span class="back-icon">←</span>
+        </button>
+        <div>
+          <h1>Subscriptions</h1>
+          <p class="subtitle">Manage and track member subscriptions</p>
+        </div>
+      </div>
     </div>
     <div class="header-right">
       <app-button label="Refresh" variant="secondary" (onClick)="loadSubscriptions()"></app-button>
