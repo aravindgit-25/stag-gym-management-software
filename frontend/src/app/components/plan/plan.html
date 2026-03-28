@@ -1,6 +1,46 @@
 <div class="container">
-  <div class="card">
-    <h2>{{ isEditing() ? 'Edit Gym Plan' : 'Define New Gym Plan' }}</h2>
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back" (click)="goBack()" title="Go Back">
+          <span class="back-icon">←</span>
+        </button>
+        <div>
+          <h1>Active Plans</h1>
+          <p class="subtitle">Manage gym membership plans and durations</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <app-button 
+        label="Refresh" 
+        variant="secondary" 
+        (onClick)="loadPlans()"
+        class="mr-10"
+      ></app-button>
+      <app-button 
+        label="Add Plan" 
+        variant="primary" 
+        (onClick)="openAddModal()"
+      ></app-button>
+    </div>
+  </div>
+
+  <app-stag-table 
+    [columns]="columns" 
+    [data]="plans()"
+    [showActions]="true"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+    [loading]="loading()"
+    [emptyMessage]="loading() ? 'Loading plans...' : 'No plans configured.'"
+  ></app-stag-table>
+
+  <app-modal 
+    [isOpen]="showModal()" 
+    [title]="isEditing() ? 'Edit Gym Plan' : 'Define New Gym Plan'"
+    (close)="closeModal()"
+  >
     <form [formGroup]="planForm" (ngSubmit)="onSubmit()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
@@ -19,12 +59,11 @@
         </div>
       </div>
 
-      <div class="form-actions">
+      <div class="form-actions mt-20">
         <app-button 
-          *ngIf="isEditing()"
           label="Cancel" 
           variant="secondary" 
-          (onClick)="cancelEdit()"
+          (onClick)="closeModal()"
           class="mr-10"
         ></app-button>
         <app-button 
@@ -35,21 +74,5 @@
         ></app-button>
       </div>
     </form>
-  </div>
-
-  <div class="card mt-20">
-    <div class="header-with-actions">
-      <h2>Active Plans</h2>
-      <app-button label="Refresh" variant="secondary" (onClick)="loadPlans()"></app-button>
-    </div>
-    
-    <app-table 
-      [columns]="columns" 
-      [data]="plans()"
-      [showActions]="true"
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-      [emptyMessage]="loading() ? 'Loading plans...' : 'No plans configured.'"
-    ></app-table>
-  </div>
+  </app-modal>
 </div>

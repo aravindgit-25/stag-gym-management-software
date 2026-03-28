@@ -1,0 +1,25 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-modal',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './app-modal.html',
+  styleUrl: './app-modal.css'
+})
+export class AppModalComponent {
+  @Input() title: string = '';
+  @Input() isOpen: boolean = false;
+  @Output() close = new EventEmitter<void>();
+
+  onClose() {
+    this.close.emit();
+  }
+
+  onBackdropClick(event: MouseEvent) {
+    if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.onClose();
+    }
+  }
+}

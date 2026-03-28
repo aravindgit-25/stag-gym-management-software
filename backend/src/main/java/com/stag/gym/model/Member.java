@@ -20,6 +20,9 @@ public class Member extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "registration_id", unique = true)
+    private String registrationId;
+
     @NotBlank(message = "Name is required")
     @Column(nullable = false)
     private String name;

@@ -20,9 +20,11 @@ export class AppTableComponent {
   @Input() showActions: boolean = false;
   @Input() showRenew: boolean = false;
   @Input() showPrint: boolean = false;
+  @Input() showView: boolean = false;
   
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
   @Output() renew = new EventEmitter<any>();
   @Output() print = new EventEmitter<any>();
+  @Output() view = new EventEmitter<any>();
 }

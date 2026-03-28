@@ -18,6 +18,9 @@ public class PaymentResponseDTO {
     private String memberName;
     private String planName;
     private Double amount;
+    private Double paidAmount;
+    private Double balanceAmount;
+    private LocalDateTime balanceDueDate;
     private LocalDateTime paymentDate;
     private Payment.PaymentMode paymentMode;
     private LocalDateTime createdAt;

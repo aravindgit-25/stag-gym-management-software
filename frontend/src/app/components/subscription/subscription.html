@@ -1,58 +1,86 @@
 <div class="container">
-  <div class="card">
-    <h2>New Subscription</h2>
-    <form [formGroup]="subscriptionForm" (ngSubmit)="onSubmit()" class="member-form">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="memberId">Select Member</label>
-          <select id="memberId" formControlName="memberId">
-            <option value="" disabled>Choose a member</option>
-            <option *ngFor="let member of members()" [value]="member.id">
-              {{ member.name }} ({{ member.phone }})
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="planId">Select Plan</label>
-          <select id="planId" formControlName="planId">
-            <option value="" disabled>Choose a plan</option>
-            <option *ngFor="let plan of plans()" [value]="plan.id">
-              {{ plan.name }} - ₹{{ plan.price }} ({{ plan.duration }} days)
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="startDate">Start Date</label>
-          <input id="startDate" type="date" formControlName="startDate">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back" (click)="goBack()" title="Go Back">
+          <span class="back-icon">←</span>
+        </button>
+        <div>
+          <h1>Subscriptions</h1>
+          <p class="subtitle">Manage and track member subscriptions</p>
         </div>
       </div>
-
-      <div class="form-actions">
-        <app-button 
-          label="Save Subscription" 
-          type="submit" 
-          [disabled]="subscriptionForm.invalid || loading()"
-          variant="primary"
-        ></app-button>
-      </div>
-    </form>
-  </div>
-
-  <div class="card mt-20">
-    <div class="header-with-actions">
-      <h2>Subscription List</h2>
+    </div>
+    <div class="header-right">
       <app-button label="Refresh" variant="secondary" (onClick)="loadSubscriptions()"></app-button>
     </div>
+  </div>
+  
+  <app-stag-table 
+    [columns]="columns" 
+    [data]="displayList()"
+    [showRenew]="true"
+    [showView]="true"
+    (renew)="openRenewPopup($event)"
+    (view)="openViewModal($event)"
+    [loading]="loading()"
+    [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
+  ></app-stag-table>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal-overlay" *ngIf="showViewModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Member Details & Invoice</h3>
+      <button class="close-btn" (click)="closeViewModal()">×</button>
+    </div>
     
-    <app-table 
-      [columns]="columns" 
-      [data]="displayList()"
-      [showRenew]="true"
-      (renew)="openRenewPopup($event)"
-      [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
-    ></app-table>
+    <div class="modal-body" *ngIf="selectedSubDetails() as details">
+      <div class="details-section">
+        <h4>Member Information</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="label">Name:</span> {{ details.member?.name }}</div>
+          <div class="detail-item"><span class="label">Reg ID:</span> {{ details.member?.registrationId }}</div>
+          <div class="detail-item"><span class="label">Phone:</span> {{ details.member?.phone }}</div>
+        </div>
+      </div>
+
+      <div class="details-section mt-15">
+        <h4>Plan Information</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="label">Plan:</span> {{ details.plan?.name }}</div>
+          <div class="detail-item"><span class="label">Price:</span> ₹{{ details.plan?.price }}</div>
+          <div class="detail-item"><span class="label">Duration:</span> {{ details.plan?.duration }} days</div>
+        </div>
+      </div>
+
+      <div class="details-section mt-15">
+        <h4>Subscription & Payment</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="label">Start Date:</span> {{ details.startDate }}</div>
+          <div class="detail-item"><span class="label">Expiry Date:</span> {{ details.expiryDate }}</div>
+          <div class="detail-item"><span class="label">Amount Paid:</span> ₹{{ details.payment?.paidAmount || 0 }}</div>
+          <div class="detail-item"><span class="label">Balance:</span> ₹{{ details.payment?.balanceAmount || 0 }}</div>
+          <div class="detail-item"><span class="label">Payment Mode:</span> {{ details.payment?.paymentMode || 'N/A' }}</div>
+        </div>
+      </div>
+
+      <div class="modal-footer mt-20">
+        <app-button label="Close" variant="secondary" (onClick)="closeViewModal()"></app-button>
+        
+        <!-- Only show invoice options if payment exists -->
+        <ng-container *ngIf="details.payment">
+          <app-button label="Add Invoice" variant="secondary" (onClick)="addInvoice()"></app-button>
+          <app-button label="Re-invoice" variant="primary" (onClick)="reInvoice()"></app-button>
+        </ng-container>
+
+        <!-- Show Update Payment if missing -->
+        <ng-container *ngIf="!details.payment">
+          <app-button label="Update Payment" variant="primary" (onClick)="openCompletePaymentPopup(details)"></app-button>
+        </ng-container>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -94,6 +122,37 @@
       <div class="modal-footer">
         <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
         <app-button label="Save Renewal & Payment" type="submit" [disabled]="renewalForm.invalid" variant="primary"></app-button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Complete Payment Modal (For existing subscriptions without payment) -->
+<div class="modal-overlay" *ngIf="showCompletePaymentModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Complete Payment: {{ selectedMemberName() }}</h3>
+      <button class="close-btn" (click)="closeCompletePaymentModal()">×</button>
+    </div>
+    
+    <form [formGroup]="renewalForm" (ngSubmit)="onSaveCompletePayment()" class="modal-body">
+      <p class="mb-15">Recording payment for existing subscription.</p>
+      
+      <div class="form-group mb-15">
+        <label>Payment Amount (₹)</label>
+        <input type="number" formControlName="amount" placeholder="Enter amount paid">
+      </div>
+
+      <div class="form-group mb-15">
+        <label>Payment Mode</label>
+        <select formControlName="paymentMode">
+          <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeCompletePaymentModal()"></app-button>
+        <app-button label="Save & Generate Invoice" type="submit" [disabled]="renewalForm.invalid" variant="primary"></app-button>
       </div>
     </form>
   </div>

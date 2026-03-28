@@ -23,6 +23,11 @@ public class MemberController {
         return new ResponseEntity<>(savedMember, HttpStatus.CREATED);
     }
 
+    @GetMapping("/registration-id")
+    public ResponseEntity<String> getNextRegistrationId() {
+        return ResponseEntity.ok(memberService.getNextRegistrationId());
+    }
+
     @GetMapping
     public ResponseEntity<List<Member>> getAllMembers() {
         return ResponseEntity.ok(memberService.getAllMembers());

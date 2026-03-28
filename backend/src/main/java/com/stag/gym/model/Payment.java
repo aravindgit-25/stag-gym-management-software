@@ -29,6 +29,15 @@ public class Payment extends BaseEntity {
     @Min(value = 0, message = "Amount must be at least 0")
     private Double amount;
 
+    @Column(name = "paid_amount")
+    private Double paidAmount;
+
+    @Column(name = "balance_amount")
+    private Double balanceAmount;
+
+    @Column(name = "balance_due_date")
+    private LocalDateTime balanceDueDate;
+
     @Column(name = "payment_date", nullable = false)
     @NotNull(message = "Payment date is required")
     private LocalDateTime paymentDate;
@@ -39,6 +48,11 @@ public class Payment extends BaseEntity {
     private PaymentMode paymentMode;
 
     public enum PaymentMode {
-        CASH, UPI, CARD
+        CASH, UPI, CARD;
+
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public static PaymentMode fromString(String value) {
+            return value == null ? null : PaymentMode.valueOf(value.toUpperCase());
+        }
     }
 }

@@ -1,16 +1,84 @@
-<div class="container">
-  <div class="card">
-    <h2>{{ isEditing() ? 'Edit Member' : 'Add New Member' }}</h2>
-    <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" class="member-form">
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back" (click)="goBack()" title="Go Back">
+          <span class="back-icon">←</span>
+        </button>
+        <div>
+          <h1>Members</h1>
+          <p class="subtitle">Manage your gym members and their subscriptions</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <app-button 
+        label="Refresh" 
+        variant="secondary" 
+        (onClick)="loadMembers()"
+        class="mr-10"
+      ></app-button>
+      <app-button 
+        label="Add Member" 
+        variant="primary" 
+        (onClick)="openAddModal()"
+      ></app-button>
+    </div>
+  </div>
+
+  <div class="table-container-card">
+    <app-stag-table 
+      [columns]="tableColumns()" 
+      [data]="filteredMembers()"
+      [height]="tableHeight()"
+      [showActions]="true"
+      [showRenew]="true"
+      [loading]="loading()"
+      [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
+      [showSelectionColumn]="true"
+      [enableBulkActions]="false"
+      [storageKey]="'member-table-columns'"
+      [editingRowIndex]="editingRowIndex()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      (renew)="onRenew($event)"
+      (selectionChange)="onTableSelectionChange($event)"
+      (rowClick)="onRowClick($event)"
+      (globalSearchChange)="onMemberGlobalSearch($event)"
+    ></app-stag-table>
+  </div>
+
+  <!-- Unified Onboarding Modal -->
+  <app-modal 
+    [isOpen]="showModal()" 
+    [title]="isEditing() ? 'Edit Member' : (currentStep() === 1 ? 'Step 1: Member Registration' : (currentStep() === 2 ? 'Step 2: Select Plan' : 'Step 3: Payment Details'))"
+    (close)="closeModal()"
+  >
+    <!-- Step Indicator -->
+    <div class="step-indicator" *ngIf="!isEditing()">
+      <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">1</div>
+      <div class="step-line"></div>
+      <div class="step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">2</div>
+      <div class="step-line"></div>
+      <div class="step" [class.active]="currentStep() >= 3">3</div>
+    </div>
+
+    <!-- STEP 1: Member Form -->
+    <form *ngIf="currentStep() === 1" [formGroup]="memberForm" (ngSubmit)="onSubmitMember()" class="member-form">
       <div class="form-grid">
         <div class="form-group">
+          <label for="registrationId">Registration ID</label>
+          <input id="registrationId" type="text" formControlName="registrationId" readonly class="readonly-input">
+        </div>
+
+        <div class="form-group">
           <label for="name">Full Name</label>
-          <input id="name" type="text" formControlName="name" placeholder="Enter name">
+          <input id="name" type="text" formControlName="name" placeholder="Enter full name">
         </div>
 
         <div class="form-group">
           <label for="phone">Phone Number</label>
-          <input id="phone" type="text" formControlName="phone" placeholder="10-digit number">
+          <input id="phone" type="text" formControlName="phone" placeholder="10-digit mobile number">
         </div>
 
         <div class="form-group">
@@ -29,51 +97,84 @@
       </div>
 
       <div class="form-actions">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()" class="mr-10"></app-button>
         <app-button 
-          *ngIf="isEditing()"
-          label="Cancel" 
-          variant="secondary" 
-          (onClick)="cancelEdit()"
-          class="mr-10"
-        ></app-button>
-        <app-button 
-          [label]="isEditing() ? 'Update Member' : 'Add Member'" 
+          [label]="isEditing() ? 'Update Details' : 'Save & Continue'" 
           type="submit" 
           [disabled]="memberForm.invalid"
           variant="primary"
         ></app-button>
       </div>
     </form>
-  </div>
 
-  <div class="card mt-20">
-    <div class="header-with-actions">
-      <h2>Member List</h2>
-      <div class="search-container">
-        <input 
-          type="text" 
-          [ngModel]="searchTerm()" 
-          (ngModelChange)="searchTerm.set($event)"
-          placeholder="Search by name or phone..."
-          class="search-input"
-        >
+    <!-- STEP 2: Plan Selection -->
+    <form *ngIf="currentStep() === 2" [formGroup]="subscriptionForm" (ngSubmit)="onSubmitSubscription()" class="member-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="planId">Select Membership Plan</label>
+          <select id="planId" formControlName="planId">
+            <option value="" disabled selected>Choose a plan...</option>
+            <option *ngFor="let plan of plans()" [value]="plan.id">
+              {{ plan.name }} - ₹{{ plan.price }} ({{ plan.duration }} days)
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="startDate">Start Date</label>
+          <input id="startDate" type="date" formControlName="startDate">
+        </div>
       </div>
-      <app-button 
-        label="Refresh" 
-        variant="secondary" 
-        (onClick)="loadMembers()"
-      ></app-button>
-    </div>
-    
-    <app-table 
-      [columns]="columns" 
-      [data]="filteredMembers()"
-      [showActions]="true"
-      [showRenew]="true"
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-      (renew)="onRenew($event)"
-      [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
-    ></app-table>
-  </div>
+
+      <div class="form-actions">
+        <app-button 
+          [label]="'Confirm & Proceed to Payment'" 
+          type="submit" 
+          [disabled]="subscriptionForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+
+    <!-- STEP 3: Payment Details -->
+    <form *ngIf="currentStep() === 3" [formGroup]="paymentForm" (ngSubmit)="onSubmitPayment()" class="member-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="amount">Total Plan Amount (₹)</label>
+          <input id="amount" type="number" formControlName="amount" readonly class="readonly-input">
+        </div>
+
+        <div class="form-group">
+          <label for="paidAmount">Amount Paid Now (₹)</label>
+          <input id="paidAmount" type="number" formControlName="paidAmount" placeholder="Enter amount paid">
+        </div>
+
+        <div class="form-group">
+          <label for="balanceAmount">Balance Amount (₹)</label>
+          <input id="balanceAmount" type="number" [value]="paymentForm.get('balanceAmount')?.value" readonly class="readonly-input">
+        </div>
+
+        <div class="form-group">
+          <label for="balanceDueDate">Balance Due Date</label>
+          <input id="balanceDueDate" type="date" formControlName="balanceDueDate" [attr.disabled]="paymentForm.get('balanceAmount')?.value <= 0 ? true : null">
+        </div>
+
+        <div class="form-group">
+          <label for="paymentMode">Payment Mode</label>
+          <select id="paymentMode" formControlName="paymentMode">
+            <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <app-button 
+          [label]="'Finalize & Generate Invoice'" 
+          type="submit" 
+          [disabled]="paymentForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+  </app-modal>
 </div>

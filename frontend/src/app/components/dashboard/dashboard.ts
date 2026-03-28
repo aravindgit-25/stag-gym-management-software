@@ -1,5 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { DashboardService } from '../../services/dashboard.service';
 
 @Component({
@@ -16,7 +17,20 @@ export class DashboardComponent implements OnInit {
   todayRevenue = signal<number>(0);
   loading = signal<boolean>(false);
 
-  constructor(private dashboardService: DashboardService) {}
+  private router = inject(Router);
+  private dashboardService = inject(DashboardService);
+
+  // Mock data for Growth Graph
+  growthData = signal<{month: string, value: number}[]>([
+    { month: 'Oct', value: 45 },
+    { month: 'Nov', value: 62 },
+    { month: 'Dec', value: 58 },
+    { month: 'Jan', value: 85 },
+    { month: 'Feb', value: 92 },
+    { month: 'Mar', value: 110 }
+  ]);
+
+  constructor() {}
 
   ngOnInit(): void {
     this.loadStats();
@@ -50,5 +64,9 @@ export class DashboardComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  navigateTo(path: string): void {
+    this.router.navigate([path]);
   }
 }

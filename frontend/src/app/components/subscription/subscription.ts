@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { CommonModule, Location } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
 import { SubscriptionService } from '../../services/subscription.service';
@@ -11,30 +11,36 @@ import { ConfirmService } from '../../services/confirm.service';
 import { Member } from '../../models/member.model';
 import { Plan } from '../../models/plan.model';
 import { Subscription } from '../../models/subscription.model';
+import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
-import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
+import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppStagTableComponent],
   templateUrl: './subscription.html',
   styleUrl: './subscription.css'
 })
 export class SubscriptionComponent implements OnInit {
-  subscriptionForm: FormGroup;
   renewalForm: FormGroup;
   
   members = signal<Member[]>([]);
   plans = signal<Plan[]>([]);
   subscriptionsList = signal<Subscription[]>([]);
+  paymentsList = signal<Payment[]>([]);
   loading = signal<boolean>(false);
   
   showRenewalModal = signal<boolean>(false);
+  showViewModal = signal<boolean>(false);
+  showCompletePaymentModal = signal<boolean>(false);
   selectedMemberName = signal<string>('');
+  selectedSubDetails = signal<any>(null);
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private location = inject(Location);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
 
@@ -44,8 +50,8 @@ export class SubscriptionComponent implements OnInit {
     today.setHours(0,0,0,0);
 
     const list = this.subscriptionsList();
+    const payments = this.paymentsList();
     
-    // Step 1: Map to find the latest subscription for each member
     const latestMap = new Map<number, any>();
     
     list.forEach(sub => {
@@ -59,7 +65,6 @@ export class SubscriptionComponent implements OnInit {
       }
     });
 
-    // Step 2: Only process and return the latest records
     return Array.from(latestMap.values()).map(item => {
       const sub = item.sub;
       const sId = sub.id;
@@ -68,10 +73,17 @@ export class SubscriptionComponent implements OnInit {
       const sDate = sub.startDate || (sub as any).start_date;
 
       const plan = this.plans().find(p => p.id === Number(sPlanId));
+      
+      const hasPayment = payments.some(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(sId));
+      const paymentStatus = hasPayment ? 'Paid' : 'Pending';
+
       let expiryDateStr = 'N/A';
       let status = 'Active';
-      let rowClass = '';
+      let rowClass = hasPayment ? '' : 'payment-pending';
       let canRenew = false;
+      
+      let renewal = '';
+      let renewalClass = '';
 
       if (plan && sDate) {
         const expDate = new Date(sDate);
@@ -88,10 +100,14 @@ export class SubscriptionComponent implements OnInit {
           status = 'Expired';
           rowClass = 'expired';
           canRenew = true;
+          renewal = 'Renew Now';
+          renewalClass = 'btn-red';
         } else if (diffDays <= 3) {
           status = 'Expiring Soon';
           rowClass = 'near-expiry';
           canRenew = true;
+          renewal = `${diffDays === 0 ? 'Today' : diffDays + ' Days'}`;
+          renewalClass = 'btn-yellow';
         }
       }
 
@@ -102,6 +118,9 @@ export class SubscriptionComponent implements OnInit {
         startDate: sDate,
         expiryDate: expiryDateStr,
         status,
+        paymentStatus,
+        renewal,
+        renewalClass,
         rowClass,
         canRenew,
         memberId: sMemberId,
@@ -110,13 +129,15 @@ export class SubscriptionComponent implements OnInit {
     }).sort((a, b) => b.id! - a.id!);
   });
 
-  columns: TableColumn[] = [
-    { field: 'id', header: 'ID' },
+  columns: StagTableColumn[] = [
+    { field: 'id', header: 'ID', width: '70px' },
     { field: 'memberName', header: 'Member Name' },
     { field: 'planName', header: 'Plan Name' },
     { field: 'startDate', header: 'Start Date' },
     { field: 'expiryDate', header: 'Expiry Date' },
-    { field: 'status', header: 'Status' }
+    { field: 'status', header: 'Status' },
+    { field: 'paymentStatus', header: 'Payment', width: '100px' },
+    { field: 'renewal', header: 'Renewal', width: '120px', type: 'action-button' }
   ];
 
   constructor(
@@ -126,12 +147,6 @@ export class SubscriptionComponent implements OnInit {
     private subscriptionService: SubscriptionService,
     private paymentService: PaymentService
   ) {
-    this.subscriptionForm = this.fb.group({
-      memberId: ['', Validators.required],
-      planId: ['', Validators.required],
-      startDate: [new Date().toISOString().split('T')[0], Validators.required]
-    });
-
     this.renewalForm = this.fb.group({
       memberId: ['', Validators.required],
       planId: ['', Validators.required],
@@ -151,17 +166,12 @@ export class SubscriptionComponent implements OnInit {
   ngOnInit(): void {
     this.loadData();
     this.loadSubscriptions();
-    
-    this.route.queryParams.subscribe(params => {
-      if (params['memberId']) {
-        this.subscriptionForm.patchValue({ memberId: params['memberId'] });
-      }
-    });
   }
 
   loadData(): void {
     this.memberService.getMembers().subscribe(data => this.members.set(data));
     this.planService.getPlans().subscribe(data => this.plans.set(data));
+    this.paymentService.getPayments().subscribe(data => this.paymentsList.set(data));
   }
 
   loadSubscriptions(): void {
@@ -176,6 +186,98 @@ export class SubscriptionComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  openViewModal(sub: any): void {
+    this.loading.set(true);
+    const member = this.members().find(m => m.id === Number(sub.memberId));
+    const plan = this.plans().find(p => p.id === Number(sub.planId));
+    
+    this.paymentService.getPayments().subscribe({
+      next: (payments) => {
+        this.paymentsList.set(payments);
+        const payment = payments.find(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(sub.id));
+        
+        this.selectedSubDetails.set({
+          ...sub,
+          member,
+          plan,
+          payment
+        });
+        
+        this.showViewModal.set(true);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.notif.show('Error loading payment details', 'error');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  reInvoice(): void {
+    const details = this.selectedSubDetails();
+    if (details && details.payment) {
+      this.router.navigate(['/invoice', details.payment.id || (details.payment as any).id]);
+    } else {
+      this.notif.show('No payment found for this subscription.', 'error');
+    }
+  }
+
+  addInvoice(): void {
+    this.reInvoice();
+  }
+
+  openCompletePaymentPopup(details: any): void {
+    this.selectedMemberName.set(details.member?.name || 'Member');
+    this.renewalForm.patchValue({
+      memberId: details.memberId,
+      planId: details.planId,
+      startDate: details.startDate,
+      amount: details.plan?.price || ''
+    });
+    this.showViewModal.set(false);
+    this.showCompletePaymentModal.set(true);
+  }
+
+  closeCompletePaymentModal(): void {
+    this.showCompletePaymentModal.set(false);
+    this.renewalForm.reset({ paymentMode: 'Cash' });
+  }
+
+  async onSaveCompletePayment() {
+    if (this.renewalForm.valid) {
+      const details = this.selectedSubDetails();
+      const formVal = this.renewalForm.value;
+      
+      const paymentData = {
+        subscriptionId: details.id,
+        amount: Number(formVal.amount),
+        paidAmount: Number(formVal.amount),
+        balanceAmount: 0,
+        paymentMode: formVal.paymentMode
+      };
+
+      this.paymentService.addPayment(paymentData as any).subscribe({
+        next: (pay) => {
+          this.notif.show('Payment recorded successfully!', 'success');
+          this.loadData();
+          this.loadSubscriptions();
+          this.closeCompletePaymentModal();
+          this.router.navigate(['/invoice', pay.id]);
+        },
+        error: (err) => this.notif.show('Failed to record payment.', 'error')
+      });
+    }
+  }
+
+  closeViewModal(): void {
+    this.showViewModal.set(false);
+    this.selectedSubDetails.set(null);
   }
 
   openRenewPopup(sub: any): void {
@@ -210,12 +312,15 @@ export class SubscriptionComponent implements OnInit {
           const paymentData = {
             subscriptionId: newSub.id!,
             amount: formVal.amount,
+            paidAmount: formVal.amount,
+            balanceAmount: 0,
             paymentMode: formVal.paymentMode
           };
 
           this.paymentService.addPayment(paymentData).subscribe({
             next: () => {
               this.notif.show('Membership renewed and payment recorded!', 'success');
+              this.loadData();
               this.loadSubscriptions();
               this.closeModal();
             },
@@ -223,24 +328,6 @@ export class SubscriptionComponent implements OnInit {
           });
         },
         error: (err) => this.notif.show('Failed to create new subscription.', 'error')
-      });
-    }
-  }
-
-  async onSubmit() {
-    if (this.subscriptionForm.valid) {
-      const confirmed = await this.confirm.ask('Are you sure you want to save this subscription?');
-      if (!confirmed) return;
-
-      this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({
-        next: (newSub) => {
-          this.notif.show('Subscription saved successfully!', 'success');
-          this.loadSubscriptions();
-          this.subscriptionForm.reset({
-            startDate: new Date().toISOString().split('T')[0]
-          });
-        },
-        error: (err) => this.notif.show('Failed to save subscription.', 'error')
       });
     }
   }

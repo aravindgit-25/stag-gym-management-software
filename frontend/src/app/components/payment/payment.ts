@@ -1,50 +1,57 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { SubscriptionService } from '../../services/subscription.service';
 import { MemberService } from '../../services/member.service';
 import { PaymentService } from '../../services/payment.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
-import { Subscription } from '../../models/subscription.model';
 import { Member } from '../../models/member.model';
 import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
-import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
+import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
 
 @Component({
   selector: 'app-payment',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppTableComponent],
+  imports: [CommonModule, AppButtonComponent, AppStagTableComponent],
   templateUrl: './payment.html',
   styleUrl: './payment.css'
 })
 export class PaymentComponent implements OnInit {
-  paymentForm: FormGroup;
   subscriptions = signal<any[]>([]); 
   members = signal<Member[]>([]);
   paymentsList = signal<Payment[]>([]);
   loading = signal<boolean>(false);
 
-  paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private notif = inject(NotificationService);
-  private confirm = inject(ConfirmService);
   private router = inject(Router);
+  private location = inject(Location);
 
   // Join data to show Member Name instead of Subscription ID
   displayList = computed(() => {
-    return this.paymentsList().map(pay => {
-      const sub = this.subscriptions().find(s => s.id === Number(pay.subscriptionId));
-      const member = this.members().find(m => m.id === Number(sub?.memberId));
+    const subs = this.subscriptions();
+    const mems = this.members();
+    const payments = this.paymentsList();
+
+    return payments.map(pay => {
+      // Handle both camelCase and snake_case for subscriptionId
+      const subId = pay.subscriptionId || (pay as any).subscription_id;
+      const sub = subs.find(s => Number(s.id) === Number(subId));
+      
+      // Handle both camelCase and snake_case for memberId
+      const memberId = sub?.memberId || (sub as any)?.member_id;
+      const member = mems.find(m => Number(m.id) === Number(memberId));
+      
       return {
         ...pay,
-        memberName: member?.name || `Sub ${pay.subscriptionId}`
+        memberName: member?.name || (subId ? `Sub ${subId}` : 'N/A'),
+        paymentDate: pay.paymentDate ? pay.paymentDate.split('T')[0] : 'N/A'
       };
-    });
+    }).sort((a, b) => Number(b.id) - Number(a.id)); // Show latest payments first
   });
 
-  columns: TableColumn[] = [
+  columns: StagTableColumn[] = [
     { field: 'id', header: 'ID' },
     { field: 'memberName', header: 'Member Name' },
     { field: 'amount', header: 'Amount (₹)' },
@@ -53,17 +60,10 @@ export class PaymentComponent implements OnInit {
   ];
 
   constructor(
-    private fb: FormBuilder,
     private subscriptionService: SubscriptionService,
     private memberService: MemberService,
     private paymentService: PaymentService
-  ) {
-    this.paymentForm = this.fb.group({
-      subscriptionId: ['', Validators.required],
-      amount: ['', [Validators.required, Validators.min(1)]],
-      paymentMode: ['Cash', Validators.required]
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadInitialData();
@@ -81,12 +81,6 @@ export class PaymentComponent implements OnInit {
     });
   }
 
-  getMemberName(subId: any): string {
-    const sub = this.subscriptions().find(s => s.id === Number(subId));
-    const member = this.members().find(m => m.id === Number(sub?.memberId));
-    return member?.name || `Sub ${subId}`;
-  }
-
   loadPayments(): void {
     this.loading.set(true);
     this.paymentService.getPayments().subscribe({
@@ -101,28 +95,14 @@ export class PaymentComponent implements OnInit {
     });
   }
 
+  goBack(): void {
+    this.location.back();
+  }
+
   onPrintReceipt(payment: any): void {
     const url = this.router.serializeUrl(
       this.router.createUrlTree(['/invoice', payment.id])
     );
     window.open(url, '_blank');
-  }
-
-  async onSubmit() {
-    if (this.paymentForm.valid) {
-      const confirmed = await this.confirm.ask('Are you sure you want to record this payment?');
-      if (!confirmed) return;
-
-      this.paymentService.addPayment(this.paymentForm.value).subscribe({
-        next: (newPayment) => {
-          this.notif.show('Payment recorded successfully!', 'success');
-          this.paymentsList.update(prev => [...prev, newPayment]);
-          this.paymentForm.reset({ paymentMode: 'Cash' });
-        },
-        error: (err) => {
-          this.notif.show('Failed to save payment.', 'error');
-        }
-      });
-    }
   }
 }
