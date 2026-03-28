@@ -42,12 +42,12 @@
           <th *ngFor="let col of columns" [style.width]="col.width">
             {{ col.header }}
           </th>
-          <th *ngIf="showActions || showRenew || showPrint" class="actions-col">Actions</th>
+          <th *ngIf="showActions || showRenew || showPrint || showView" class="actions-col">Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="loading">
-          <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions ? 1 : 0)" class="loading-cell">
+          <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showPrint || showView ? 1 : 0)" class="loading-cell">
             <div class="shimmer-row" *ngFor="let i of [1,2,3]"></div>
           </td>
         </tr>
@@ -66,8 +66,11 @@
             <span class="cell-content">{{ row[col.field] }}</span>
           </td>
 
-          <td *ngIf="showActions || showRenew || showPrint" class="actions-cell" (click)="$event.stopPropagation()">
+          <td *ngIf="showActions || showRenew || showPrint || showView" class="actions-cell" (click)="$event.stopPropagation()">
             <div class="action-group">
+              <button *ngIf="showView" class="action-icon view" (click)="view.emit(row)" title="View">
+                View
+              </button>
               <button *ngIf="showRenew && row.canRenew" class="action-icon renew" (click)="renew.emit(row)" title="Renew">
                 Renew
               </button>
@@ -85,7 +88,7 @@
         </tr>
 
         <tr *ngIf="!loading && data.length === 0">
-          <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions ? 1 : 0)" class="empty-cell">
+          <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showPrint || showView ? 1 : 0)" class="empty-cell">
             <div class="empty-state">
               <span class="empty-icon">📭</span>
               <p>{{ emptyMessage }}</p>

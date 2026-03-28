@@ -6,12 +6,13 @@ import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { Plan } from '../../models/plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
-import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
+import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
+import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
 
 @Component({
   selector: 'app-plan',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppStagTableComponent, AppModalComponent],
   templateUrl: './plan.html',
   styleUrl: './plan.css'
 })
@@ -21,15 +22,16 @@ export class PlanComponent implements OnInit {
   loading = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
+  showModal = signal<boolean>(false);
   
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
 
-  columns: TableColumn[] = [
-    { field: 'id', header: 'ID' },
+  columns: StagTableColumn[] = [
+    { field: 'id', header: 'ID', width: '80px' },
     { field: 'name', header: 'Plan Name' },
-    { field: 'duration', header: 'Duration (Days)' },
-    { field: 'price', header: 'Price (₹)' }
+    { field: 'duration', header: 'Duration (Days)', width: '150px' },
+    { field: 'price', header: 'Price (₹)', width: '150px' }
   ];
 
   constructor(private fb: FormBuilder, private planService: PlanService) {
@@ -58,11 +60,18 @@ export class PlanComponent implements OnInit {
     });
   }
 
+  openAddModal() {
+    this.isEditing.set(false);
+    this.editingId.set(null);
+    this.planForm.reset();
+    this.showModal.set(true);
+  }
+
   onEdit(plan: Plan): void {
     this.isEditing.set(true);
     this.editingId.set(plan.id || null);
     this.planForm.patchValue(plan);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.showModal.set(true);
   }
 
   async onDelete(plan: Plan) {
@@ -78,7 +87,8 @@ export class PlanComponent implements OnInit {
     }
   }
 
-  cancelEdit(): void {
+  closeModal(): void {
+    this.showModal.set(false);
     this.isEditing.set(false);
     this.editingId.set(null);
     this.planForm.reset();
@@ -97,7 +107,7 @@ export class PlanComponent implements OnInit {
           next: (updated) => {
             this.notif.show('Plan updated successfully!', 'success');
             this.plans.update(prev => prev.map(p => p.id === updated.id ? updated : p));
-            this.cancelEdit();
+            this.closeModal();
           },
           error: (err) => this.notif.show('Error updating plan.', 'error')
         });
@@ -106,7 +116,7 @@ export class PlanComponent implements OnInit {
           next: (newPlan) => {
             this.notif.show('Plan added successfully!', 'success');
             this.plans.update(prev => [...prev, newPlan]);
-            this.planForm.reset();
+            this.closeModal();
           },
           error: (err) => this.notif.show('Error adding plan.', 'error')
         });

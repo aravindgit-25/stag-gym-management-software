@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
@@ -12,17 +12,16 @@ import { Member } from '../../models/member.model';
 import { Plan } from '../../models/plan.model';
 import { Subscription } from '../../models/subscription.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
-import { AppTableComponent, TableColumn } from '../../shared/components/app-table/app-table';
+import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppStagTableComponent],
   templateUrl: './subscription.html',
   styleUrl: './subscription.css'
 })
 export class SubscriptionComponent implements OnInit {
-  subscriptionForm: FormGroup;
   renewalForm: FormGroup;
   
   members = signal<Member[]>([]);
@@ -113,7 +112,7 @@ export class SubscriptionComponent implements OnInit {
     }).sort((a, b) => b.id! - a.id!);
   });
 
-  columns: TableColumn[] = [
+  columns: StagTableColumn[] = [
     { field: 'id', header: 'ID' },
     { field: 'memberName', header: 'Member Name' },
     { field: 'planName', header: 'Plan Name' },
@@ -129,12 +128,6 @@ export class SubscriptionComponent implements OnInit {
     private subscriptionService: SubscriptionService,
     private paymentService: PaymentService
   ) {
-    this.subscriptionForm = this.fb.group({
-      memberId: ['', Validators.required],
-      planId: ['', Validators.required],
-      startDate: [new Date().toISOString().split('T')[0], Validators.required]
-    });
-
     this.renewalForm = this.fb.group({
       memberId: ['', Validators.required],
       planId: ['', Validators.required],
@@ -154,12 +147,6 @@ export class SubscriptionComponent implements OnInit {
   ngOnInit(): void {
     this.loadData();
     this.loadSubscriptions();
-    
-    this.route.queryParams.subscribe(params => {
-      if (params['memberId']) {
-        this.subscriptionForm.patchValue({ memberId: params['memberId'] });
-      }
-    });
   }
 
   loadData(): void {
@@ -271,24 +258,6 @@ export class SubscriptionComponent implements OnInit {
           });
         },
         error: (err) => this.notif.show('Failed to create new subscription.', 'error')
-      });
-    }
-  }
-
-  async onSubmit() {
-    if (this.subscriptionForm.valid) {
-      const confirmed = await this.confirm.ask('Are you sure you want to save this subscription?');
-      if (!confirmed) return;
-
-      this.subscriptionService.addSubscription(this.subscriptionForm.value).subscribe({
-        next: (newSub) => {
-          this.notif.show('Subscription saved successfully!', 'success');
-          this.loadSubscriptions();
-          this.subscriptionForm.reset({
-            startDate: new Date().toISOString().split('T')[0]
-          });
-        },
-        error: (err) => this.notif.show('Failed to save subscription.', 'error')
       });
     }
   }

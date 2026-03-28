@@ -11,6 +11,7 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  width: 100%;
 }
 
 .stag-table-header {
@@ -140,6 +141,9 @@
   background: #e2e8f0;
 }
 
+.action-icon.view { background: #f0f9ff; color: #0369a1; }
+.action-icon.view:hover { background: #e0f2fe; }
+
 .action-icon.edit { background: #eff6ff; color: #2563eb; }
 .action-icon.edit:hover { background: #dbeafe; }
 
@@ -148,6 +152,9 @@
 
 .action-icon.renew { background: #f0fdf4; color: #16a34a; }
 .action-icon.renew:hover { background: #dcfce7; }
+
+.action-icon.print { background: #f8fafc; color: #475569; }
+.action-icon.print:hover { background: #f1f5f9; }
 
 /* Selection */
 .selection-col {

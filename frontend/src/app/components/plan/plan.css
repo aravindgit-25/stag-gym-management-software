@@ -1,24 +1,43 @@
 .container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
+}
+
+.table-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.subtitle {
+  margin: 4px 0 0 0;
+  color: #718096;
+  font-size: 14px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
 }
 
 .card {
   background: white;
-  padding: 30px;
+  padding: 24px;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .mt-20 { margin-top: 20px; }
-
-h2 {
-  margin-top: 0;
-  margin-bottom: 25px;
-  color: #2d3748;
-  font-size: 18px;
-  font-weight: 700;
-}
+.mr-10 { margin-right: 10px; }
 
 .form-grid {
   display: grid;
@@ -46,14 +65,6 @@ h2 {
 }
 
 .form-actions {
-  margin-top: 25px;
   display: flex;
   justify-content: flex-end;
-}
-
-.header-with-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
 }
