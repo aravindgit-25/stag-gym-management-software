@@ -30,15 +30,25 @@ export class PaymentComponent implements OnInit {
 
   // Join data to show Member Name instead of Subscription ID
   displayList = computed(() => {
-    return this.paymentsList().map(pay => {
-      const sub = this.subscriptions().find(s => s.id === Number(pay.subscriptionId));
-      const member = this.members().find(m => m.id === Number(sub?.memberId));
+    const subs = this.subscriptions();
+    const mems = this.members();
+    const payments = this.paymentsList();
+
+    return payments.map(pay => {
+      // Handle both camelCase and snake_case for subscriptionId
+      const subId = pay.subscriptionId || (pay as any).subscription_id;
+      const sub = subs.find(s => Number(s.id) === Number(subId));
+      
+      // Handle both camelCase and snake_case for memberId
+      const memberId = sub?.memberId || (sub as any)?.member_id;
+      const member = mems.find(m => Number(m.id) === Number(memberId));
+      
       return {
         ...pay,
-        memberName: member?.name || `Sub ${pay.subscriptionId}`,
+        memberName: member?.name || (subId ? `Sub ${subId}` : 'N/A'),
         paymentDate: pay.paymentDate ? pay.paymentDate.split('T')[0] : 'N/A'
       };
-    });
+    }).sort((a, b) => Number(b.id) - Number(a.id)); // Show latest payments first
   });
 
   columns: StagTableColumn[] = [

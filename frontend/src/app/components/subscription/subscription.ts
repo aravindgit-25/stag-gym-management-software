@@ -31,6 +31,7 @@ export class SubscriptionComponent implements OnInit {
   
   showRenewalModal = signal<boolean>(false);
   showViewModal = signal<boolean>(false);
+  showCompletePaymentModal = signal<boolean>(false);
   selectedMemberName = signal<string>('');
   selectedSubDetails = signal<any>(null);
 
@@ -180,7 +181,7 @@ export class SubscriptionComponent implements OnInit {
     
     this.paymentService.getPayments().subscribe({
       next: (payments) => {
-        const payment = payments.find(p => p.subscriptionId === Number(sub.id));
+        const payment = payments.find(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(sub.id));
         
         this.selectedSubDetails.set({
           ...sub,
@@ -201,7 +202,7 @@ export class SubscriptionComponent implements OnInit {
   reInvoice(): void {
     const details = this.selectedSubDetails();
     if (details && details.payment) {
-      this.router.navigate(['/invoice', details.payment.id]);
+      this.router.navigate(['/invoice', details.payment.id || (details.payment as any).id]);
     } else {
       this.notif.show('No payment found for this subscription.', 'error');
     }
@@ -209,6 +210,48 @@ export class SubscriptionComponent implements OnInit {
 
   addInvoice(): void {
     this.reInvoice();
+  }
+
+  openCompletePaymentPopup(details: any): void {
+    this.selectedMemberName.set(details.member?.name || 'Member');
+    this.renewalForm.patchValue({
+      memberId: details.memberId,
+      planId: details.planId,
+      startDate: details.startDate,
+      amount: details.plan?.price || ''
+    });
+    this.showViewModal.set(false);
+    this.showCompletePaymentModal.set(true);
+  }
+
+  closeCompletePaymentModal(): void {
+    this.showCompletePaymentModal.set(false);
+    this.renewalForm.reset({ paymentMode: 'Cash' });
+  }
+
+  async onSaveCompletePayment() {
+    if (this.renewalForm.valid) {
+      const details = this.selectedSubDetails();
+      const formVal = this.renewalForm.value;
+      
+      const paymentData = {
+        subscriptionId: details.id,
+        amount: Number(formVal.amount),
+        paidAmount: Number(formVal.amount),
+        balanceAmount: 0,
+        paymentMode: formVal.paymentMode
+      };
+
+      this.paymentService.addPayment(paymentData as any).subscribe({
+        next: (pay) => {
+          this.notif.show('Payment recorded successfully!', 'success');
+          this.loadSubscriptions();
+          this.closeCompletePaymentModal();
+          this.router.navigate(['/invoice', pay.id]);
+        },
+        error: (err) => this.notif.show('Failed to record payment.', 'error')
+      });
+    }
   }
 
   closeViewModal(): void {
