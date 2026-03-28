@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
 import { SubscriptionService } from '../../services/subscription.service';
@@ -31,10 +31,13 @@ export class SubscriptionComponent implements OnInit {
   loading = signal<boolean>(false);
   
   showRenewalModal = signal<boolean>(false);
+  showViewModal = signal<boolean>(false);
   selectedMemberName = signal<string>('');
+  selectedSubDetails = signal<any>(null);
 
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
 
@@ -176,6 +179,49 @@ export class SubscriptionComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  openViewModal(sub: any): void {
+    this.loading.set(true);
+    const member = this.members().find(m => m.id === Number(sub.memberId));
+    const plan = this.plans().find(p => p.id === Number(sub.planId));
+    
+    this.paymentService.getPayments().subscribe({
+      next: (payments) => {
+        const payment = payments.find(p => p.subscriptionId === Number(sub.id));
+        
+        this.selectedSubDetails.set({
+          ...sub,
+          member,
+          plan,
+          payment
+        });
+        this.showViewModal.set(true);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.notif.show('Error loading payment details', 'error');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  reInvoice(): void {
+    const details = this.selectedSubDetails();
+    if (details && details.payment) {
+      this.router.navigate(['/invoice', details.payment.id]);
+    } else {
+      this.notif.show('No payment found for this subscription.', 'error');
+    }
+  }
+
+  addInvoice(): void {
+    this.reInvoice();
+  }
+
+  closeViewModal(): void {
+    this.showViewModal.set(false);
+    this.selectedSubDetails.set(null);
   }
 
   openRenewPopup(sub: any): void {

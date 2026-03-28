@@ -102,3 +102,33 @@ input:focus, select:focus {
   justify-content: flex-end;
   gap: 12px;
 }
+
+.details-section h4 {
+  margin: 0 0 10px 0;
+  color: #4a5568;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 5px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.detail-item {
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.detail-item .label {
+  font-weight: 600;
+  color: #718096;
+  margin-right: 5px;
+}
+
+.mt-15 { margin-top: 15px; }
+.mt-20 { margin-top: 20px; }

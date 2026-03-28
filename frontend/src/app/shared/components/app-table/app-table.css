@@ -53,7 +53,7 @@
   align-items: center;
 }
 
-.btn-edit, .btn-delete, .btn-renew {
+.btn-edit, .btn-delete, .btn-renew, .btn-view {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
@@ -62,6 +62,12 @@
   font-weight: 600;
   transition: all 0.2s;
 }
+
+.btn-view {
+  background: #f0fff4;
+  color: #2f855a;
+}
+.btn-view:hover { background: #c6f6d5; }
 
 .btn-edit {
   background: #ebf8ff;

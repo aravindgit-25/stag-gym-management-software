@@ -50,9 +50,58 @@
       [columns]="columns" 
       [data]="displayList()"
       [showRenew]="true"
+      [showView]="true"
       (renew)="openRenewPopup($event)"
+      (view)="openViewModal($event)"
       [emptyMessage]="loading() ? 'Loading subscriptions...' : 'No subscriptions found.'"
     ></app-table>
+  </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal-overlay" *ngIf="showViewModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Member Details & Invoice</h3>
+      <button class="close-btn" (click)="closeViewModal()">×</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedSubDetails() as details">
+      <div class="details-section">
+        <h4>Member Information</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="label">Name:</span> {{ details.member?.name }}</div>
+          <div class="detail-item"><span class="label">Reg ID:</span> {{ details.member?.registrationId }}</div>
+          <div class="detail-item"><span class="label">Phone:</span> {{ details.member?.phone }}</div>
+        </div>
+      </div>
+
+      <div class="details-section mt-15">
+        <h4>Plan Information</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="label">Plan:</span> {{ details.plan?.name }}</div>
+          <div class="detail-item"><span class="label">Price:</span> ₹{{ details.plan?.price }}</div>
+          <div class="detail-item"><span class="label">Duration:</span> {{ details.plan?.duration }} days</div>
+        </div>
+      </div>
+
+      <div class="details-section mt-15">
+        <h4>Subscription & Payment</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="label">Start Date:</span> {{ details.startDate }}</div>
+          <div class="detail-item"><span class="label">Expiry Date:</span> {{ details.expiryDate }}</div>
+          <div class="detail-item"><span class="label">Amount Paid:</span> ₹{{ details.payment?.paidAmount || 0 }}</div>
+          <div class="detail-item"><span class="label">Balance:</span> ₹{{ details.payment?.balanceAmount || 0 }}</div>
+          <div class="detail-item"><span class="label">Payment Mode:</span> {{ details.payment?.paymentMode || 'N/A' }}</div>
+        </div>
+      </div>
+
+      <div class="modal-footer mt-20">
+        <app-button label="Close" variant="secondary" (onClick)="closeViewModal()"></app-button>
+        <app-button label="Add Invoice" variant="secondary" (onClick)="addInvoice()"></app-button>
+        <app-button label="Re-invoice" variant="primary" (onClick)="reInvoice()"></app-button>
+      </div>
+    </div>
   </div>
 </div>
 
