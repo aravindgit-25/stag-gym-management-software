@@ -2,7 +2,8 @@
 FROM gradle:8.7-jdk17 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
-RUN ./gradlew clean bootJar --no-daemon
+RUN chmod +x gradlew
+RUN sh ./gradlew clean bootJar --no-daemon
 
 # Step 2: Run the application
 FROM eclipse-temurin:17-jdk-alpine
