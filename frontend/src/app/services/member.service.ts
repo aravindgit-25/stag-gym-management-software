@@ -31,4 +31,10 @@ export class MemberService {
   getActiveMembers(): Observable<Member[]> {
     return this.http.get<Member[]>(`${this.apiUrl}/active`);
   }
+
+  generateRegistrationId(): Observable<string> {
+    return this.http.get(`${this.apiUrl}/registration-id`, { 
+      responseType: 'text' 
+    });
+  }
 }

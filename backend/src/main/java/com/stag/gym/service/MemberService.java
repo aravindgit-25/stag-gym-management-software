@@ -24,23 +24,83 @@ public class MemberService {
         if (member.getJoinDate() == null) {
             member.setJoinDate(LocalDate.now());
         }
+        member.setRegistrationId(generateRegistrationId());
         return memberRepository.save(member);
     }
 
+    @Transactional(readOnly = true)
+    public String getNextRegistrationId() {
+        return generateRegistrationId();
+    }
+
+    private String generateRegistrationId() {
+        Optional<String> lastId = memberRepository.findLastRegistrationId();
+        int nextNumber = 1;
+        if (lastId.isPresent() && lastId.get().startsWith("SG-")) {
+            try {
+                String numericPart = lastId.get().substring(3);
+                nextNumber = Integer.parseInt(numericPart) + 1;
+            } catch (NumberFormatException e) {
+                // fallback to 1 if something's wrong
+            }
+        }
+        return String.format("SG-%03d", nextNumber);
+    }
+
+    @Transactional
     public List<Member> getAllMembers() {
-        return memberRepository.findAll();
+        List<Member> members = memberRepository.findAll();
+        backfillRegistrationIds(members);
+        return members;
     }
 
+    @Transactional
     public List<Member> getActiveMembers() {
-        return memberRepository.findActiveMembers(LocalDate.now());
+        List<Member> members = memberRepository.findActiveMembers(LocalDate.now());
+        backfillRegistrationIds(members);
+        return members;
     }
 
+    @Transactional
     public List<Member> getExpiredMembers() {
-        return memberRepository.findExpiredMembers(LocalDate.now());
+        List<Member> members = memberRepository.findExpiredMembers(LocalDate.now());
+        backfillRegistrationIds(members);
+        return members;
     }
 
+    private void backfillRegistrationIds(List<Member> members) {
+        boolean needsSave = false;
+        String lastIdStr = memberRepository.findLastRegistrationId().orElse("SG-000");
+        int nextNumber = 1;
+        if (lastIdStr.startsWith("SG-")) {
+            try {
+                nextNumber = Integer.parseInt(lastIdStr.substring(3)) + 1;
+            } catch (NumberFormatException e) {
+                nextNumber = 1;
+            }
+        }
+
+        for (Member member : members) {
+            if (member.getRegistrationId() == null) {
+                member.setRegistrationId(String.format("SG-%03d", nextNumber++));
+                memberRepository.save(member);
+                needsSave = true;
+            }
+        }
+        if (needsSave) {
+            memberRepository.flush();
+        }
+    }
+
+    @Transactional
     public Optional<Member> getMemberById(Long id) {
-        return memberRepository.findById(id);
+        return memberRepository.findById(id).map(member -> {
+            if (member.getRegistrationId() == null) {
+                member.setRegistrationId(generateRegistrationId());
+                return memberRepository.saveAndFlush(member);
+            }
+            return member;
+        });
     }
 
     @Transactional

@@ -14,6 +14,9 @@ import java.util.Optional;
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByPhone(String phone);
 
+    @Query("SELECT m.registrationId FROM Member m WHERE m.registrationId LIKE 'SG-%' ORDER BY m.id DESC LIMIT 1")
+    Optional<String> findLastRegistrationId();
+
     @Query("SELECT DISTINCT m FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.status = 'ACTIVE' AND s.endDate >= :today")
     List<Member> findActiveMembers(@Param("today") LocalDate today);
 

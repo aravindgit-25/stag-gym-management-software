@@ -76,6 +76,7 @@ export class MemberComponent implements OnInit {
       .filter(m => m.name.toLowerCase().includes(term) || m.phone.includes(term))
       .map(m => {
         const mId = m.id;
+        const regId = m.registrationId || (m as any).registration_id || 'N/A';
         const memberSubs = this.subscriptions()
           .filter(s => {
             const sMemberId = s.memberId || (s as any).member_id;
@@ -120,7 +121,7 @@ export class MemberComponent implements OnInit {
           }
         }
 
-        return { ...m, expiryDisplay, rowClass, canRenew };
+        return { ...m, registrationId: regId, expiryDisplay, rowClass, canRenew };
       });
   });
 
@@ -131,6 +132,7 @@ export class MemberComponent implements OnInit {
     private planService: PlanService
   ) {
     this.memberForm = this.fb.group({
+      registrationId: ['Fetching...'],
       name: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       gender: ['Male', Validators.required],
@@ -165,14 +167,36 @@ export class MemberComponent implements OnInit {
   openAddModal() {
     this.isEditing.set(false);
     this.editingId.set(null);
-    this.memberForm.reset({ gender: 'Male', branchId: 1 });
+    this.memberForm.reset({ 
+      registrationId: 'Fetching...',
+      gender: 'Male', 
+      branchId: 1 
+    });
+    
+    this.memberService.generateRegistrationId().subscribe({
+      next: (id) => {
+        this.memberForm.patchValue({ registrationId: id });
+      },
+      error: (err) => {
+        console.error('Registration ID fetch failed:', err);
+        this.notif.show('Error fetching registration ID', 'error');
+        this.memberForm.patchValue({ registrationId: 'SG-ERR' });
+      }
+    });
+    
     this.showModal.set(true);
   }
 
   onEdit(member: Member): void {
     this.isEditing.set(true);
     this.editingId.set(member.id || null);
-    this.memberForm.patchValue(member);
+    this.memberForm.patchValue({
+      registrationId: member.registrationId,
+      name: member.name,
+      phone: member.phone,
+      gender: member.gender,
+      branchId: member.branchId
+    });
     this.showModal.set(true);
   }
 
