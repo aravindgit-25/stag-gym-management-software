@@ -5,12 +5,23 @@
     <div class="header">
       <div class="header-left">
         <h1 class="gym-brand">STAG FITNESS</h1>
-        <p class="tagline">PREMIUM FITNESS HUB</p>
+        <div class="business-details">
+          <p class="studio-name">LIFESTYLE & FITNESS STUDIO</p>
+          <p class="address">
+            #68-E, Sri Saravanabahava Tower, 2nd Floor,<br>
+            Sathymain Road, Sivanandhapuram, Saravanapatti - 641035
+          </p>
+          <p class="contact">
+            Mobile: 7598164812 & 8428143133<br>
+            Mail: stagfitness2702@gmail.com<br>
+            <strong>GST: 33CLMPA7280H2Z2</strong>
+          </p>
+        </div>
       </div>
       <div class="header-right">
         <div class="meta-row"><span class="m-label">Invoice No:</span> <span class="m-val">#{{ invoiceData().receiptNo }}</span></div>
         <div class="meta-row"><span class="m-label">Date:</span> <span class="m-val">{{ invoiceData().date }}</span></div>
-        <div class="meta-row"><span class="m-label">Method:</span> <span class="m-val">{{ invoiceData().paymentMode }}</span></div>
+        <div class="meta-row"><span class="m-label">Payment Mode:</span> <span class="m-val">{{ invoiceData().paymentMode }}</span></div>
       </div>
     </div>
 
@@ -27,17 +38,22 @@
     <table class="invoice-table">
       <thead>
         <tr>
-          <th>MEMBERSHIP PLAN</th>
-          <th>START DATE</th>
-          <th>END DATE</th>
+          <th>DESCRIPTION</th>
+          <th>DURATION</th>
+          <th class="text-right">CGST</th>
+          <th class="text-right">SGST</th>
           <th class="text-right">AMOUNT</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><span class="plan-name">{{ invoiceData().planName }}</span></td>
-          <td>{{ invoiceData().startDate }}</td>
-          <td>{{ invoiceData().endDate }}</td>
+          <td>
+            <span class="plan-name">{{ invoiceData().planName }}</span>
+            <div class="date-range">{{ invoiceData().startDate }} to {{ invoiceData().endDate }}</div>
+          </td>
+          <td>{{ invoiceData().durationDays }} Days</td>
+          <td class="text-right">₹0.00</td>
+          <td class="text-right">₹0.00</td>
           <td class="text-right">₹{{ invoiceData().planPrice | number }}</td>
         </tr>
       </tbody>
@@ -49,7 +65,19 @@
         <span>Subtotal</span>
         <span>₹{{ invoiceData().planPrice | number }}</span>
       </div>
+      <div class="summary-row">
+        <span>CGST (0%)</span>
+        <span>₹0.00</span>
+      </div>
+      <div class="summary-row">
+        <span>SGST (0%)</span>
+        <span>₹0.00</span>
+      </div>
       <div class="summary-row highlight">
+        <span>Total Amount</span>
+        <span>₹{{ invoiceData().planPrice | number }}</span>
+      </div>
+      <div class="summary-row highlight paid">
         <span>Amount Paid</span>
         <span>₹{{ invoiceData().amountPaid | number }}</span>
       </div>
@@ -61,8 +89,16 @@
 
     <!-- Footer -->
     <div class="invoice-footer">
+      <div class="signature-section">
+        <div class="sig-box">
+          <div class="sig-space"></div>
+          <div class="sig-line"></div>
+          <p>Authorized Signatory</p>
+          <p class="sig-brand">For STAG FITNESS</p>
+        </div>
+      </div>
       <div class="thank-you">THANK YOU FOR YOUR MEMBERSHIP!</div>
-      <div class="disclaimer">This is a system generated receipt. No signature is required.</div>
+      <div class="disclaimer">This is a computer generated invoice.</div>
     </div>
 
   </div>
