@@ -126,65 +126,123 @@
 }
 
 .action-icon {
-  padding: 6px 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  font-size: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.action-icon:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon.view { 
+  color: #0284c7; 
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+.action-icon.view:hover { background: #e0f2fe; }
+
+.action-icon.edit { 
+  color: #2563eb; 
+  background: #eff6ff;
+  border-color: #dbeafe;
+}
+.action-icon.edit:hover { background: #dbeafe; }
+
+.action-icon.delete { 
+  color: #dc2626; 
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+.action-icon.delete:hover { background: #fee2e2; }
+
+.action-icon.renew { 
+  color: #16a34a; 
+  background: #f0fdf4;
+  border-color: #dcfce7;
+}
+.action-icon.renew:hover { background: #dcfce7; }
+
+.action-icon.print { 
+  color: #475569; 
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+.action-icon.print:hover { background: #f1f5f9; }
+
+@media screen and (max-width: 768px) {
+  .action-group {
+    flex-direction: row; /* Keep icons in a row on mobile */
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .action-icon {
+    width: 44px; /* Larger touch target for mobile */
+    height: 44px;
+    font-size: 18px;
+  }
+}
+
+/* Status Action Buttons (Renew) */
+.btn-status-action {
+  height: 32px;
+  padding: 0 16px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.action-icon:hover {
-  background: #e2e8f0;
-}
-
-.action-icon.view { background: #f0f9ff; color: #0369a1; }
-.action-icon.view:hover { background: #e0f2fe; }
-
-.action-icon.edit { background: #eff6ff; color: #2563eb; }
-.action-icon.edit:hover { background: #dbeafe; }
-
-.action-icon.delete { background: #fef2f2; color: #dc2626; }
-.action-icon.delete:hover { background: #fee2e2; }
-
-.action-icon.renew { background: #f0fdf4; color: #16a34a; }
-.action-icon.renew:hover { background: #dcfce7; }
-
-.action-icon.print { background: #f8fafc; color: #475569; }
-.action-icon.print:hover { background: #f1f5f9; }
-
-/* Status Action Buttons */
-.btn-status-action {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
 }
 
+.btn-status-action.btn-blue {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-color: #dbeafe;
+}
+.btn-status-action.btn-blue:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
 .btn-status-action.btn-yellow {
-  background-color: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  background-color: #fffbeb;
+  color: #d97706;
+  border-color: #fef3c7;
 }
 .btn-status-action.btn-yellow:hover {
-  background-color: #fcd34d;
+  background-color: #d97706;
+  color: white;
 }
 
 .btn-status-action.btn-red {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #fee2e2;
 }
 .btn-status-action.btn-red:hover {
-  background-color: #fecaca;
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn-status-action:active {
+  transform: scale(0.95);
 }
 
 /* Selection */

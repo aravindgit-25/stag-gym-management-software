@@ -57,7 +57,9 @@ export class MemberComponent implements OnInit {
     { field: 'registrationId', header: this.getFieldDisplayName('registrationId'), width: '120px' },
     { field: 'name', header: this.getFieldDisplayName('name') },
     { field: 'phone', header: this.getFieldDisplayName('phone'), width: '150px' },
-    { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' }
+    { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' },
+    { field: 'renewLabel', header: 'Renewal', type: 'action-button', width: '100px' },
+    { field: 'branchId', header: 'Branch', width: '80px' }
   ]);
 
   private getFieldDisplayName(fieldName: string): string {
@@ -342,6 +344,7 @@ export class MemberComponent implements OnInit {
         let expiryDisplay = 'No Plan';
         let rowClass = '';
         let canRenew = true;
+        let priority = 3; // Default low priority
 
         if (memberSubs.length > 0) {
           const lastSub = memberSubs[0];
@@ -363,16 +366,30 @@ export class MemberComponent implements OnInit {
             if (diffDays < 0) {
               rowClass = 'expired';
               canRenew = true;
+              priority = 1; // Highest priority
             } else if (diffDays <= 3) {
               rowClass = 'near-expiry';
               canRenew = true;
+              priority = 2; // Medium priority
             } else {
               canRenew = false;
+              priority = 3;
             }
           }
+        } else {
+           priority = 0; // No plan members also priority
         }
 
-        return { ...m, registrationId: regId, expiryDisplay, rowClass, canRenew };
+        const renewLabel = canRenew ? 'Renew' : '';
+        const renewLabelClass = rowClass === 'expired' ? 'btn-red' : (rowClass === 'near-expiry' ? 'btn-yellow' : 'btn-blue');
+
+        return { ...m, registrationId: regId, expiryDisplay, rowClass, canRenew, priority, renewLabel, renewLabelClass };
+      })
+      .sort((a, b) => {
+        if (a.priority === b.priority) {
+          return a.name.localeCompare(b.name);
+        }
+        return a.priority - b.priority;
       });
   });
 }
