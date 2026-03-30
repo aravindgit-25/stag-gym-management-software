@@ -105,17 +105,17 @@
               <td class="actions-cell" (click)="$event.stopPropagation()">
                 <div class="action-group">
                   @if (showView) {
-                    <button class="action-icon view" (click)="view.emit(row)" title="View">View</button>
+                    <button class="action-icon view" (click)="view.emit(row)" title="View">👁️</button>
                   }
                   @if (showRenew && row.canRenew) {
-                    <button class="action-icon renew" (click)="renew.emit(row)" title="Renew">Renew</button>
+                    <button class="action-icon renew" (click)="renew.emit(row)" title="Renew">🔄</button>
                   }
                   @if (showPrint) {
-                    <button class="action-icon print" (click)="print.emit(row)" title="Print">Print</button>
+                    <button class="action-icon print" (click)="print.emit(row)" title="Print">🖨️</button>
                   }
                   @if (showActions) {
-                    <button class="action-icon edit" (click)="edit.emit(row)" title="Edit">Edit</button>
-                    <button class="action-icon delete" (click)="delete.emit(row)" title="Delete">Delete</button>
+                    <button class="action-icon edit" (click)="edit.emit(row)" title="Edit">✏️</button>
+                    <button class="action-icon delete" (click)="delete.emit(row)" title="Delete">🗑️</button>
                   }
                 </div>
               </td>
