@@ -54,6 +54,7 @@ export class InvoiceComponent implements OnInit {
                   phone: member?.phone,
                   planName: plan?.name,
                   planPrice: plan?.price || 0,
+                  durationDays: plan?.duration || 0,
                   startDate: this.formatDate(sub.startDate || (sub as any).start_date),
                   endDate: expDate.toISOString().split('T')[0],
                   amountPaid: payment.paidAmount || payment.amount,
