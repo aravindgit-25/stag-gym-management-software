@@ -186,6 +186,43 @@ input:focus, select:focus {
 .mt-15 { margin-top: 15px; }
 .mt-20 { margin-top: 20px; }
 
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  .table-header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header-left h1 {
+    font-size: 1.5rem;
+  }
+
+  .header-right {
+    width: 100%;
+  }
+
+  :host ::ng-deep .app-button {
+    width: 100%;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
 /* Payment Status Highlighting */
 :host ::ng-deep tr.payment-pending td {
   background-color: #fffaf0 !important;
