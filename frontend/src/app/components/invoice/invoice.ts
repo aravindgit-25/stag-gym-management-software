@@ -37,28 +37,57 @@ export class InvoiceComponent implements OnInit {
       const payment = payments.find(p => p.id === Number(paymentId));
       if (payment) {
         this.subService.getSubscriptions().subscribe(subs => {
-          const sub = subs.find(s => s.id === Number(payment.subscriptionId));
-          if (sub) {
+          const mainSub = subs.find(s => s.id === Number(payment.subscriptionId));
+          if (mainSub) {
             this.memberService.getMembers().subscribe(members => {
-              const member = members.find(m => m.id === Number(sub.memberId));
-              this.planService.getPlans().subscribe(plans => {
-                const plan = plans.find(p => p.id === Number(sub.planId));
+              const member = members.find(m => m.id === Number(mainSub.memberId));
+              this.planService.getPlans().subscribe(allPlans => {
                 
-                const expDate = new Date(sub.startDate || (sub as any).start_date);
-                expDate.setDate(expDate.getDate() + (plan?.duration || 0));
+                // Heuristic: Find all subscriptions for this member on the same start date
+                // that might belong to this payment.
+                const startDate = mainSub.startDate || (mainSub as any).start_date;
+                const mId = mainSub.memberId || (mainSub as any).member_id;
+
+                const relatedSubs = subs.filter(s => 
+                  Number(s.memberId || (s as any).member_id) === Number(mId) &&
+                  (s.startDate || (s as any).start_date) === startDate
+                );
+
+                // Get plans for these subscriptions
+                const selectedPlans: any[] = [];
+                let currentTotal = 0;
+                const targetTotal = payment.amount;
+
+                // Sort by ID to keep order consistent
+                relatedSubs.sort((a, b) => (a.id || 0) - (b.id || 0));
+
+                for (const rs of relatedSubs) {
+                  const pId = rs.planId || (rs as any).plan_id;
+                  const plan = allPlans.find(p => p.id === Number(pId));
+                  if (plan) {
+                    // Only add if it doesn't exceed the total paid (safety check)
+                    if (currentTotal + plan.price <= targetTotal || selectedPlans.length === 0) {
+                      selectedPlans.push(plan);
+                      currentTotal += plan.price;
+                    }
+                  }
+                }
+                
+                const maxDuration = Math.max(...selectedPlans.map(p => p.duration || 0), 0);
+                const expDate = new Date(startDate);
+                expDate.setDate(expDate.getDate() + maxDuration);
 
                 this.invoiceData.set({
                   receiptNo: `REC-${payment.id?.toString().padStart(4, '0')}`,
                   regId: member?.registrationId || `SG-${member?.id?.toString().padStart(3, '0')}`,
                   memberName: member?.name,
                   phone: member?.phone,
-                  planName: plan?.name,
-                  planPrice: plan?.price || 0,
-                  durationDays: plan?.duration || 0,
-                  startDate: this.formatDate(sub.startDate || (sub as any).start_date),
+                  plans: selectedPlans,
+                  startDate: this.formatDate(startDate),
                   endDate: expDate.toISOString().split('T')[0],
                   amountPaid: payment.paidAmount || payment.amount,
-                  balance: payment.balanceAmount ?? ((plan?.price || 0) - payment.amount),
+                  totalAmount: payment.amount,
+                  balance: payment.balanceAmount || 0,
                   paymentMode: payment.paymentMode,
                   date: this.formatDate(payment.paymentDate || new Date().toISOString())
                 });

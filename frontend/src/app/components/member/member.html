@@ -108,15 +108,18 @@
 
     <!-- STEP 2: Plan Selection -->
     <form *ngIf="currentStep() === 2" [formGroup]="subscriptionForm" (ngSubmit)="onSubmitSubscription()" class="member-form">
-      <div class="form-grid">
+      <div class="form-grid single-col">
         <div class="form-group">
-          <label for="planId">Select Membership Plan</label>
-          <select id="planId" formControlName="planId">
-            <option value="" disabled selected>Choose a plan...</option>
-            <option *ngFor="let plan of plans()" [value]="plan.id">
-              {{ plan.name }} - ₹{{ plan.price }} ({{ plan.duration }} days)
-            </option>
-          </select>
+          <label>Select Membership Plans</label>
+          <app-stag-dropdown 
+            [items]="planDropdownItems()"
+            placeholder="Select one or more plans..."
+            [selectedIds]="selectedPlanIds"
+            (selectionChange)="selectedPlanIds.set($event); togglePlan({id: 0, name: '', price: 0, duration: 0})" 
+          ></app-stag-dropdown>
+          <div class="selection-summary" *ngIf="selectedPlanIds().length > 0">
+            Selected: {{ selectedPlanIds().length }} plan(s) | Total: ₹{{ paymentForm.get('amount')?.value }}
+          </div>
         </div>
 
         <div class="form-group">
@@ -129,7 +132,7 @@
         <app-button 
           [label]="'Confirm & Proceed to Payment'" 
           type="submit" 
-          [disabled]="subscriptionForm.invalid"
+          [disabled]="selectedPlanIds().length === 0 || !!subscriptionForm.get('startDate')?.invalid"
           variant="primary"
         ></app-button>
       </div>
