@@ -32,6 +32,10 @@
   padding-bottom: 8mm;
 }
 
+.header-left {
+  flex: 1;
+}
+
 .gym-brand {
   margin: 0;
   font-size: 26pt;
@@ -241,7 +245,7 @@
   @page { size: A4; margin: 0; }
   body { margin: 0; }
   .invoice-container { background: white; padding: 0; display: block; }
-  .invoice-sheet { box-shadow: none; border: none; width: 100%; height: 297mm; padding: 12mm; }
+  .invoice-sheet { box-shadow: none; border: none; width: 100%; height: auto; min-height: 297mm; padding: 12mm; overflow: visible !important; }
   .invoice-table th { -webkit-print-color-adjust: exact; background-color: #f8fafc !important; }
   .gym-brand, .section-title, .invoice-table th { color: #8B0000 !important; }
   .summary-row.balance { background-color: #fef2f2 !important; -webkit-print-color-adjust: exact; }

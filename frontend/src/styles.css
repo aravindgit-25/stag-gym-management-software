@@ -184,3 +184,27 @@ body {
 
 .mr-10 { margin-right: 10px; }
 .mt-20 { margin-top: 20px; }
+
+/* Print Styles */
+@media print {
+  .app-sidebar, .app-header, .sidebar-overlay, .menu-toggle {
+    display: none !important;
+  }
+  
+  .app-wrapper {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .app-main, .full-width {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  body {
+    background: white !important;
+  }
+}
