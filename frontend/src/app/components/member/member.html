@@ -32,7 +32,7 @@
       [data]="filteredMembers()"
       [height]="tableHeight()"
       [showActions]="true"
-      [showRenew]="false"
+      [showRenew]="true"
       [loading]="loading()"
       [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
       [showSelectionColumn]="true"
@@ -40,6 +40,7 @@
       [storageKey]="'member-table-columns'"
       [editingRowIndex]="editingRowIndex()"
       (edit)="onEdit($event)"
+      (renew)="onRenew($event)"
       (delete)="onDelete($event)"
       (selectionChange)="onTableSelectionChange($event)"
       (rowClick)="onRowClick($event)"
@@ -129,6 +130,7 @@
       </div>
 
       <div class="form-actions">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()" class="mr-10"></app-button>
         <app-button 
           [label]="'Confirm & Proceed to Payment'" 
           type="submit" 
@@ -170,6 +172,7 @@
       </div>
 
       <div class="form-actions">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()" class="mr-10"></app-button>
         <app-button 
           [label]="'Finalize & Generate Invoice'" 
           type="submit" 

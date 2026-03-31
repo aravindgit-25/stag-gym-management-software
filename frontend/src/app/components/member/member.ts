@@ -70,7 +70,6 @@ export class MemberComponent implements OnInit {
     { field: 'name', header: this.getFieldDisplayName('name') },
     { field: 'phone', header: this.getFieldDisplayName('phone'), width: '150px' },
     { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' },
-    { field: 'renewLabel', header: 'Renewal', type: 'action-button', width: '100px' },
     { field: 'branchId', header: 'Branch', width: '80px' }
   ]);
 
@@ -79,7 +78,7 @@ export class MemberComponent implements OnInit {
       registrationId: 'Reg ID',
       name: 'Full Name',
       phone: 'Phone Number',
-      expiryDisplay: 'Expiry Date',
+      expiryDisplay: 'Plan Expiry',
     };
     return fieldNames[fieldName] || fieldName;
   }
@@ -133,10 +132,14 @@ export class MemberComponent implements OnInit {
     const id = Number(plan.id);
     let updated: number[];
 
-    if (current.includes(id)) {
-      updated = current.filter(i => i !== id);
+    if (id !== 0) {
+      if (current.includes(id)) {
+        updated = current.filter(i => i !== id);
+      } else {
+        updated = [...current, id];
+      }
     } else {
-      updated = [...current, id];
+      updated = current; // Called from dropdown change which already updated the signal
     }
 
     this.selectedPlanIds.set(updated);
@@ -180,6 +183,7 @@ export class MemberComponent implements OnInit {
   openAddModal() {
     this.isEditing.set(false);
     this.editingId.set(null);
+    this.createdMemberId.set(null);
     this.currentStep.set(1);
     this.selectedPlanIds.set([]);
     this.memberForm.reset({
@@ -199,6 +203,7 @@ export class MemberComponent implements OnInit {
         this.memberForm.patchValue({ registrationId: id });
       },
       error: (err) => {
+        console.error('Registration ID fetch failed:', err);
         this.notif.show('Error fetching registration ID', 'error');
         this.memberForm.patchValue({ registrationId: 'SG-ERR' });
       }
@@ -264,9 +269,10 @@ export class MemberComponent implements OnInit {
           error: (err) => this.notif.show('Error updating member.', 'error')
         });
       } else {
+        // Save Member immediately as per user request to have "resume" capability later
         this.memberService.addMember(memberData).subscribe({
           next: (newMember) => {
-            this.notif.show('Member registered! Now select a plan.', 'success');
+            this.notif.show('Member registered! Proceed to select plan.', 'success');
             this.createdMemberId.set(newMember.id!);
             this.loadData();
             this.currentStep.set(2);
@@ -284,54 +290,49 @@ export class MemberComponent implements OnInit {
     }
 
     if (this.subscriptionForm.valid) {
-      const subData = {
-        ...this.subscriptionForm.value,
-        memberId: this.createdMemberId()
-      };
-
-      this.subscriptionService.addSubscription(subData).subscribe({
-        next: (newSub) => {
-          this.notif.show('Plans selected! Proceed to payment.', 'success');
-          this.createdSubId.set(newSub.id!);
-          this.currentStep.set(3);
-        },
-        error: (err) => this.notif.show('Error saving subscription.', 'error')
-      });
+      this.currentStep.set(3);
     }
   }
 
   onSubmitPayment() {
     if (this.paymentForm.valid) {
       const rawForm = this.paymentForm.getRawValue();
-      const subId = Number(this.createdSubId());
+      const memberId = Number(this.createdMemberId());
+      const subFormData = this.subscriptionForm.getRawValue();
 
-      const payData = {
-        subscriptionId: subId,
-        amount: Number(rawForm.amount),
-        paidAmount: Number(rawForm.paidAmount),
-        balanceAmount: Number(rawForm.balanceAmount),
-        balanceDueDate: rawForm.balanceDueDate || null,
-        paymentMode: rawForm.paymentMode,
-
-        subscription_id: subId,
-        paid_amount: Number(rawForm.paidAmount),
-        balance_amount: Number(rawForm.balanceAmount),
-        balance_due_date: rawForm.balanceDueDate || null,
-        payment_mode: rawForm.paymentMode
+      const subPayload = { 
+        ...subFormData, 
+        memberId: memberId 
       };
 
-      this.paymentService.addPayment(payData as any).subscribe({
-        next: (newPay) => {
-          this.notif.show('Payment successful! Generating invoice...', 'success');
-          this.showModal.set(false);
-          this.loadData();
+      this.subscriptionService.addSubscription(subPayload).subscribe({
+        next: (newSub) => {
+          const payData = {
+            subscriptionId: newSub.id!,
+            subscription_id: newSub.id!,
+            amount: Number(rawForm.amount),
+            paidAmount: Number(rawForm.paidAmount),
+            paid_amount: Number(rawForm.paidAmount),
+            balanceAmount: Number(rawForm.balanceAmount),
+            balance_amount: Number(rawForm.balanceAmount),
+            balanceDueDate: rawForm.balanceDueDate || null,
+            balance_due_date: rawForm.balanceDueDate || null,
+            paymentMode: rawForm.paymentMode,
+            payment_mode: rawForm.paymentMode
+          };
 
-          const url = this.router.serializeUrl(
-            this.router.createUrlTree(['/invoice', newPay.id])
-          );
-          window.open(url, '_blank');
+          this.paymentService.addPayment(payData as any).subscribe({
+            next: (newPay) => {
+              this.notif.show('Payment successful! Generating invoice...', 'success');
+              this.showModal.set(false);
+              this.loadData();
+              const url = this.router.serializeUrl(this.router.createUrlTree(['/invoice', newPay.id]));
+              window.open(url, '_blank');
+            },
+            error: (err) => this.notif.show('Error saving payment.', 'error')
+          });
         },
-        error: (err) => this.notif.show('Error saving payment.', 'error')
+        error: (err) => this.notif.show('Error saving subscription.', 'error')
       });
     }
   }
@@ -415,10 +416,12 @@ export class MemberComponent implements OnInit {
           }
         } else {
            priority = 0;
+           canRenew = true; // Set to true to show the "Complete Setup" button
         }
 
-        const renewLabel = canRenew ? 'Renew' : '';
-        const renewLabelClass = rowClass === 'expired' ? 'btn-red' : (rowClass === 'near-expiry' ? 'btn-yellow' : 'btn-blue');
+        // Logical Fix: Show "Complete Setup" if no subscriptions exist
+        const renewLabel = memberSubs.length === 0 ? 'Complete Setup' : (canRenew ? 'Renew' : '');
+        const renewLabelClass = memberSubs.length === 0 ? 'btn-blue' : (rowClass === 'expired' ? 'btn-red' : (rowClass === 'near-expiry' ? 'btn-yellow' : 'btn-blue'));
 
         return { ...m, registrationId: regId, expiryDisplay, rowClass, canRenew, priority, renewLabel, renewLabelClass };
       })

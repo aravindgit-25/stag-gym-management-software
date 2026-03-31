@@ -107,8 +107,13 @@
                   @if (showView) {
                     <button class="action-icon view" (click)="view.emit(row)" title="View">👁️</button>
                   }
-                  @if (showRenew && row.canRenew) {
-                    <button class="action-icon renew" (click)="renew.emit(row)" title="Renew">🔄</button>
+                  @if (showRenew && (row.renewLabel || row.renewal)) {
+                    <button 
+                      [class]="'btn-status-action ' + (row.renewLabelClass || row.renewalClass)" 
+                      (click)="renew.emit(row)"
+                    >
+                      {{ row.renewLabel || row.renewal }}
+                    </button>
                   }
                   @if (showPrint) {
                     <button class="action-icon print" (click)="print.emit(row)" title="Print">🖨️</button>
