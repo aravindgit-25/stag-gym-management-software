@@ -14,11 +14,13 @@ import { Plan } from '../../models/plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
 import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
+import { StagCheckboxComponent } from '../../shared/components/stag-checkbox/stag-checkbox';
+import { StagDropdownComponent, DropdownItem } from '../../shared/components/stag-dropdown/stag-dropdown';
 
 @Component({
   selector: 'app-member',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, AppButtonComponent, AppStagTableComponent, AppModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AppButtonComponent, AppStagTableComponent, AppModalComponent, StagCheckboxComponent, StagDropdownComponent],
   templateUrl: './member.html',
   styleUrl: './member.css'
 })
@@ -28,6 +30,16 @@ export class MemberComponent implements OnInit {
   paymentForm: FormGroup;
 
   members = signal<Member[]>([]);
+  selectedPlanIds = signal<number[]>([]);
+  
+  planDropdownItems = computed<DropdownItem[]>(() => {
+    return this.plans().map(p => ({
+      id: p.id,
+      label: p.name,
+      subLabel: `₹${p.price} - ${p.duration} days`
+    }));
+  });
+
   subscriptions = signal<Subscription[]>([]);
   plans = signal<Plan[]>([]);
   searchTerm = signal<string>('');
@@ -37,7 +49,7 @@ export class MemberComponent implements OnInit {
   editingRowIndex = signal<number | null>(null);
   tableHeight = signal<string>('calc(100vh - 220px)');
   showModal = signal<boolean>(false);
-  
+
   // Wizard State
   currentStep = signal<number>(1);
   createdMemberId = signal<number | null>(null);
@@ -58,7 +70,6 @@ export class MemberComponent implements OnInit {
     { field: 'name', header: this.getFieldDisplayName('name') },
     { field: 'phone', header: this.getFieldDisplayName('phone'), width: '150px' },
     { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' },
-    { field: 'renewLabel', header: 'Renewal', type: 'action-button', width: '100px' },
     { field: 'branchId', header: 'Branch', width: '80px' }
   ]);
 
@@ -67,7 +78,7 @@ export class MemberComponent implements OnInit {
       registrationId: 'Reg ID',
       name: 'Full Name',
       phone: 'Phone Number',
-      expiryDisplay: 'Expiry Date',
+      expiryDisplay: 'Plan Expiry',
     };
     return fieldNames[fieldName] || fieldName;
   }
@@ -82,7 +93,7 @@ export class MemberComponent implements OnInit {
     });
 
     this.subscriptionForm = this.fb.group({
-      planId: ['', Validators.required],
+      planId: [''], // Will store comma separated IDs for compatibility
       startDate: [new Date().toISOString().split('T')[0], Validators.required]
     });
 
@@ -94,27 +105,14 @@ export class MemberComponent implements OnInit {
       paymentMode: ['Cash', Validators.required]
     });
 
-    // Auto-fill amount when plan changes
-    this.subscriptionForm.get('planId')?.valueChanges.subscribe(planId => {
-      const plan = this.plans().find(p => p.id === Number(planId));
-      if (plan) {
-        this.paymentForm.patchValue({ 
-          amount: plan.price,
-          paidAmount: plan.price,
-          balanceAmount: 0
-        });
-      }
-    });
-
     // Auto-calculate balance
     this.paymentForm.valueChanges.subscribe(() => {
       const total = this.paymentForm.get('amount')?.value || 0;
       const paid = this.paymentForm.get('paidAmount')?.value || 0;
       const balance = total - paid;
-      
+
       this.paymentForm.get('balanceAmount')?.setValue(balance, { emitEvent: false });
-      
-      // If balance exists, set a default due date (e.g., 7 days from now) if empty
+
       if (balance > 0 && !this.paymentForm.get('balanceDueDate')?.value) {
         const nextWeek = new Date();
         nextWeek.setDate(nextWeek.getDate() + 7);
@@ -127,6 +125,39 @@ export class MemberComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+  }
+
+  togglePlan(plan: Plan) {
+    const current = this.selectedPlanIds();
+    const id = Number(plan.id);
+    let updated: number[];
+
+    if (id !== 0) {
+      if (current.includes(id)) {
+        updated = current.filter(i => i !== id);
+      } else {
+        updated = [...current, id];
+      }
+    } else {
+      updated = current; // Called from dropdown change which already updated the signal
+    }
+
+    this.selectedPlanIds.set(updated);
+    this.subscriptionForm.get('planId')?.setValue(updated.join(','));
+
+    const total = this.plans()
+      .filter(p => updated.includes(Number(p.id)))
+      .reduce((sum, p) => sum + p.price, 0);
+
+    this.paymentForm.patchValue({
+      amount: total,
+      paidAmount: total,
+      balanceAmount: 0
+    });
+  }
+
+  isPlanSelected(planId: any): boolean {
+    return this.selectedPlanIds().includes(Number(planId));
   }
 
   loadData(): void {
@@ -152,11 +183,13 @@ export class MemberComponent implements OnInit {
   openAddModal() {
     this.isEditing.set(false);
     this.editingId.set(null);
+    this.createdMemberId.set(null);
     this.currentStep.set(1);
-    this.memberForm.reset({ 
+    this.selectedPlanIds.set([]);
+    this.memberForm.reset({
       registrationId: 'Fetching...',
-      gender: 'Male', 
-      branchId: 1 
+      gender: 'Male',
+      branchId: 1
     });
     this.subscriptionForm.reset({
       startDate: new Date().toISOString().split('T')[0]
@@ -164,7 +197,7 @@ export class MemberComponent implements OnInit {
     this.paymentForm.reset({
       paymentMode: 'Cash'
     });
-    
+
     this.memberService.generateRegistrationId().subscribe({
       next: (id) => {
         this.memberForm.patchValue({ registrationId: id });
@@ -175,7 +208,7 @@ export class MemberComponent implements OnInit {
         this.memberForm.patchValue({ registrationId: 'SG-ERR' });
       }
     });
-    
+
     this.showModal.set(true);
   }
 
@@ -196,7 +229,8 @@ export class MemberComponent implements OnInit {
   onRenew(member: any): void {
     this.isEditing.set(false);
     this.createdMemberId.set(member.id);
-    this.currentStep.set(2); // Jump to Plan selection
+    this.currentStep.set(2);
+    this.selectedPlanIds.set([]);
     this.subscriptionForm.reset({
       startDate: new Date().toISOString().split('T')[0]
     });
@@ -223,11 +257,11 @@ export class MemberComponent implements OnInit {
 
   async onSubmitMember() {
     if (this.memberForm.valid) {
-      const memberData = this.memberForm.getRawValue(); // use getRawValue to include registrationId
-      
+      const memberData = this.memberForm.getRawValue();
+
       if (this.isEditing()) {
         this.memberService.updateMember(this.editingId()!, memberData).subscribe({
-          next: (updated) => {
+          next: () => {
             this.notif.show('Member updated successfully!', 'success');
             this.loadData();
             this.showModal.set(false);
@@ -235,12 +269,13 @@ export class MemberComponent implements OnInit {
           error: (err) => this.notif.show('Error updating member.', 'error')
         });
       } else {
+        // Save Member immediately as per user request to have "resume" capability later
         this.memberService.addMember(memberData).subscribe({
           next: (newMember) => {
-            this.notif.show('Member registered! Now select a plan.', 'success');
+            this.notif.show('Member registered! Proceed to select plan.', 'success');
             this.createdMemberId.set(newMember.id!);
             this.loadData();
-            this.currentStep.set(2); 
+            this.currentStep.set(2);
           },
           error: (err) => this.notif.show('Error adding member.', 'error')
         });
@@ -249,57 +284,55 @@ export class MemberComponent implements OnInit {
   }
 
   onSubmitSubscription() {
-    if (this.subscriptionForm.valid) {
-      const subData = {
-        ...this.subscriptionForm.value,
-        memberId: this.createdMemberId()
-      };
+    if (this.selectedPlanIds().length === 0) {
+      this.notif.show('Please select at least one plan.', 'error');
+      return;
+    }
 
-      this.subscriptionService.addSubscription(subData).subscribe({
-        next: (newSub) => {
-          this.notif.show('Plan selected! Proceed to payment.', 'success');
-          this.createdSubId.set(newSub.id!);
-          this.currentStep.set(3); 
-        },
-        error: (err) => this.notif.show('Error saving subscription.', 'error')
-      });
+    if (this.subscriptionForm.valid) {
+      this.currentStep.set(3);
     }
   }
 
   onSubmitPayment() {
     if (this.paymentForm.valid) {
       const rawForm = this.paymentForm.getRawValue();
-      const subId = Number(this.createdSubId());
-      
-      const payData = {
-        // camelCase
-        subscriptionId: subId,
-        amount: Number(rawForm.amount),
-        paidAmount: Number(rawForm.paidAmount),
-        balanceAmount: Number(rawForm.balanceAmount),
-        balanceDueDate: rawForm.balanceDueDate || null,
-        paymentMode: rawForm.paymentMode,
-        
-        // snake_case (Backwards compatibility/Spring naming)
-        subscription_id: subId,
-        paid_amount: Number(rawForm.paidAmount),
-        balance_amount: Number(rawForm.balanceAmount),
-        balance_due_date: rawForm.balanceDueDate || null,
-        payment_mode: rawForm.paymentMode
+      const memberId = Number(this.createdMemberId());
+      const subFormData = this.subscriptionForm.getRawValue();
+
+      const subPayload = { 
+        ...subFormData, 
+        memberId: memberId 
       };
 
-      this.paymentService.addPayment(payData as any).subscribe({
-        next: (newPay) => {
-          this.notif.show('Payment successful! Generating invoice...', 'success');
-          this.showModal.set(false);
-          this.loadData();
-          
-          const url = this.router.serializeUrl(
-            this.router.createUrlTree(['/invoice', newPay.id])
-          );
-          window.open(url, '_blank');
+      this.subscriptionService.addSubscription(subPayload).subscribe({
+        next: (newSub) => {
+          const payData = {
+            subscriptionId: newSub.id!,
+            subscription_id: newSub.id!,
+            amount: Number(rawForm.amount),
+            paidAmount: Number(rawForm.paidAmount),
+            paid_amount: Number(rawForm.paidAmount),
+            balanceAmount: Number(rawForm.balanceAmount),
+            balance_amount: Number(rawForm.balanceAmount),
+            balanceDueDate: rawForm.balanceDueDate || null,
+            balance_due_date: rawForm.balanceDueDate || null,
+            paymentMode: rawForm.paymentMode,
+            payment_mode: rawForm.paymentMode
+          };
+
+          this.paymentService.addPayment(payData as any).subscribe({
+            next: (newPay) => {
+              this.notif.show('Payment successful! Generating invoice...', 'success');
+              this.showModal.set(false);
+              this.loadData();
+              const url = this.router.serializeUrl(this.router.createUrlTree(['/invoice', newPay.id]));
+              window.open(url, '_blank');
+            },
+            error: (err) => this.notif.show('Error saving payment.', 'error')
+          });
         },
-        error: (err) => this.notif.show('Error saving payment.', 'error')
+        error: (err) => this.notif.show('Error saving subscription.', 'error')
       });
     }
   }
@@ -344,44 +377,51 @@ export class MemberComponent implements OnInit {
         let expiryDisplay = 'No Plan';
         let rowClass = '';
         let canRenew = true;
-        let priority = 3; // Default low priority
+        let priority = 3;
 
         if (memberSubs.length > 0) {
           const lastSub = memberSubs[0];
           const sPlanId = lastSub.planId || (lastSub as any).plan_id;
-          const plan = this.plans().find(p => p.id === Number(sPlanId));
+
+          const planIds = typeof sPlanId === 'string' ? sPlanId.split(',').map(Number) : [Number(sPlanId)];
+          const relevantPlans = this.plans().filter(p => planIds.includes(Number(p.id)));
+
+          const maxDuration = Math.max(...relevantPlans.map(p => p.duration || 0), 0);
+
           const sDate = lastSub.startDate || (lastSub as any).start_date;
 
-          if (plan && sDate) {
+          if (relevantPlans.length > 0 && sDate) {
             const expDate = new Date(sDate);
-            expDate.setDate(expDate.getDate() + (plan.duration || 0));
+            expDate.setDate(expDate.getDate() + maxDuration);
             expiryDisplay = expDate.toISOString().split('T')[0];
-            
+
             const expMidnight = new Date(expDate);
             expMidnight.setHours(0,0,0,0);
-            
+
             const diffTime = expMidnight.getTime() - today.getTime();
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays < 0) {
               rowClass = 'expired';
               canRenew = true;
-              priority = 1; // Highest priority
+              priority = 1;
             } else if (diffDays <= 3) {
               rowClass = 'near-expiry';
               canRenew = true;
-              priority = 2; // Medium priority
+              priority = 2;
             } else {
               canRenew = false;
               priority = 3;
             }
           }
         } else {
-           priority = 0; // No plan members also priority
+           priority = 0;
+           canRenew = true; // Set to true to show the "Complete Setup" button
         }
 
-        const renewLabel = canRenew ? 'Renew' : '';
-        const renewLabelClass = rowClass === 'expired' ? 'btn-red' : (rowClass === 'near-expiry' ? 'btn-yellow' : 'btn-blue');
+        // Logical Fix: Show "Complete Setup" if no subscriptions exist
+        const renewLabel = memberSubs.length === 0 ? 'Complete Setup' : (canRenew ? 'Renew' : '');
+        const renewLabelClass = memberSubs.length === 0 ? 'btn-blue' : (rowClass === 'expired' ? 'btn-red' : (rowClass === 'near-expiry' ? 'btn-yellow' : 'btn-blue'));
 
         return { ...m, registrationId: regId, expiryDisplay, rowClass, canRenew, priority, renewLabel, renewLabelClass };
       })

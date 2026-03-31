@@ -46,15 +46,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
+        <tr *ngFor="let plan of invoiceData().plans">
           <td>
-            <span class="plan-name">{{ invoiceData().planName }}</span>
+            <span class="plan-name">{{ plan.name }}</span>
             <div class="date-range">{{ invoiceData().startDate }} to {{ invoiceData().endDate }}</div>
           </td>
-          <td>{{ invoiceData().durationDays }} Days</td>
+          <td>{{ plan.duration }} Days</td>
           <td class="text-right">₹0.00</td>
           <td class="text-right">₹0.00</td>
-          <td class="text-right">₹{{ invoiceData().planPrice | number }}</td>
+          <td class="text-right">₹{{ plan.price | number }}</td>
         </tr>
       </tbody>
     </table>
@@ -63,7 +63,7 @@
     <div class="summary-section">
       <div class="summary-row">
         <span>Subtotal</span>
-        <span>₹{{ invoiceData().planPrice | number }}</span>
+        <span>₹{{ invoiceData().totalAmount | number }}</span>
       </div>
       <div class="summary-row">
         <span>CGST (0%)</span>
@@ -75,7 +75,7 @@
       </div>
       <div class="summary-row highlight">
         <span>Total Amount</span>
-        <span>₹{{ invoiceData().planPrice | number }}</span>
+        <span>₹{{ invoiceData().totalAmount | number }}</span>
       </div>
       <div class="summary-row highlight paid">
         <span>Amount Paid</span>

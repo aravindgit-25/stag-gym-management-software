@@ -14,7 +14,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
     <app-notification></app-notification>
     <app-confirm></app-confirm>
     
-    <div class="app-wrapper" *ngIf="authService.isLoggedIn(); else loginView">
+    <div class="app-wrapper" [class.invoice-layout]="isInvoicePage" *ngIf="authService.isLoggedIn(); else loginView">
       <!-- Sidebar Overlay for Mobile -->
       <div class="sidebar-overlay" *ngIf="sidebarOpen()" (click)="closeSidebar()"></div>
 
@@ -60,10 +60,16 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
     </ng-template>
   `,
   styles: [`
+    .invoice-layout {
+      display: block !important;
+      grid-template-columns: 1fr !important;
+    }
     .full-width {
       width: 100%;
-      height: 100vh;
+      min-height: 100vh;
       background: white;
+      margin: 0;
+      padding: 0;
     }
     .sidebar-footer {
       margin-top: auto;

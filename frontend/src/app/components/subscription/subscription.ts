@@ -14,17 +14,28 @@ import { Subscription } from '../../models/subscription.model';
 import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
+import { StagCheckboxComponent } from '../../shared/components/stag-checkbox/stag-checkbox';
+import { StagDropdownComponent, DropdownItem } from '../../shared/components/stag-dropdown/stag-dropdown';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppStagTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppStagTableComponent, StagCheckboxComponent, StagDropdownComponent],
   templateUrl: './subscription.html',
   styleUrl: './subscription.css'
 })
 export class SubscriptionComponent implements OnInit {
   renewalForm: FormGroup;
+  selectedPlanIds = signal<number[]>([]);
   
+  planDropdownItems = computed<DropdownItem[]>(() => {
+    return this.plans().map(p => ({
+      id: p.id,
+      label: p.name,
+      subLabel: `₹${p.price}`
+    }));
+  });
+
   members = signal<Member[]>([]);
   plans = signal<Plan[]>([]);
   subscriptionsList = signal<Subscription[]>([]);
@@ -44,7 +55,6 @@ export class SubscriptionComponent implements OnInit {
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
 
-  // Filtered display list showing ONLY the latest subscription per member
   displayList = computed(() => {
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -72,7 +82,10 @@ export class SubscriptionComponent implements OnInit {
       const sMemberId = sub.memberId || (sub as any).member_id;
       const sDate = sub.startDate || (sub as any).start_date;
 
-      const plan = this.plans().find(p => p.id === Number(sPlanId));
+      const planIds = typeof sPlanId === 'string' ? sPlanId.split(',').map(Number) : [Number(sPlanId)];
+      const relevantPlans = this.plans().filter(p => planIds.includes(Number(p.id)));
+      const planNames = relevantPlans.map(p => p.name).join(' + ');
+      const totalDuration = Math.max(...relevantPlans.map(p => p.duration || 0), 0);
       
       const hasPayment = payments.some(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(sId));
       const paymentStatus = hasPayment ? 'Paid' : 'Pending';
@@ -85,9 +98,9 @@ export class SubscriptionComponent implements OnInit {
       let renewal = '';
       let renewalClass = '';
 
-      if (plan && sDate) {
+      if (relevantPlans.length > 0 && sDate) {
         const expDate = new Date(sDate);
-        expDate.setDate(expDate.getDate() + Number(plan.duration || 0));
+        expDate.setDate(expDate.getDate() + totalDuration);
         expiryDateStr = expDate.toISOString().split('T')[0];
 
         const expMidnight = new Date(expDate);
@@ -114,7 +127,7 @@ export class SubscriptionComponent implements OnInit {
       return {
         id: sId,
         memberName: this.members().find(m => m.id === Number(sMemberId))?.name || `Member ${sMemberId}`,
-        planName: plan?.name || `Plan ${sPlanId}`,
+        planName: planNames || 'Unknown Plan',
         startDate: sDate,
         expiryDate: expiryDateStr,
         status,
@@ -132,7 +145,7 @@ export class SubscriptionComponent implements OnInit {
   columns: StagTableColumn[] = [
     { field: 'id', header: 'ID', width: '70px' },
     { field: 'memberName', header: 'Member Name' },
-    { field: 'planName', header: 'Plan Name' },
+    { field: 'planName', header: 'Plans' },
     { field: 'startDate', header: 'Start Date' },
     { field: 'expiryDate', header: 'Expiry Date' },
     { field: 'status', header: 'Status' },
@@ -149,17 +162,10 @@ export class SubscriptionComponent implements OnInit {
   ) {
     this.renewalForm = this.fb.group({
       memberId: ['', Validators.required],
-      planId: ['', Validators.required],
+      planId: [''],
       startDate: [new Date().toISOString().split('T')[0], Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
       paymentMode: ['Cash', Validators.required]
-    });
-
-    this.renewalForm.get('planId')?.valueChanges.subscribe(planId => {
-      const plan = this.plans().find(p => p.id === Number(planId));
-      if (plan) {
-        this.renewalForm.patchValue({ amount: plan.price }, { emitEvent: false });
-      }
     });
   }
 
@@ -188,6 +194,31 @@ export class SubscriptionComponent implements OnInit {
     });
   }
 
+  togglePlan(plan: Plan) {
+    const current = this.selectedPlanIds();
+    const id = Number(plan.id);
+    let updated: number[];
+    
+    if (current.includes(id)) {
+      updated = current.filter(i => i !== id);
+    } else {
+      updated = [...current, id];
+    }
+    
+    this.selectedPlanIds.set(updated);
+    this.renewalForm.get('planId')?.setValue(updated.join(','));
+    
+    const total = this.plans()
+      .filter(p => updated.includes(Number(p.id)))
+      .reduce((sum, p) => sum + p.price, 0);
+      
+    this.renewalForm.patchValue({ amount: total });
+  }
+
+  isPlanSelected(planId: any): boolean {
+    return this.selectedPlanIds().includes(Number(planId));
+  }
+
   goBack(): void {
     this.location.back();
   }
@@ -195,7 +226,9 @@ export class SubscriptionComponent implements OnInit {
   openViewModal(sub: any): void {
     this.loading.set(true);
     const member = this.members().find(m => m.id === Number(sub.memberId));
-    const plan = this.plans().find(p => p.id === Number(sub.planId));
+    
+    const planIds = typeof sub.planId === 'string' ? sub.planId.split(',').map(Number) : [Number(sub.planId)];
+    const plans = this.plans().filter(p => planIds.includes(Number(p.id)));
     
     this.paymentService.getPayments().subscribe({
       next: (payments) => {
@@ -205,7 +238,7 @@ export class SubscriptionComponent implements OnInit {
         this.selectedSubDetails.set({
           ...sub,
           member,
-          plan,
+          plans,
           payment
         });
         
@@ -234,11 +267,14 @@ export class SubscriptionComponent implements OnInit {
 
   openCompletePaymentPopup(details: any): void {
     this.selectedMemberName.set(details.member?.name || 'Member');
+    
+    const totalAmount = (details.plans as Plan[])?.reduce((sum, p) => sum + p.price, 0) || details.plan?.price || 0;
+    
     this.renewalForm.patchValue({
       memberId: details.memberId,
       planId: details.planId,
       startDate: details.startDate,
-      amount: details.plan?.price || ''
+      amount: totalAmount
     });
     this.showViewModal.set(false);
     this.showCompletePaymentModal.set(true);
@@ -282,10 +318,12 @@ export class SubscriptionComponent implements OnInit {
 
   openRenewPopup(sub: any): void {
     this.selectedMemberName.set(sub.memberName);
+    this.selectedPlanIds.set([]);
     this.renewalForm.patchValue({
       memberId: sub.memberId,
-      planId: sub.planId,
-      startDate: new Date().toISOString().split('T')[0]
+      planId: '',
+      startDate: new Date().toISOString().split('T')[0],
+      amount: ''
     });
     this.showRenewalModal.set(true);
   }
@@ -293,9 +331,15 @@ export class SubscriptionComponent implements OnInit {
   closeModal(): void {
     this.showRenewalModal.set(false);
     this.renewalForm.reset({ paymentMode: 'Cash' });
+    this.selectedPlanIds.set([]);
   }
 
   async onSaveRenewal() {
+    if (this.selectedPlanIds().length === 0) {
+      this.notif.show('Please select at least one plan.', 'error');
+      return;
+    }
+
     if (this.renewalForm.valid) {
       const confirmed = await this.confirm.ask('Are you sure you want to renew this membership and record payment?');
       if (!confirmed) return;
