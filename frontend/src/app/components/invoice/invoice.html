@@ -1,5 +1,18 @@
-<div class="invoice-container" *ngIf="invoiceData()">
-  <div class="invoice-sheet">
+<div class="invoice-container">
+  <!-- Loading State -->
+  <div class="status-message" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Generating Invoice...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="status-message error" *ngIf="error()">
+    <span class="error-icon">⚠️</span>
+    <p>{{ error() }}</p>
+    <button class="btn-retry" (click)="ngOnInit()">Retry</button>
+  </div>
+
+  <div class="invoice-sheet" *ngIf="!loading() && !error() && invoiceData()">
     
     <!-- Professional Header -->
     <div class="header">
