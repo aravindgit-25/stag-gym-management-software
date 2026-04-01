@@ -2,6 +2,8 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { MemberService } from '../../services/member.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { PlanService } from '../../services/plan.service';
@@ -85,7 +87,7 @@ export class MemberComponent implements OnInit {
 
   constructor(private fb: FormBuilder) {
     this.memberForm = this.fb.group({
-      registrationId: ['Fetching...'],
+      registrationId: [''],
       name: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       gender: ['Male', Validators.required],
@@ -162,16 +164,18 @@ export class MemberComponent implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
-    this.memberService.getMembers().subscribe(data => this.members.set(data));
-    this.planService.getPlans().subscribe(data => this.plans.set(data));
-    this.subscriptionService.getSubscriptions().subscribe({
-      next: (data) => {
-        this.subscriptions.set(data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.notif.show('Error fetching data', 'error');
-        this.loading.set(false);
+    forkJoin({
+      members: this.memberService.getMembers().pipe(catchError(() => of([]))),
+      plans: this.planService.getPlans().pipe(catchError(() => of([]))),
+      subscriptions: this.subscriptionService.getSubscriptions().pipe(catchError(() => of([])))
+    }).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe(result => {
+      this.members.set(result.members);
+      this.plans.set(result.plans);
+      this.subscriptions.set(result.subscriptions);
+      if (result.members.length === 0 && result.plans.length === 0 && result.subscriptions.length === 0) {
+        this.notif.show('Could not fetch data. Backend might be starting up...', 'info');
       }
     });
   }
@@ -204,7 +208,7 @@ export class MemberComponent implements OnInit {
       },
       error: (err) => {
         console.error('Registration ID fetch failed:', err);
-        this.notif.show('Error fetching registration ID', 'error');
+        this.notif.show('Error fetching registration ID. Please retry.', 'error');
         this.memberForm.patchValue({ registrationId: 'SG-ERR' });
       }
     });

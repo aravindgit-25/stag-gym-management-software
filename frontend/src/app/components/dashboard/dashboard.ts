@@ -1,6 +1,8 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { DashboardService } from '../../services/dashboard.service';
 
 @Component({
@@ -39,30 +41,18 @@ export class DashboardComponent implements OnInit {
   loadStats(): void {
     this.loading.set(true);
     
-    this.dashboardService.getMemberCount().subscribe({
-      next: (count) => this.totalMembers.set(count),
-      error: (err) => console.error('Error loading member count', err)
-    });
-
-    this.dashboardService.getActiveMemberCount().subscribe({
-      next: (count) => this.activeMembers.set(count),
-      error: (err) => console.error('Error loading active count', err)
-    });
-
-    this.dashboardService.getTotalRevenue().subscribe({
-      next: (rev) => this.totalRevenue.set(rev),
-      error: (err) => console.error('Error loading total revenue', err)
-    });
-
-    this.dashboardService.getTodayRevenue().subscribe({
-      next: (rev) => {
-        this.todayRevenue.set(rev);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error loading today revenue', err);
-        this.loading.set(false);
-      }
+    forkJoin({
+      totalMembers: this.dashboardService.getMemberCount().pipe(catchError(() => of(0))),
+      activeMembers: this.dashboardService.getActiveMemberCount().pipe(catchError(() => of(0))),
+      totalRevenue: this.dashboardService.getTotalRevenue().pipe(catchError(() => of(0))),
+      todayRevenue: this.dashboardService.getTodayRevenue().pipe(catchError(() => of(0)))
+    }).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe(result => {
+      this.totalMembers.set(result.totalMembers);
+      this.activeMembers.set(result.activeMembers);
+      this.totalRevenue.set(result.totalRevenue);
+      this.todayRevenue.set(result.todayRevenue);
     });
   }
 
