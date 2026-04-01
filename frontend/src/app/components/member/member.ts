@@ -311,6 +311,7 @@ export class MemberComponent implements OnInit {
 
       this.subscriptionService.addSubscription(subPayload).subscribe({
         next: (newSub) => {
+          // Robust mapping for both camelCase and snake_case backends
           const payData = {
             subscriptionId: newSub.id!,
             subscription_id: newSub.id!,
@@ -327,16 +328,27 @@ export class MemberComponent implements OnInit {
 
           this.paymentService.addPayment(payData as any).subscribe({
             next: (newPay) => {
-              this.notif.show('Payment successful! Generating invoice...', 'success');
+              this.notif.show('Payment successful! Opening invoice...', 'success');
               this.showModal.set(false);
               this.loadData();
-              const url = this.router.serializeUrl(this.router.createUrlTree(['/invoice', newPay.id]));
-              window.open(url, '_blank');
+              
+              // Use direct hash URL to ensure it works on live refresh/redirect
+              const invoiceId = newPay.id;
+              setTimeout(() => {
+                const url = window.location.origin + window.location.pathname + `#/invoice/${invoiceId}`;
+                window.open(url, '_blank');
+              }, 100);
             },
-            error: (err) => this.notif.show('Error saving payment.', 'error')
+            error: (err) => {
+              console.error('Payment save error:', err);
+              this.notif.show('Error saving payment. Check if all fields are correct.', 'error');
+            }
           });
         },
-        error: (err) => this.notif.show('Error saving subscription.', 'error')
+        error: (err) => {
+          console.error('Subscription save error:', err);
+          this.notif.show('Error saving subscription.', 'error');
+        }
       });
     }
   }
