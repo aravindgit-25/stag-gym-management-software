@@ -328,15 +328,29 @@ export class MemberComponent implements OnInit {
 
           this.paymentService.addPayment(payData as any).subscribe({
             next: (newPay) => {
-              this.notif.show('Payment successful! Opening invoice...', 'success');
+              this.notif.show('Payment successful!', 'success');
               this.showModal.set(false);
               this.loadData();
               
-              // Use direct hash URL to ensure it works on live refresh/redirect
               const invoiceId = newPay.id;
+              const memberName = this.memberForm.get('name')?.value;
+              let phone = this.memberForm.get('phone')?.value;
+              const amount = rawForm.paidAmount;
+
+              // Ensure phone has country code (default to 91 for India if not present)
+              if (phone && phone.length === 10) phone = '91' + phone;
+
+              const invoiceUrl = window.location.origin + window.location.pathname + `#/invoice/${invoiceId}`;
+              
+              // Construct WhatsApp Message
+              const message = `Hello *${memberName}*,\n\nThank you for choosing *STAG FITNESS*! \n\nYour payment of *₹${amount}* has been received successfully. \n\nYou can view and download your invoice here:\n${invoiceUrl}\n\nHave a great workout!`;
+              const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+
+              // Open Invoice and WhatsApp
               setTimeout(() => {
-                const url = window.location.origin + window.location.pathname + `#/invoice/${invoiceId}`;
-                window.open(url, '_blank');
+                window.open(invoiceUrl, '_blank');
+                // Small delay for WhatsApp to avoid popup blockers
+                setTimeout(() => window.open(waUrl, '_blank'), 500);
               }, 100);
             },
             error: (err) => {

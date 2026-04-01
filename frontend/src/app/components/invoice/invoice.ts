@@ -136,4 +136,22 @@ export class InvoiceComponent implements OnInit {
       if (!this.error()) window.print();
     }, 1000);
   }
+
+  printInvoice() {
+    window.print();
+  }
+
+  shareWhatsApp() {
+    const data = this.invoiceData();
+    if (!data) return;
+
+    let phone = data.phone;
+    if (phone && phone.length === 10) phone = '91' + phone;
+
+    const invoiceUrl = window.location.href;
+    const message = `Hello *${data.memberName}*,\n\nThank you for choosing *STAG FITNESS*! \n\nYour payment of *₹${data.amountPaid}* has been received successfully. \n\nYou can view and download your invoice here:\n${invoiceUrl}\n\nHave a great workout!`;
+    
+    const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+  }
 }

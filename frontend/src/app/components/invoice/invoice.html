@@ -12,6 +12,16 @@
     <button class="btn-retry" (click)="ngOnInit()">Retry</button>
   </div>
 
+  <!-- Action Bar (Screen Only) -->
+  <div class="action-bar no-print" *ngIf="!loading() && !error() && invoiceData()">
+    <button class="btn-whatsapp" (click)="shareWhatsApp()">
+      <span class="icon">💬</span> Share on WhatsApp
+    </button>
+    <button class="btn-print" (click)="printInvoice()">
+      <span class="icon">📥</span> Download / Print PDF
+    </button>
+  </div>
+
   <div class="invoice-sheet" *ngIf="!loading() && !error() && invoiceData()">
     
     <!-- Professional Header -->

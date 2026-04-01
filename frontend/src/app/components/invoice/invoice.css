@@ -7,9 +7,48 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 0;
+  padding: 40px 15px; /* Added horizontal padding for mobile */
   font-family: 'Poppins', 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Action Bar */
+.action-bar {
+  width: 100%;
+  max-width: 210mm;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.btn-print, .btn-whatsapp {
+  border: none;
+  padding: 10pt 20pt;
+  border-radius: 8pt;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.btn-whatsapp {
+  background: #25D366; /* WhatsApp Green */
+  color: white;
+  box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2);
+}
+
+.btn-print {
+  background: #16a34a;
+  color: white;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2);
+}
+
+.btn-print:hover, .btn-whatsapp:hover {
+  transform: translateY(-2px);
+  filter: brightness(0.9);
 }
 
 /* Status Messages */
@@ -37,27 +76,6 @@
   100% { transform: rotate(360deg); }
 }
 
-.status-message.error {
-  border-left: 5px solid #ef4444;
-}
-
-.error-icon {
-  font-size: 32pt;
-  display: block;
-  margin-bottom: 10px;
-}
-
-.btn-retry {
-  background: #8B0000;
-  color: white;
-  border: none;
-  padding: 8pt 20pt;
-  border-radius: 6pt;
-  font-weight: 600;
-  margin-top: 15px;
-  cursor: pointer;
-}
-
 /* Sheet Styles */
 .invoice-sheet {
   background: white;
@@ -69,6 +87,7 @@
   box-sizing: border-box;
   box-shadow: 0 0 15px rgba(0,0,0,0.1);
   margin-bottom: 40px;
+  position: relative;
 }
 
 .header {
@@ -292,9 +311,29 @@
 .invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 15%; }
 .invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 15%; }
 
+/* Mobile Responsiveness for Screen */
+@media screen and (max-width: 210mm) {
+  .invoice-sheet {
+    width: 100%;
+    height: auto;
+    padding: 10mm;
+    margin-bottom: 20px;
+    font-size: 90%;
+  }
+  .action-bar {
+    max-width: 100%;
+  }
+  .gym-brand { font-size: 20pt; }
+  .summary-section { width: 100%; }
+  .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .header-right { text-align: left; }
+}
+
+/* Print Styles */
 @media print {
   @page { size: A4; margin: 0; }
   body { margin: 0; background: white; }
+  .no-print { display: none !important; }
   .invoice-container { background: white; padding: 0; display: block; min-height: 0; }
   .status-message { display: none; }
   .invoice-sheet { 
@@ -306,6 +345,7 @@
     padding: 12mm; 
     margin: 0;
     overflow: visible !important; 
+    transform: none !important;
   }
   .invoice-table th { -webkit-print-color-adjust: exact; background-color: #f8fafc !important; }
   .gym-brand, .section-title, .invoice-table th { color: #8B0000 !important; }
