@@ -75,6 +75,34 @@ export class MemberComponent implements OnInit {
     { field: 'branchId', header: 'Branch', width: '80px' }
   ]);
 
+  onViewInvoice(member: any): void {
+    const mId = member.id;
+    // Find the latest subscription for this member
+    const memberSubs = this.subscriptions()
+      .filter(s => Number(s.memberId || (s as any).member_id) === mId)
+      .sort((a, b) => {
+        const dateA = a.startDate || (a as any).start_date;
+        const dateB = b.startDate || (b as any).start_date;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+
+    if (memberSubs.length > 0) {
+      const latestSubId = memberSubs[0].id;
+      // Find payment for this subscription
+      this.paymentService.getPayments().subscribe(payments => {
+        const payment = payments.find(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(latestSubId));
+        if (payment) {
+          const url = window.location.origin + window.location.pathname + `#/invoice/${payment.id}`;
+          window.open(url, '_blank');
+        } else {
+          this.notif.show('No payment record found for the latest subscription.', 'error');
+        }
+      });
+    } else {
+      this.notif.show('No subscription found for this member.', 'error');
+    }
+  }
+
   private getFieldDisplayName(fieldName: string): string {
     const fieldNames: { [key: string]: string } = {
       registrationId: 'Reg ID',

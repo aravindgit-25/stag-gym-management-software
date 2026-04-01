@@ -74,12 +74,6 @@
       <div class="modal-footer mt-20">
         <app-button label="Close" variant="secondary" (onClick)="closeViewModal()"></app-button>
         
-        <!-- Only show invoice options if payment exists -->
-        <ng-container *ngIf="details.payment">
-          <app-button label="Add Invoice" variant="secondary" (onClick)="addInvoice()"></app-button>
-          <app-button label="Re-invoice" variant="primary" (onClick)="reInvoice()"></app-button>
-        </ng-container>
-
         <!-- Show Update Payment if missing -->
         <ng-container *ngIf="!details.payment">
           <app-button label="Update Payment" variant="primary" (onClick)="openCompletePaymentPopup(details)"></app-button>
