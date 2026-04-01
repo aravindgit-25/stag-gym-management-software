@@ -175,7 +175,7 @@ export class MemberComponent implements OnInit {
       this.plans.set(result.plans);
       this.subscriptions.set(result.subscriptions);
       if (result.members.length === 0 && result.plans.length === 0 && result.subscriptions.length === 0) {
-        this.notif.show('Could not fetch data. Backend might be starting up...', 'info');
+        this.notif.show('Could not fetch data. Backend might be starting up...', 'success');
       }
     });
   }
