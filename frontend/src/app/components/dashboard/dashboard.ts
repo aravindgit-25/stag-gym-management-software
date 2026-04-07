@@ -60,20 +60,35 @@ export class DashboardComponent implements OnInit {
 
   loadStats(): void {
     this.loading.set(true);
-    
-    forkJoin({
-      totalMembers: this.dashboardService.getMemberCount().pipe(catchError(() => of(0))),
-      activeMembers: this.dashboardService.getActiveMemberCount().pipe(catchError(() => of(0))),
-      totalRevenue: this.dashboardService.getTotalRevenue().pipe(catchError(() => of(0))),
-      todayRevenue: this.dashboardService.getTodayRevenue().pipe(catchError(() => of(0)))
-    }).pipe(
-      finalize(() => this.loading.set(false))
-    ).subscribe(result => {
-      this.totalMembers.set(result.totalMembers);
-      this.activeMembers.set(result.activeMembers);
-      this.totalRevenue.set(result.totalRevenue);
-      this.todayRevenue.set(result.todayRevenue);
-    });
+    let completedRequests = 0;
+    const totalRequests = 4;
+
+    const checkLoading = () => {
+      completedRequests++;
+      if (completedRequests >= totalRequests) {
+        this.loading.set(false);
+      }
+    };
+
+    this.dashboardService.getMemberCount().pipe(
+      catchError(() => of(0)),
+      finalize(() => checkLoading())
+    ).subscribe(val => this.totalMembers.set(val));
+
+    this.dashboardService.getActiveMemberCount().pipe(
+      catchError(() => of(0)),
+      finalize(() => checkLoading())
+    ).subscribe(val => this.activeMembers.set(val));
+
+    this.dashboardService.getTotalRevenue().pipe(
+      catchError(() => of(0)),
+      finalize(() => checkLoading())
+    ).subscribe(val => this.totalRevenue.set(val));
+
+    this.dashboardService.getTodayRevenue().pipe(
+      catchError(() => of(0)),
+      finalize(() => checkLoading())
+    ).subscribe(val => this.todayRevenue.set(val));
   }
 
   navigateTo(path: string): void {
