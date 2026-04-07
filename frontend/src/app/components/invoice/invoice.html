@@ -40,27 +40,30 @@
 
   <div class="invoice-sheet" *ngIf="!loading() && !error() && invoiceData()">
     
-    <!-- Professional Header -->
+    <!-- Corporate Header -->
     <div class="header">
-      <div class="header-left">
+      <div class="header-left-column">
         <h1 class="gym-brand">STAG FITNESS</h1>
         <div class="business-details">
           <p class="studio-name">LIFESTYLE & FITNESS STUDIO</p>
           <p class="address">
             #68-E, Sri Saravanabahava Tower, 2nd Floor,<br>
-            Sathymain Road, Sivanandhapuram, Saravanapatti - 641035
+            Sathymain Road, Sivanandhapuram,<br>
+            Saravanapatti, Coimbatore - 641035
           </p>
-          <p class="contact">
-            Mobile: 7598164812 & 8428143133<br>
-            Mail: stagfitness2702@gmail.com<br>
-            <strong>GST: 33CLMPA7280H2Z2</strong>
-          </p>
+          <p class="contact">Mob: 7598164812, 8428143133</p>
+          <p class="contact">Mail: stagfitness2702@gmail.com</p>
+          <p class="gst">GSTIN: 33CLMPA7280H2Z2</p>
         </div>
       </div>
-      <div class="header-right">
-        <div class="meta-row"><span class="m-label">Invoice No:</span> <span class="m-val">#{{ invoiceData().receiptNo }}</span></div>
-        <div class="meta-row"><span class="m-label">Date:</span> <span class="m-val">{{ invoiceData().date }}</span></div>
-        <div class="meta-row"><span class="m-label">Payment Mode:</span> <span class="m-val">{{ invoiceData().paymentMode }}</span></div>
+
+      <div class="header-right-column">
+        <div class="invoice-label">INVOICE</div>
+        <div class="invoice-meta-vertical">
+          <div class="meta-item"><span class="m-label">Invoice No:</span> <span class="m-val">#{{ invoiceData().receiptNo }}</span></div>
+          <div class="meta-item"><span class="m-label">Date:</span> <span class="m-val">{{ invoiceData().date }}</span></div>
+          <div class="meta-item"><span class="m-label">Payment Mode:</span> <span class="m-val">{{ invoiceData().paymentMode }}</span></div>
+        </div>
       </div>
     </div>
 
