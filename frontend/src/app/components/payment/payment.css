@@ -1,16 +1,14 @@
 .container {
-  padding: 24px 40px;
+  padding: 0;
   max-width: 100%;
   margin: 0;
-  background-color: #f8fafc;
-  min-height: 100vh;
 }
 
 .table-header-section {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
+  align-items: flex-end;
+  margin-bottom: 30px;
 }
 
 .title-with-back {
@@ -19,71 +17,31 @@
   gap: 16px;
 }
 
-.btn-back {
+.btn-back-modern {
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-medium);
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  color: #64748b;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  color: var(--secondary-grey);
 }
 
-.btn-back:hover {
-  background: #f8fafc;
-  border-color: #cbd5e0;
-  color: #1e293b;
-  transform: translateX(-2px);
-}
-
-.back-icon {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.header-left h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a202c;
-}
-
-.subtitle {
-  margin: 4px 0 0 0;
-  color: #718096;
-  font-size: 14px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
+.btn-back-modern:hover {
+  border-color: var(--primary-grey);
+  color: var(--text-main);
+  transform: translateX(-4px);
 }
 
 @media screen and (max-width: 768px) {
-  .container {
-    padding: 15px;
-  }
-
   .table-header-section {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-
-  .header-left h1 {
-    font-size: 1.5rem;
-  }
-
-  .header-right {
-    width: 100%;
-  }
-
-  :host ::ng-deep .app-button {
-    width: 100%;
-  }
 }
+

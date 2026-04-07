@@ -1,40 +1,39 @@
 <div class="stag-table-container">
-  @if (enableBulkActions || globalSearchChange.observed) {
-    <div class="stag-table-header">
-      <div class="left-header">
-        @if (enableBulkActions && selectedItems().length > 0) {
-          <div class="bulk-actions">
-            <span class="selected-count">{{ selectedItems().length }} selected</span>
-            <div class="action-chips">
-              @for (action of bulkActions; track action.label) {
-                <button 
-                  class="btn-bulk" 
-                  [ngClass]="'btn-' + (action.variant || 'primary')"
-                  (click)="action.action(selectedItems())"
-                >
-                  {{ action.label }}
-                </button>
-              }
-            </div>
-          </div>
-        }
+  @if (globalSearchChange.observed) {
+    <div class="table-search-bar">
+      <div class="search-box">
+        <span class="search-icon">
+          <svg viewBox="0 0 24 24" class="svg-icon">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input 
+          type="text" 
+          [ngModel]="searchTerm()" 
+          (ngModelChange)="onGlobalSearch($event)" 
+          placeholder="Search entries..."
+          class="search-input"
+        >
       </div>
-      
-      <div class="right-header">
-        @if (globalSearchChange.observed) {
-          <div class="table-search">
-            <div class="search-box">
-              <span class="search-icon">🔍</span>
-              <input 
-                type="text" 
-                [ngModel]="searchTerm()" 
-                (ngModelChange)="onGlobalSearch($event)" 
-                placeholder="Search entries..."
-                class="search-input"
-              >
-            </div>
-          </div>
-        }
+    </div>
+  }
+
+  @if (enableBulkActions && selectedItems().length > 0) {
+    <div class="stag-table-header">
+      <div class="bulk-actions">
+        <span class="selected-count">{{ selectedItems().length }} selected</span>
+        <div class="action-chips">
+          @for (action of bulkActions; track action.label) {
+            <button 
+              class="btn-bulk" 
+              [ngClass]="'btn-' + (action.variant || 'primary')"
+              (click)="action.action(selectedItems())"
+            >
+              {{ action.label }}
+            </button>
+          }
+        </div>
       </div>
     </div>
   }
@@ -105,7 +104,12 @@
               <td class="actions-cell" (click)="$event.stopPropagation()">
                 <div class="action-group">
                   @if (showView) {
-                    <button class="action-icon view" (click)="view.emit(row)" title="View">👁️</button>
+                    <button class="action-icon view" (click)="view.emit(row)" title="View">
+                      <svg viewBox="0 0 24 24" class="svg-icon">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
                   }
                   @if (showRenew && (row.renewLabel || row.renewal)) {
                     <button 
@@ -116,11 +120,29 @@
                     </button>
                   }
                   @if (showPrint) {
-                    <button class="action-icon print" (click)="print.emit(row)" title="Print">🖨️</button>
+                    <button class="action-icon print" (click)="print.emit(row)" title="Print">
+                      <svg viewBox="0 0 24 24" class="svg-icon">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                      </svg>
+                    </button>
                   }
                   @if (showActions) {
-                    <button class="action-icon edit" (click)="edit.emit(row)" title="Edit">✏️</button>
-                    <button class="action-icon delete" (click)="delete.emit(row)" title="Delete">🗑️</button>
+                    <button class="action-icon edit" (click)="edit.emit(row)" title="Edit">
+                      <svg viewBox="0 0 24 24" class="svg-icon">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                    <button class="action-icon delete" (click)="delete.emit(row)" title="Delete">
+                      <svg viewBox="0 0 24 24" class="svg-icon">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
                   }
                 </div>
               </td>
@@ -132,7 +154,11 @@
           <tr>
             <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showPrint || showView ? 1 : 0)" class="empty-cell">
               <div class="empty-state">
-                <span class="empty-icon">📭</span>
+                <div class="empty-icon-container">
+                  <svg viewBox="0 0 24 24" class="empty-svg">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
                 <p>{{ emptyMessage }}</p>
               </div>
             </td>

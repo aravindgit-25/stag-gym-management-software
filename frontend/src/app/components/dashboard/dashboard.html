@@ -1,71 +1,114 @@
 <div class="dashboard-container">
   <!-- Quick Management Boxes -->
   <div class="quick-nav-section">
-    <div class="nav-card" (click)="navigateTo('/members')">
-      <div class="nav-icon">👥</div>
+    <div class="nav-card standard-card" (click)="navigateTo('/members')">
+      <div class="symbol-marker"></div>
       <div class="nav-label">Members</div>
+      <div class="nav-arrow">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
     </div>
-    <div class="nav-card" (click)="navigateTo('/plans')">
-      <div class="nav-icon">📋</div>
+    <div class="nav-card standard-card" (click)="navigateTo('/plans')">
+      <div class="symbol-marker"></div>
       <div class="nav-label">Plans</div>
+      <div class="nav-arrow">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
     </div>
-    <div class="nav-card" (click)="navigateTo('/subscriptions')">
-      <div class="nav-icon">💳</div>
+    <div class="nav-card standard-card" (click)="navigateTo('/subscriptions')">
+      <div class="symbol-marker"></div>
       <div class="nav-label">Subscriptions</div>
+      <div class="nav-arrow">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
     </div>
-    <div class="nav-card" (click)="navigateTo('/payments')">
-      <div class="nav-icon">💰</div>
+    <div class="nav-card standard-card" (click)="navigateTo('/payments')">
+      <div class="symbol-marker"></div>
       <div class="nav-label">Payments</div>
+      <div class="nav-arrow">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
     </div>
   </div>
 
-  <div class="dashboard-header mt-32">
-    <h1>Business Overview</h1>
-    <button class="refresh-btn" (click)="loadStats()" [disabled]="loading()">Refresh Stats</button>
+  <div class="table-header-section mt-60">
+    <div class="header-left">
+      <h1 class="section-title">Overview</h1>
+    </div>
+    <div class="header-right">
+      <button class="refresh-btn-standard" (click)="loadStats()" [disabled]="loading()">
+        <span class="refresh-icon" [class.spinning]="loading()">
+          <svg viewBox="0 0 24 24">
+            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </span> Refresh
+      </button>
+    </div>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-label">Total Members</div>
-      <div class="stat-value">{{ totalMembers() }}</div>
-      <div class="stat-footer">All time registered</div>
+  <div class="stats-grid mt-20">
+    <div class="stat-card-standard standard-card">
+      <div class="stat-content">
+        <div class="stat-label">Total Members</div>
+        <div class="stat-value">{{ totalMembers() }}</div>
+        <div class="stat-trend">Lifetime Records</div>
+      </div>
     </div>
 
-    <div class="stat-card active">
-      <div class="stat-label">Active Members</div>
-      <div class="stat-value">{{ activeMembers() }}</div>
-      <div class="stat-footer">Current active plans</div>
+    <div class="stat-card-standard standard-card highlight-red">
+      <div class="stat-content">
+        <div class="stat-label">Active Members</div>
+        <div class="stat-value">{{ activeMembers() }}</div>
+        <div class="stat-trend positive">Current Subscriptions</div>
+      </div>
     </div>
 
-    <div class="stat-card revenue">
-      <div class="stat-label">Total Revenue</div>
-      <div class="stat-value">₹{{ totalRevenue() | number:'1.0-0' }}</div>
-      <div class="stat-footer">Gross collection</div>
+    <div class="stat-card-standard standard-card">
+      <div class="stat-content">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value">₹{{ totalRevenue() | number:'1.0-0' }}</div>
+        <div class="stat-trend">Cumulative Earnings</div>
+      </div>
     </div>
 
-    <div class="stat-card today">
-      <div class="stat-label">Today's Revenue</div>
-      <div class="stat-value">₹{{ todayRevenue() | number:'1.0-0' }}</div>
-      <div class="stat-footer">Collected today</div>
+    <div class="stat-card-standard standard-card highlight-grey">
+      <div class="stat-content">
+        <div class="stat-label">Today's Collection</div>
+        <div class="stat-value">₹{{ todayRevenue() | number:'1.0-0' }}</div>
+        <div class="stat-trend positive">Recorded Today</div>
+      </div>
     </div>
   </div>
 
   <!-- Growth Graph Section -->
-  <div class="growth-section mt-32">
-    <div class="section-header">
-      <h2>Business Growth Analytics</h2>
-      <p class="subtitle">Member registration growth over last 6 months</p>
+  <div class="growth-section standard-card mt-40">
+    <div class="section-header-standard">
+      <div class="header-left">
+        <h2>Growth Trend</h2>
+        <p class="subtitle">Member registration performance (6 Months)</p>
+      </div>
+      <div class="header-right">
+        <span class="legend-item"><span class="dot-symbol"></span> Registrations</span>
+      </div>
     </div>
     
-    <div class="graph-container">
+    <div class="graph-container-standard">
       <div class="graph-bars">
         <div class="bar-wrapper" *ngFor="let item of growthData()">
-          <div class="bar-value">{{ item.value }}</div>
-          <div class="bar" [style.height.%]="(item.value / 150) * 100"></div>
+          <div class="bar-value-standard">{{ item.value }}</div>
+          <div class="bar-standard" [style.height.%]="(item.value / 150) * 100"></div>
           <div class="bar-label">{{ item.month }}</div>
         </div>
       </div>
-      <div class="graph-grid-lines">
+      <div class="graph-grid-lines-standard">
         <div class="grid-line"><span>150</span></div>
         <div class="grid-line"><span>100</span></div>
         <div class="grid-line"><span>50</span></div>
@@ -74,3 +117,5 @@
     </div>
   </div>
 </div>
+
+
