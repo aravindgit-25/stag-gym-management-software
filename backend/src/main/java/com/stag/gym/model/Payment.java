@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "payments")
@@ -36,11 +36,11 @@ public class Payment extends BaseEntity {
     private Double balanceAmount;
 
     @Column(name = "balance_due_date")
-    private LocalDateTime balanceDueDate;
+    private LocalDate balanceDueDate;
 
     @Column(name = "payment_date", nullable = false)
     @NotNull(message = "Payment date is required")
-    private LocalDateTime paymentDate;
+    private LocalDate paymentDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_mode", nullable = false)

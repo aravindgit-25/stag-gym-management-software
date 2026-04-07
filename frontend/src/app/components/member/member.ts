@@ -339,19 +339,13 @@ export class MemberComponent implements OnInit {
 
       this.subscriptionService.addSubscription(subPayload).subscribe({
         next: (newSub) => {
-          // Robust mapping for both camelCase and snake_case backends
           const payData = {
             subscriptionId: newSub.id!,
-            subscription_id: newSub.id!,
             amount: Number(rawForm.amount),
             paidAmount: Number(rawForm.paidAmount),
-            paid_amount: Number(rawForm.paidAmount),
             balanceAmount: Number(rawForm.balanceAmount),
-            balance_amount: Number(rawForm.balanceAmount),
             balanceDueDate: rawForm.balanceDueDate || null,
-            balance_due_date: rawForm.balanceDueDate || null,
-            paymentMode: rawForm.paymentMode,
-            payment_mode: rawForm.paymentMode
+            paymentMode: rawForm.paymentMode
           };
 
           this.paymentService.addPayment(payData as any).subscribe({

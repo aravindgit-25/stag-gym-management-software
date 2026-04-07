@@ -35,7 +35,7 @@ public class PaymentService {
                 .balanceAmount(requestDTO.getBalanceAmount())
                 .balanceDueDate(requestDTO.getBalanceDueDate())
                 .paymentMode(requestDTO.getPaymentMode())
-                .paymentDate(requestDTO.getPaymentDate() != null ? requestDTO.getPaymentDate() : LocalDateTime.now())
+                .paymentDate(requestDTO.getPaymentDate() != null ? requestDTO.getPaymentDate() : LocalDate.now())
                 .build();
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -60,8 +60,8 @@ public class PaymentService {
     }
 
     public Double sumToday() {
-        LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        Double todayTotal = paymentRepository.sumTodayRevenue(startOfDay);
+        LocalDate today = LocalDate.now();
+        Double todayTotal = paymentRepository.sumTodayRevenue(today);
         return todayTotal != null ? todayTotal : 0.0;
     }
 
