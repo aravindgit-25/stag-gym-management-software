@@ -252,19 +252,6 @@ export class SubscriptionComponent implements OnInit {
     });
   }
 
-  reInvoice(): void {
-    const details = this.selectedSubDetails();
-    if (details && details.payment) {
-      this.router.navigate(['/invoice', details.payment.id || (details.payment as any).id]);
-    } else {
-      this.notif.show('No payment found for this subscription.', 'error');
-    }
-  }
-
-  addInvoice(): void {
-    this.reInvoice();
-  }
-
   openCompletePaymentPopup(details: any): void {
     this.selectedMemberName.set(details.member?.name || 'Member');
     

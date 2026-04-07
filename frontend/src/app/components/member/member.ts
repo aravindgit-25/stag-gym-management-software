@@ -75,6 +75,34 @@ export class MemberComponent implements OnInit {
     { field: 'branchId', header: 'Branch', width: '80px' }
   ]);
 
+  onViewInvoice(member: any): void {
+    const mId = member.id;
+    // Find the latest subscription for this member
+    const memberSubs = this.subscriptions()
+      .filter(s => Number(s.memberId || (s as any).member_id) === mId)
+      .sort((a, b) => {
+        const dateA = a.startDate || (a as any).start_date;
+        const dateB = b.startDate || (b as any).start_date;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+
+    if (memberSubs.length > 0) {
+      const latestSubId = memberSubs[0].id;
+      // Find payment for this subscription
+      this.paymentService.getPayments().subscribe(payments => {
+        const payment = payments.find(p => Number(p.subscriptionId || (p as any).subscription_id) === Number(latestSubId));
+        if (payment) {
+          const url = window.location.origin + window.location.pathname + `#/invoice/${payment.id}`;
+          window.open(url, '_blank');
+        } else {
+          this.notif.show('No payment record found for the latest subscription.', 'error');
+        }
+      });
+    } else {
+      this.notif.show('No subscription found for this member.', 'error');
+    }
+  }
+
   private getFieldDisplayName(fieldName: string): string {
     const fieldNames: { [key: string]: string } = {
       registrationId: 'Reg ID',
@@ -311,32 +339,40 @@ export class MemberComponent implements OnInit {
 
       this.subscriptionService.addSubscription(subPayload).subscribe({
         next: (newSub) => {
-          // Robust mapping for both camelCase and snake_case backends
           const payData = {
             subscriptionId: newSub.id!,
-            subscription_id: newSub.id!,
             amount: Number(rawForm.amount),
             paidAmount: Number(rawForm.paidAmount),
-            paid_amount: Number(rawForm.paidAmount),
             balanceAmount: Number(rawForm.balanceAmount),
-            balance_amount: Number(rawForm.balanceAmount),
             balanceDueDate: rawForm.balanceDueDate || null,
-            balance_due_date: rawForm.balanceDueDate || null,
-            paymentMode: rawForm.paymentMode,
-            payment_mode: rawForm.paymentMode
+            paymentMode: rawForm.paymentMode
           };
 
           this.paymentService.addPayment(payData as any).subscribe({
             next: (newPay) => {
-              this.notif.show('Payment successful! Opening invoice...', 'success');
+              this.notif.show('Payment successful!', 'success');
               this.showModal.set(false);
               this.loadData();
               
-              // Use direct hash URL to ensure it works on live refresh/redirect
               const invoiceId = newPay.id;
+              const memberName = this.memberForm.get('name')?.value;
+              let phone = this.memberForm.get('phone')?.value;
+              const amount = rawForm.paidAmount;
+
+              // Ensure phone has country code (default to 91 for India if not present)
+              if (phone && phone.length === 10) phone = '91' + phone;
+
+              const invoiceUrl = window.location.origin + window.location.pathname + `#/invoice/${invoiceId}`;
+              
+              // Construct WhatsApp Message
+              const message = `Hello *${memberName}*,\n\nThank you for choosing *STAG FITNESS*! \n\nYour payment of *₹${amount}* has been received successfully. \n\nYou can view and download your invoice here:\n${invoiceUrl}\n\nHave a great workout!`;
+              const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+
+              // Open Invoice and WhatsApp
               setTimeout(() => {
-                const url = window.location.origin + window.location.pathname + `#/invoice/${invoiceId}`;
-                window.open(url, '_blank');
+                window.open(invoiceUrl, '_blank');
+                // Small delay for WhatsApp to avoid popup blockers
+                setTimeout(() => window.open(waUrl, '_blank'), 500);
               }, 100);
             },
             error: (err) => {
