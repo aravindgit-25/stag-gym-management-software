@@ -44,12 +44,13 @@
       <h1 class="section-title">Overview</h1>
     </div>
     <div class="header-right">
-      <button class="refresh-btn-standard" (click)="loadStats()" [disabled]="loading()">
-        <span class="refresh-icon" [class.spinning]="loading()">
+      <button class="refresh-link-btn" (click)="loadStats()" [disabled]="loading()">
+        <span class="refresh-icon-small" [class.spinning]="loading()">
           <svg viewBox="0 0 24 24">
             <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
           </svg>
-        </span> Refresh
+        </span>
+        Refresh Data
       </button>
     </div>
   </div>
@@ -92,27 +93,49 @@
   <div class="growth-section standard-card mt-40">
     <div class="section-header-standard">
       <div class="header-left">
-        <h2>Growth Trend</h2>
-        <p class="subtitle">Member registration performance (6 Months)</p>
+        <h2>Growth Analysis</h2>
+        <p class="subtitle">Member registration performance (Last 6 Months)</p>
       </div>
       <div class="header-right">
-        <span class="legend-item"><span class="dot-symbol"></span> Registrations</span>
+        <div class="graph-legend">
+          <span class="legend-item"><span class="line-symbol"></span> Registrations</span>
+        </div>
       </div>
     </div>
     
-    <div class="graph-container-standard">
-      <div class="graph-bars">
-        <div class="bar-wrapper" *ngFor="let item of growthData()">
-          <div class="bar-value-standard">{{ item.value }}</div>
-          <div class="bar-standard" [style.height.%]="(item.value / 150) * 100"></div>
-          <div class="bar-label">{{ item.month }}</div>
-        </div>
+    <div class="graph-container-modern">
+      <div class="svg-container">
+        <svg viewBox="0 0 1000 200" preserveAspectRatio="none" class="main-svg">
+          <!-- Grid Lines (horizontal) -->
+          <line x1="0" y1="0" x2="1000" y2="0" class="svg-grid-line" />
+          <line x1="0" y1="66" x2="1000" y2="66" class="svg-grid-line" />
+          <line x1="0" y1="133" x2="1000" y2="133" class="svg-grid-line" />
+          <line x1="0" y1="200" x2="1000" y2="200" class="svg-grid-line" />
+
+          <!-- Shaded Area -->
+          <polyline [attr.points]="svgAreaPoints()" class="graph-area" />
+          
+          <!-- The Line -->
+          <polyline [attr.points]="svgPoints()" class="graph-line" />
+          
+          <!-- Data Points (dots) -->
+          <circle *ngFor="let point of svgPoints().split(' '); let i = index" 
+            [attr.cx]="point.split(',')[0]" 
+            [attr.cy]="point.split(',')[1]" 
+            r="6" class="graph-point" />
+        </svg>
       </div>
-      <div class="graph-grid-lines-standard">
-        <div class="grid-line"><span>150</span></div>
-        <div class="grid-line"><span>100</span></div>
-        <div class="grid-line"><span>50</span></div>
-        <div class="grid-line"><span>0</span></div>
+      
+      <!-- Axis Labels -->
+      <div class="graph-y-axis">
+        <span>150</span>
+        <span>100</span>
+        <span>50</span>
+        <span>0</span>
+      </div>
+      
+      <div class="graph-x-axis">
+        <span *ngFor="let item of growthData()">{{ item.month }}</span>
       </div>
     </div>
   </div>

@@ -17,7 +17,6 @@ import {
   AppStagTableComponent,
   StagTableColumn,
 } from '../../shared/components/stag-table/stag-table';
-import { StagCheckboxComponent } from '../../shared/components/stag-checkbox/stag-checkbox';
 import {
   StagDropdownComponent,
   DropdownItem,
@@ -32,7 +31,6 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
     ReactiveFormsModule,
     AppButtonComponent,
     AppStagTableComponent,
-    StagCheckboxComponent,
     StagDropdownComponent,
     AppModalComponent,
   ],

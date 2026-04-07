@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
@@ -87,17 +87,46 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
 
         <header class="app-header">
           <div class="header-left">
-            <div class="header-brand">
-              <span class="brand-text">STAG FITNESS</span>
-            </div>
+            <!-- Redundant brand text removed from header as requested -->
           </div>
-          <div class="user-profile">
-            <div class="user-info">
-              <span class="user-name">{{ authService.currentUser()?.name }}</span>
-              <span class="user-role">{{ authService.currentUser()?.role | titlecase }}</span>
+          
+          <div class="user-profile-wrapper">
+            <div class="user-profile" (click)="toggleUserDropdown($event)">
+              <div class="user-avatar">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"></path>
+                  <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                </svg>
+              </div>
             </div>
-            <div class="user-avatar">
-              {{ authService.currentUser()?.name?.charAt(0) }}
+
+            <div class="user-dropdown" *ngIf="userDropdownOpen()" (click)="$event.stopPropagation()">
+              <div class="dropdown-header">
+                <span class="user-name">{{ authService.currentUser()?.name }}</span>
+                <span class="user-email">{{ authService.currentUser()?.email }}</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-items">
+                <button class="dropdown-item">
+                  <span class="item-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </span>
+                  Change Password
+                </button>
+                <button class="dropdown-item exit-btn" (click)="authService.logout(); closeUserDropdown()">
+                  <span class="item-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                  </span>
+                  Exit
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -136,22 +165,117 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
       color: var(--accent-red);
     }
     
-    .header-brand { display: flex; flex-direction: column; margin-left: 10px; }
-    .brand-text { font-weight: 700; color: var(--text-main); font-size: 14px; letter-spacing: 0.5px; }
-    .brand-status { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .user-profile-wrapper {
+      position: relative;
+    }
+    
+    .user-profile {
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    .user-profile:hover {
+      background: var(--bg-hover);
+    }
     
     .user-avatar {
       width: 40px;
       height: 40px;
       background: var(--bg-hover);
       border: 1px solid var(--border-medium);
-      border-radius: 10px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
+      color: var(--secondary-grey);
+      transition: all 0.2s;
+    }
+    
+    .user-profile:hover .user-avatar {
+      color: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 120%;
+      right: 0;
+      width: 240px;
+      background: white;
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      z-index: 1001;
+      overflow: hidden;
+      animation: dropdownIn 0.2s ease-out;
+    }
+
+    @keyframes dropdownIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-header {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .user-name {
+      font-weight: 700;
       color: var(--text-main);
-      font-size: 16px;
+      font-size: 15px;
+    }
+
+    .user-email {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border-light);
+    }
+
+    .dropdown-items {
+      padding: 8px;
+    }
+
+    .dropdown-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border: none;
+      background: none;
+      border-radius: 8px;
+      color: var(--secondary-grey);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .dropdown-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    .exit-btn:hover {
+      color: var(--accent-red);
+      background: var(--accent-red-light);
+    }
+
+    .item-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: inherit;
     }
     
     .sidebar-footer { margin-top: auto; padding: 20px 15px; border-top: 1px solid var(--border-light); }
@@ -164,6 +288,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
 export class AppComponent {
   isInvoicePage = false;
   sidebarOpen = signal<boolean>(false);
+  userDropdownOpen = signal<boolean>(false);
   private router = inject(Router);
 
   constructor(public authService: AuthService) {
@@ -174,11 +299,25 @@ export class AppComponent {
     });
   }
 
+  @HostListener('window:click')
+  onWindowClick() {
+    this.userDropdownOpen.set(false);
+  }
+
   toggleSidebar() {
     this.sidebarOpen.update(val => !val);
   }
 
   closeSidebar() {
     this.sidebarOpen.set(false);
+  }
+
+  toggleUserDropdown(event: Event) {
+    event.stopPropagation();
+    this.userDropdownOpen.update(val => !val);
+  }
+
+  closeUserDropdown() {
+    this.userDropdownOpen.set(false);
   }
 }
