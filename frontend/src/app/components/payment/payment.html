@@ -1,13 +1,16 @@
-<div class="container">
+<div class="container full-width">
   <div class="table-header-section">
     <div class="header-left">
       <div class="title-with-back">
-        <button class="btn-back" (click)="goBack()" title="Go Back">
-          <span class="back-icon">←</span>
+        <button class="btn-back-modern" (click)="goBack()" title="Go Back">
+          <span class="back-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </span>
         </button>
-        <div>
-          <h1>Payments</h1>
-          <p class="subtitle">History of all transactions and receipts</p>
+        <div class="header-info">
+          <h1 class="section-title">Payments</h1>
         </div>
       </div>
     </div>
@@ -16,12 +19,15 @@
     </div>
   </div>
   
-  <app-stag-table 
-    [columns]="columns" 
-    [data]="displayList()"
-    [showPrint]="true"
-    (print)="onPrintReceipt($event)"
-    [loading]="loading()"
-    [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
-  ></app-stag-table>
+  <div class="table-container-card">
+    <app-stag-table 
+      [columns]="columns" 
+      [data]="displayList()"
+      [showPrint]="true"
+      (print)="onPrintReceipt($event)"
+      [loading]="loading()"
+      [emptyMessage]="loading() ? 'Loading payments...' : 'No payments found.'"
+    ></app-stag-table>
+  </div>
 </div>
+

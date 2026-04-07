@@ -1,8 +1,11 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <div class="logo">STAG FITNESS</div>
-      <p>Enter your credentials to access the portal</p>
+      <div class="logo">
+        <div class="mark"></div>
+        STAG <strong>FITNESS</strong>
+      </div>
+      <p>Management Portal Access</p>
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
@@ -22,7 +25,7 @@
 
       <div class="form-actions">
         <app-button 
-          label="Login to System" 
+          label="Authenticate" 
           type="submit" 
           [disabled]="loginForm.invalid"
           variant="primary"
@@ -32,8 +35,9 @@
     </form>
 
     <div class="login-footer">
-      <p>Demo Admin: admin@stag.com / admin123</p>
-      <p>Demo Staff: staff@stag.com / staff123</p>
+      <p>&copy; 2026 STAG FITNESS Systems</p>
+      <p>Secure Enterprise Session</p>
     </div>
   </div>
 </div>
+
