@@ -179,6 +179,71 @@ body {
   align-items: center;
 }
 
+/* Menu Toggle Button */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-main);
+  margin-right: 15px;
+}
+
+.menu-toggle svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+}
+
+@media screen and (max-width: 768px) {
+  .app-wrapper {
+    grid-template-areas:
+      "header"
+      "main";
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .app-header {
+    padding: 0 20px;
+  }
+
+  .app-main {
+    padding: 20px;
+  }
+
+  .menu-toggle {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+}
+
 .btn-back-modern {
   background: white;
   border: 1px solid var(--border-medium);
