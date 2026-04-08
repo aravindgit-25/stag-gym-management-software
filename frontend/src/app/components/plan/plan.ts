@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
@@ -12,13 +12,14 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
 @Component({
   selector: 'app-plan',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppButtonComponent, AppStagTableComponent, AppModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AppButtonComponent, AppStagTableComponent, AppModalComponent],
   templateUrl: './plan.html',
   styleUrl: './plan.css'
 })
 export class PlanComponent implements OnInit {
   planForm: FormGroup;
   plans = signal<Plan[]>([]);
+  searchTerm = signal<string>('');
   loading = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
@@ -30,10 +31,17 @@ export class PlanComponent implements OnInit {
 
   columns: StagTableColumn[] = [
     { field: 'id', header: 'ID', width: '80px' },
-    { field: 'name', header: 'Plan Name' },
+    { field: 'name', header: 'Plan Name', minWidth: '250px' },
     { field: 'duration', header: 'Duration (Days)', width: '150px' },
     { field: 'price', header: 'Price (₹)', width: '150px' }
   ];
+
+  filteredPlans = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    return this.plans().filter(p => 
+      p.name.toLowerCase().includes(term)
+    );
+  });
 
   constructor(private fb: FormBuilder, private planService: PlanService) {
     this.planForm = this.fb.group({

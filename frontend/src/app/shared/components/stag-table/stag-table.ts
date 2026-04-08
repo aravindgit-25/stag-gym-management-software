@@ -6,6 +6,7 @@ export interface StagTableColumn {
   field: string;
   header: string;
   width?: string;
+  minWidth?: string;
   type?: 'text' | 'date' | 'number' | 'boolean' | 'template' | 'action-button';
   sortable?: boolean;
 }
@@ -36,6 +37,7 @@ export class AppStagTableComponent {
   @Input() bulkActions: BulkAction[] = [];
   @Input() editingRowIndex: number | null = null;
   @Input() emptyMessage: string = 'No records found.';
+  @Input() filterTerm: string = ''; // Receives search term from parent
 
   @Input() showActions: boolean = false;
   @Input() showRenew: boolean = false;
@@ -46,7 +48,6 @@ export class AppStagTableComponent {
   @Output() cellChange = new EventEmitter<any>();
   @Output() rowEdit = new EventEmitter<any>();
   @Output() rowClick = new EventEmitter<any>();
-  @Output() globalSearchChange = new EventEmitter<string>();
 
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
@@ -55,7 +56,54 @@ export class AppStagTableComponent {
   @Output() view = new EventEmitter<any>();
 
   selectedItems = signal<any[]>([]);
-  searchTerm = signal<string>('');
+  
+  // Resize logic
+  private resizingColumn: StagTableColumn | null = null;
+  private startX: number = 0;
+  private startWidth: number = 0;
+  private animationFrameId: number | null = null;
+
+  onResizeStart(event: MouseEvent, column: StagTableColumn) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizingColumn = column;
+    this.startX = event.pageX;
+    
+    const th = (event.target as HTMLElement).closest('th');
+    this.startWidth = th?.getBoundingClientRect().width || 0;
+
+    document.addEventListener('mousemove', this.onResizing);
+    document.addEventListener('mouseup', this.onResizeEnd);
+    document.body.style.cursor = 'col-resize';
+    document.body.classList.add('is-resizing');
+  }
+
+  private onResizing = (event: MouseEvent) => {
+    if (!this.resizingColumn) return;
+
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+
+    this.animationFrameId = requestAnimationFrame(() => {
+      if (this.resizingColumn) {
+        const deltaX = event.pageX - this.startX;
+        const newWidth = Math.max(60, this.startWidth + deltaX);
+        this.resizingColumn.width = `${newWidth}px`;
+      }
+    });
+  };
+
+  private onResizeEnd = () => {
+    this.resizingColumn = null;
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    document.removeEventListener('mousemove', this.onResizing);
+    document.removeEventListener('mouseup', this.onResizeEnd);
+    document.body.style.cursor = 'default';
+    document.body.classList.remove('is-resizing');
+  };
 
   onRowClickInternal(row: any) {
     this.rowClick.emit(row);
@@ -85,10 +133,5 @@ export class AppStagTableComponent {
 
   isSelected(item: any): boolean {
     return this.selectedItems().includes(item);
-  }
-
-  onGlobalSearch(value: string) {
-    this.searchTerm.set(value);
-    this.globalSearchChange.emit(value);
   }
 }

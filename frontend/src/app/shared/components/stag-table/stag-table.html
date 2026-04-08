@@ -1,43 +1,3 @@
-<div class="stag-table-container">
-  @if (globalSearchChange.observed) {
-    <div class="table-search-bar">
-      <div class="search-box">
-        <span class="search-icon">
-          <svg viewBox="0 0 24 24" class="svg-icon">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-        </span>
-        <input 
-          type="text" 
-          [ngModel]="searchTerm()" 
-          (ngModelChange)="onGlobalSearch($event)" 
-          placeholder="Search entries..."
-          class="search-input"
-        >
-      </div>
-    </div>
-  }
-
-  @if (enableBulkActions && selectedItems().length > 0) {
-    <div class="stag-table-header">
-      <div class="bulk-actions">
-        <span class="selected-count">{{ selectedItems().length }} selected</span>
-        <div class="action-chips">
-          @for (action of bulkActions; track action.label) {
-            <button 
-              class="btn-bulk" 
-              [ngClass]="'btn-' + (action.variant || 'primary')"
-              (click)="action.action(selectedItems())"
-            >
-              {{ action.label }}
-            </button>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
   <div class="table-scroll-area" [style.max-height]="height">
     <table class="stag-table">
       <thead>
@@ -48,8 +8,11 @@
             </th>
           }
           @for (col of columns; track col.field) {
-            <th [style.width]="col.width">
-              {{ col.header }}
+            <th [style.width]="col.width" [style.minWidth]="col.minWidth">
+              <div class="header-cell-content">
+                {{ col.header }}
+                <div class="column-resizer" (mousedown)="onResizeStart($event, col)"></div>
+              </div>
             </th>
           }
           @if (showActions || showRenew || showPrint || showView) {
@@ -167,4 +130,4 @@
       </tbody>
     </table>
   </div>
-</div>
+

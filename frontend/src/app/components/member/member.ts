@@ -87,10 +87,10 @@ export class MemberComponent implements OnInit {
   private planService = inject(PlanService);
 
   tableColumns = computed<StagTableColumn[]>(() => [
-    { field: 'registrationId', header: this.getFieldDisplayName('registrationId'), width: '120px' },
-    { field: 'name', header: this.getFieldDisplayName('name') },
-    { field: 'phone', header: this.getFieldDisplayName('phone'), width: '150px' },
-    { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '150px' },
+    { field: 'registrationId', header: this.getFieldDisplayName('registrationId'), width: '100px' },
+    { field: 'name', header: this.getFieldDisplayName('name'), minWidth: '200px' },
+    { field: 'phone', header: this.getFieldDisplayName('phone'), width: '130px' },
+    { field: 'expiryDisplay', header: this.getFieldDisplayName('expiryDisplay'), width: '130px' },
     { field: 'branchId', header: 'Branch', width: '80px' },
   ]);
 

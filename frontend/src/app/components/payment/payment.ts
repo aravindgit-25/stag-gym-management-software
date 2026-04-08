@@ -9,24 +9,37 @@ import { ConfirmService } from '../../services/confirm.service';
 import { Member } from '../../models/member.model';
 import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
-import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
+import {
+  AppStagTableComponent,
+  StagTableColumn,
+} from '../../shared/components/stag-table/stag-table';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-payment',
   standalone: true,
-  imports: [CommonModule, AppButtonComponent, AppStagTableComponent],
+  imports: [CommonModule, FormsModule, AppButtonComponent, AppStagTableComponent],
   templateUrl: './payment.html',
-  styleUrl: './payment.css'
+  styleUrl: './payment.css',
 })
 export class PaymentComponent implements OnInit {
-  subscriptions = signal<any[]>([]); 
+  subscriptions = signal<any[]>([]);
   members = signal<Member[]>([]);
   paymentsList = signal<Payment[]>([]);
+  searchTerm = signal<string>('');
   loading = signal<boolean>(false);
 
   private notif = inject(NotificationService);
   private router = inject(Router);
   private location = inject(Location);
+
+  filteredPayments = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    return this.displayList().filter(
+      (p) =>
+        p.memberName.toLowerCase().includes(term) || p.paymentMode.toLowerCase().includes(term),
+    );
+  });
 
   // Join data to show Member Name instead of Subscription ID
   displayList = computed(() => {
@@ -34,35 +47,37 @@ export class PaymentComponent implements OnInit {
     const mems = this.members();
     const payments = this.paymentsList();
 
-    return payments.map(pay => {
-      // Handle both camelCase and snake_case for subscriptionId
-      const subId = pay.subscriptionId || (pay as any).subscription_id;
-      const sub = subs.find(s => Number(s.id) === Number(subId));
-      
-      // Handle both camelCase and snake_case for memberId
-      const memberId = sub?.memberId || (sub as any)?.member_id;
-      const member = mems.find(m => Number(m.id) === Number(memberId));
-      
-      return {
-        ...pay,
-        memberName: member?.name || (subId ? `Sub ${subId}` : 'N/A'),
-        paymentDate: pay.paymentDate ? pay.paymentDate.split('T')[0] : 'N/A'
-      };
-    }).sort((a, b) => Number(b.id) - Number(a.id)); // Show latest payments first
+    return payments
+      .map((pay) => {
+        // Handle both camelCase and snake_case for subscriptionId
+        const subId = pay.subscriptionId || (pay as any).subscription_id;
+        const sub = subs.find((s) => Number(s.id) === Number(subId));
+
+        // Handle both camelCase and snake_case for memberId
+        const memberId = sub?.memberId || (sub as any)?.member_id;
+        const member = mems.find((m) => Number(m.id) === Number(memberId));
+
+        return {
+          ...pay,
+          memberName: member?.name || (subId ? `Sub ${subId}` : 'N/A'),
+          paymentDate: pay.paymentDate ? pay.paymentDate.split('T')[0] : 'N/A',
+        };
+      })
+      .sort((a, b) => Number(b.id) - Number(a.id)); // Show latest payments first
   });
 
   columns: StagTableColumn[] = [
-    { field: 'id', header: 'ID' },
+    { field: 'id', header: 'ID', width: '80px' },
     { field: 'memberName', header: 'Member Name' },
-    { field: 'amount', header: 'Amount (₹)' },
-    { field: 'paymentMode', header: 'Mode' },
-    { field: 'paymentDate', header: 'Date' }
+    { field: 'amount', header: 'Amount (₹)', width: '150px' },
+    { field: 'paymentMode', header: 'Mode', width: '150px' },
+    { field: 'paymentDate', header: 'Date', width: '150px' },
   ];
 
   constructor(
     private subscriptionService: SubscriptionService,
     private memberService: MemberService,
-    private paymentService: PaymentService
+    private paymentService: PaymentService,
   ) {}
 
   ngOnInit(): void {
@@ -73,11 +88,11 @@ export class PaymentComponent implements OnInit {
   loadInitialData(): void {
     this.subscriptionService.getSubscriptions().subscribe({
       next: (data) => this.subscriptions.set(data),
-      error: (err) => console.error('Error loading subscriptions', err)
+      error: (err) => console.error('Error loading subscriptions', err),
     });
     this.memberService.getMembers().subscribe({
       next: (data) => this.members.set(data),
-      error: (err) => console.error('Error loading members', err)
+      error: (err) => console.error('Error loading members', err),
     });
   }
 
@@ -91,7 +106,7 @@ export class PaymentComponent implements OnInit {
       error: (err) => {
         this.notif.show('Error loading payments', 'error');
         this.loading.set(false);
-      }
+      },
     });
   }
 
@@ -100,9 +115,7 @@ export class PaymentComponent implements OnInit {
   }
 
   onPrintReceipt(payment: any): void {
-    const url = this.router.serializeUrl(
-      this.router.createUrlTree(['/invoice', payment.id])
-    );
+    const url = this.router.serializeUrl(this.router.createUrlTree(['/invoice', payment.id]));
     window.open(url, '_blank');
   }
 }

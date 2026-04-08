@@ -1,6 +1,12 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
@@ -29,6 +35,7 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     AppButtonComponent,
     AppStagTableComponent,
     StagDropdownComponent,
@@ -40,6 +47,7 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
 export class SubscriptionComponent implements OnInit {
   renewalForm: FormGroup;
   selectedPlanIds = signal<number[]>([]);
+  searchTerm = signal<string>('');
 
   planDropdownItems = computed<DropdownItem[]>(() => {
     return this.plans().map((p) => ({
@@ -67,6 +75,16 @@ export class SubscriptionComponent implements OnInit {
   private location = inject(Location);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
+
+  filteredSubscriptions = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    return this.displayList().filter(
+      (s) =>
+        s.memberName.toLowerCase().includes(term) ||
+        s.planName.toLowerCase().includes(term) ||
+        s.status.toLowerCase().includes(term),
+    );
+  });
 
   displayList = computed(() => {
     const today = new Date();
@@ -169,11 +187,11 @@ export class SubscriptionComponent implements OnInit {
     { field: 'id', header: 'ID', width: '70px' },
     { field: 'memberName', header: 'Member Name' },
     { field: 'planName', header: 'Plans' },
-    { field: 'startDate', header: 'Start Date' },
-    { field: 'expiryDate', header: 'Expiry Date' },
-    { field: 'status', header: 'Status' },
+    { field: 'startDate', header: 'Start Date', width: '120px' },
+    { field: 'expiryDate', header: 'Expiry Date', width: '120px' },
+    { field: 'status', header: 'Status', width: '130px' },
     { field: 'paymentStatus', header: 'Payment', width: '100px' },
-    { field: 'renewal', header: 'Renewal', width: '120px', type: 'action-button' },
+    { field: 'renewal', header: 'Renewal', width: '140px', type: 'action-button' },
   ];
 
   constructor(
