@@ -14,65 +14,24 @@
   width: 100%;
 }
 
-.table-search-bar {
-  padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: var(--bg-main);
-  border: 1px solid var(--border-medium);
-  border-radius: 10px;
-  padding: 0 16px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  max-width: 400px;
-}
-
-.search-box:focus-within {
-  border-color: var(--secondary-grey);
-  background: white;
-  box-shadow: var(--shadow-subtle);
-  max-width: 100%;
-}
-
-.stag-table-header {
-  padding: 12px 24px;
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border-light);
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  font-size: 14px;
-  margin-right: 10px;
-  color: var(--text-muted);
-}
-
-.search-input {
-  border: none;
-  background: transparent;
-  padding: 10px 0;
-  font-size: 14px;
-  width: 100%;
-  outline: none;
-  color: var(--text-main);
-  font-weight: 500;
-}
-
 .table-scroll-area {
   overflow: auto;
   position: relative;
+  border-radius: 0 0 12px 12px;
+  background: white;
 }
 
 .stag-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
+  table-layout: auto;
+}
+
+/* Fixed layout during resizing prevents other columns from shifting wildly */
+:host-context(body.is-resizing) .stag-table {
+  table-layout: fixed;
 }
 
 .stag-table thead {
@@ -83,21 +42,44 @@
 }
 
 .stag-table th {
-  padding: 16px 24px;
+  padding: 0 24px;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--secondary-grey);
   letter-spacing: 0.06em;
   border-bottom: 2px solid var(--border-medium);
+  border-right: 1px solid var(--border-medium);
   white-space: nowrap;
-  height: 56px; /* Explicit height for consistency */
+  height: 56px;
   box-sizing: border-box;
+  position: relative;
+  background: var(--bg-subtle);
+  user-select: none;
 }
 
-.actions-col {
-  width: 120px;
-  text-align: right !important;
+.header-cell-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Resize Handle */
+.column-resizer {
+  position: absolute;
+  right: -1px;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 11;
+  transition: background 0.2s;
+}
+
+.column-resizer:hover {
+  background: var(--accent-red);
+  opacity: 0.3;
 }
 
 .stag-table td {
@@ -105,14 +87,30 @@
   font-size: 14px;
   color: var(--text-main);
   border-bottom: 1px solid var(--border-light);
-  transition: all 0.1s;
+  border-right: 1px solid var(--border-light);
+  transition: background 0.1s;
+  background: white;
+}
+
+/* Remove last vertical line if it's the actions column */
+.actions-col, .actions-cell {
+  border-right: none !important;
+  width: 140px;
+  min-width: 140px;
+  text-align: right !important;
+}
+
+.selection-col {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
 }
 
 .stag-table tr:hover td {
   background: var(--bg-hover);
 }
 
-/* Status markers - minimalist style */
+/* Status markers */
 .stag-table tr.expired td:first-child {
   border-left: 3px solid var(--accent-red);
 }
@@ -121,18 +119,13 @@
   border-left: 3px solid #f59e0b;
 }
 
-.actions-cell {
-  text-align: right;
-  padding-right: 24px !important;
-}
-
+/* Action Group */
 .action-group {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
 }
 
-/* Action Icons refinements */
 .action-icon {
   width: 36px;
   height: 36px;
@@ -166,7 +159,7 @@
 .action-icon.edit:hover { color: #059669; border-color: #059669; background: #ecfdf5; }
 .action-icon.delete:hover { color: var(--accent-red); border-color: var(--accent-red); background: var(--accent-red-light); }
 
-/* Empty state refined */
+/* Empty state */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -202,17 +195,3 @@
   font-weight: 600;
   margin: 0;
 }
-
-/* Search refinements */
-.search-icon .svg-icon {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2.5;
-}
-
-@media screen and (max-width: 768px) {
-  .stag-table-header { flex-direction: column; padding: 16px; gap: 16px; }
-  .search-box { width: 100% !important; }
-}
-
-

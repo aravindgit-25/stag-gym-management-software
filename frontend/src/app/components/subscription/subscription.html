@@ -15,6 +15,23 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="search-container mr-12">
+        <div class="search-box">
+          <span class="search-icon">
+            <svg viewBox="0 0 24 24" class="svg-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            [ngModel]="searchTerm()" 
+            (ngModelChange)="searchTerm.set($event)" 
+            placeholder="Search subscriptions..."
+            class="search-input"
+          >
+        </div>
+      </div>
       <app-button label="Refresh" variant="secondary" (onClick)="loadSubscriptions()"></app-button>
     </div>
   </div>
@@ -22,7 +39,7 @@
   <div class="table-container-card">
     <app-stag-table 
       [columns]="columns" 
-      [data]="displayList()"
+      [data]="filteredSubscriptions()"
       [showRenew]="true"
       [showView]="true"
       (renew)="openRenewPopup($event)"
