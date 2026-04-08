@@ -79,17 +79,25 @@
   background: var(--bg-subtle);
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 10;
 }
 
 .stag-table th {
-  padding: 14px 24px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 16px 24px;
+  font-size: 13px;
+  font-weight: 800;
   text-transform: uppercase;
   color: var(--secondary-grey);
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border-medium);
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid var(--border-medium);
+  white-space: nowrap;
+  height: 56px; /* Explicit height for consistency */
+  box-sizing: border-box;
+}
+
+.actions-col {
+  width: 120px;
+  text-align: right !important;
 }
 
 .stag-table td {

@@ -52,11 +52,11 @@ export class PaymentComponent implements OnInit {
   });
 
   columns: StagTableColumn[] = [
-    { field: 'id', header: 'ID' },
+    { field: 'id', header: 'ID', width: '80px' },
     { field: 'memberName', header: 'Member Name' },
-    { field: 'amount', header: 'Amount (₹)' },
-    { field: 'paymentMode', header: 'Mode' },
-    { field: 'paymentDate', header: 'Date' }
+    { field: 'amount', header: 'Amount (₹)', width: '150px' },
+    { field: 'paymentMode', header: 'Mode', width: '150px' },
+    { field: 'paymentDate', header: 'Date', width: '150px' }
   ];
 
   constructor(

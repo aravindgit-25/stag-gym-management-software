@@ -169,11 +169,11 @@ export class SubscriptionComponent implements OnInit {
     { field: 'id', header: 'ID', width: '70px' },
     { field: 'memberName', header: 'Member Name' },
     { field: 'planName', header: 'Plans' },
-    { field: 'startDate', header: 'Start Date' },
-    { field: 'expiryDate', header: 'Expiry Date' },
-    { field: 'status', header: 'Status' },
+    { field: 'startDate', header: 'Start Date', width: '120px' },
+    { field: 'expiryDate', header: 'Expiry Date', width: '120px' },
+    { field: 'status', header: 'Status', width: '130px' },
     { field: 'paymentStatus', header: 'Payment', width: '100px' },
-    { field: 'renewal', header: 'Renewal', width: '120px', type: 'action-button' },
+    { field: 'renewal', header: 'Renewal', width: '140px', type: 'action-button' },
   ];
 
   constructor(
