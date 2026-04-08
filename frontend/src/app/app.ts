@@ -311,7 +311,10 @@ export class AppComponent {
     this.userDropdownOpen.set(false);
   }
 
-  toggleSidebar() {
+  toggleSidebar(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
     this.sidebarOpen.update(val => !val);
   }
 
