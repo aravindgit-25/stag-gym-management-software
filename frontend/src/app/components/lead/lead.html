@@ -1,0 +1,167 @@
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back-modern" (click)="goBack()" title="Go Back">
+          <span class="back-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </span>
+        </button>
+        <div class="header-info">
+          <h1 class="section-title">Leads Management</h1>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="search-container mr-12">
+        <div class="search-box">
+          <span class="search-icon">
+            <svg viewBox="0 0 24 24" class="svg-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            [ngModel]="searchTerm()" 
+            (ngModelChange)="searchTerm.set($event)" 
+            placeholder="Search leads..."
+            class="search-input"
+          >
+        </div>
+      </div>
+      <app-button 
+        label="Refresh" 
+        variant="secondary" 
+        (onClick)="loadLeads()"
+        class="mr-12"
+      ></app-button>
+      <app-button 
+        label="Add Lead" 
+        variant="primary" 
+        (onClick)="openAddModal()"
+      ></app-button>
+    </div>
+  </div>
+
+  <div class="table-container-card">
+    <app-stag-table 
+      [columns]="tableColumns()" 
+      [data]="filteredLeads()"
+      [height]="'calc(100vh - 220px)'"
+      [showActions]="true"
+      [showFollowup]="true"
+      [showConvert]="true"
+      [loading]="loading()"
+      [emptyMessage]="loading() ? 'Loading leads...' : 'No leads found.'"
+      [filterTerm]="searchTerm()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      (followup)="onFollowUp($event)"
+      (convert)="onConvert($event)"
+    ></app-stag-table>
+  </div>
+
+  <!-- Add/Edit Lead Modal -->
+  <app-modal 
+    [isOpen]="showLeadModal()" 
+    [title]="isEditing() ? 'Edit Lead' : 'Add New Lead'"
+    (close)="closeLeadModal()"
+  >
+    <form [formGroup]="leadForm" (ngSubmit)="onSubmitLead()" class="lead-form">
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
+          <label>Full Name</label>
+          <input type="text" formControlName="name" placeholder="Enter full name">
+        </div>
+
+        <div class="form-group-modern">
+          <label>Phone Number</label>
+          <input type="text" formControlName="phone" placeholder="10-digit mobile number">
+        </div>
+
+        <div class="form-group-modern">
+          <label>Location</label>
+          <input type="text" formControlName="location" placeholder="Enter location">
+        </div>
+
+        <div class="form-group-modern">
+          <label>Goal</label>
+          <input type="text" formControlName="goal" placeholder="e.g. Fat Loss, Muscle Building">
+        </div>
+
+        <div class="form-group-modern">
+          <label>Status</label>
+          <select formControlName="status">
+            <option *ngFor="let status of leadStatuses" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+
+        <div class="form-group-modern">
+          <label>Plan to Join Date</label>
+          <input type="date" formControlName="planToJoinDate">
+        </div>
+
+        <div class="form-group-modern">
+          <label>Next Follow-up Date</label>
+          <input type="date" formControlName="nextFollowUpDate">
+        </div>
+      </div>
+
+      <div class="form-group-modern mt-16">
+        <label>Notes / History</label>
+        <textarea formControlName="notes" rows="4" placeholder="Enter notes or follow-up history"></textarea>
+      </div>
+
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeLeadModal()"></app-button>
+        <app-button 
+          [label]="isEditing() ? 'Update Lead' : 'Save Lead'" 
+          type="submit" 
+          [disabled]="leadForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+  </app-modal>
+
+  <!-- Follow-up Modal -->
+  <app-modal 
+    [isOpen]="showFollowUpModal()" 
+    [title]="'Add Follow-up for ' + selectedLeadForFollowUp()?.name"
+    (close)="closeFollowUpModal()"
+  >
+    <form [formGroup]="followUpForm" (ngSubmit)="onSubmitFollowUp()" class="lead-form">
+      <div class="form-grid-modern single-col">
+        <div class="form-group-modern">
+          <label>Status</label>
+          <select formControlName="status">
+            <option *ngFor="let status of leadStatuses" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+
+        <div class="form-group-modern">
+          <label>Next Follow-up Date</label>
+          <input type="date" formControlName="nextFollowUpDate">
+        </div>
+
+        <div class="form-group-modern">
+          <label>Follow-up Notes</label>
+          <textarea formControlName="notes" rows="4" placeholder="Enter follow-up comments..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeFollowUpModal()"></app-button>
+        <app-button 
+          label="Save Follow-up" 
+          type="submit" 
+          [disabled]="followUpForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+  </app-modal>
+</div>

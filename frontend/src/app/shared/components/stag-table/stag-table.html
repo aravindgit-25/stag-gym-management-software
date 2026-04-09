@@ -15,7 +15,7 @@
               </div>
             </th>
           }
-          @if (showActions || showRenew || showPrint || showView) {
+          @if (showActions || showRenew || showFollowup || showConvert || showTerminate || showPrint || showView) {
             <th class="actions-col">Actions</th>
           }
         </tr>
@@ -23,7 +23,7 @@
       <tbody>
         @if (loading) {
           <tr>
-            <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showPrint || showView ? 1 : 0)" class="loading-cell">
+            <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showFollowup || showConvert || showTerminate || showPrint || showView ? 1 : 0)" class="loading-cell">
               @for (i of [1,2,3]; track i) {
                 <div class="shimmer-row"></div>
               }
@@ -63,7 +63,7 @@
               </td>
             }
 
-            @if (showActions || showRenew || showPrint || showView) {
+            @if (showActions || showRenew || showFollowup || showConvert || showTerminate || showPrint || showView) {
               <td class="actions-cell" (click)="$event.stopPropagation()">
                 <div class="action-group">
                   @if (showView) {
@@ -80,6 +80,30 @@
                       (click)="renew.emit(row)"
                     >
                       {{ row.renewLabel || row.renewal }}
+                    </button>
+                  }
+                  @if (showFollowup) {
+                    <button 
+                      class="btn-status-action btn-yellow"
+                      (click)="followup.emit(row)"
+                    >
+                      Follow-up
+                    </button>
+                  }
+                  @if (showConvert && row.status !== 'JOINED') {
+                    <button 
+                      class="btn-status-action btn-green"
+                      (click)="convert.emit(row)"
+                    >
+                      Convert
+                    </button>
+                  }
+                  @if (showTerminate && row.status !== 'TERMINATED') {
+                    <button 
+                      class="btn-status-action btn-red"
+                      (click)="terminate.emit(row)"
+                    >
+                      Terminate
                     </button>
                   }
                   @if (showPrint) {
@@ -115,7 +139,7 @@
 
         @if (!loading && data.length === 0) {
           <tr>
-            <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showPrint || showView ? 1 : 0)" class="empty-cell">
+            <td [attr.colspan]="columns.length + (showSelectionColumn ? 1 : 0) + (showActions || showRenew || showFollowup || showConvert || showTerminate || showPrint || showView ? 1 : 0)" class="empty-cell">
               <div class="empty-state">
                 <div class="empty-icon-container">
                   <svg viewBox="0 0 24 24" class="empty-svg">

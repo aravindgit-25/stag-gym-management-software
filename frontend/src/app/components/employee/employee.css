@@ -1,0 +1,85 @@
+.container.full-width {
+  padding: 0;
+}
+
+.employee-form {
+  padding: 10px 0;
+}
+
+.form-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent-red);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.form-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.form-group-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group-modern label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--secondary-grey);
+  text-transform: uppercase;
+}
+
+.form-group-modern input, 
+.form-group-modern select {
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-main);
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.mt-24 { margin-top: 24px; }
+
+.tab-group {
+  display: flex;
+  background: var(--bg-hover);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border-medium);
+}
+
+.tab-group button {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-group button.active {
+  background: white;
+  color: var(--accent-red);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+@media screen and (max-width: 1024px) {
+  .form-grid-modern { grid-template-columns: 1fr 1fr; }
+}
+
+@media screen and (max-width: 768px) {
+  .form-grid-modern { grid-template-columns: 1fr; }
+}

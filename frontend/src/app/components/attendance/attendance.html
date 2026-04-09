@@ -1,0 +1,83 @@
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back-modern" (click)="goBack()" title="Go Back">
+          <span class="back-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </span>
+        </button>
+        <div class="header-info">
+          <h1 class="section-title">Daily Attendance</h1>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="date-picker-container mr-12">
+        <input type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event); loadAttendance()" class="date-input">
+      </div>
+      <app-button 
+        label="Refresh" 
+        variant="secondary" 
+        (onClick)="loadAttendance()"
+      ></app-button>
+    </div>
+  </div>
+
+  <div class="attendance-layout">
+    <div class="attendance-main">
+      <div class="table-container-card">
+        <div class="card-header-simple">Who's In Today</div>
+        <app-stag-table 
+          [columns]="tableColumns" 
+          [data]="attendanceData()"
+          [height]="'calc(100vh - 280px)'"
+          [loading]="loading()"
+          [emptyMessage]="'No attendance marked for this date.'"
+        ></app-stag-table>
+      </div>
+    </div>
+
+    <div class="attendance-sidebar">
+      <div class="sidebar-card">
+        <div class="card-header-simple">Pending Mark</div>
+        <div class="pending-list">
+          <div *ngIf="missingAttendance().length === 0" class="empty-pending">All staff accounted for!</div>
+          <div *ngFor="let emp of missingAttendance()" class="pending-item">
+            <div class="emp-info">
+              <span class="emp-name">{{ emp.name }}</span>
+              <span class="emp-role">{{ emp.role }}</span>
+            </div>
+            <button class="btn-mark-mini" (click)="openMarkModal(emp)">Mark</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Attendance Modal -->
+  <app-modal 
+    [isOpen]="showMarkModal()" 
+    [title]="'Mark Attendance: ' + selectedEmployee()?.name"
+    (close)="showMarkModal.set(false)"
+  >
+    <form [formGroup]="markForm" (ngSubmit)="onMark()" class="mark-form">
+      <div class="form-group-modern">
+        <label>Status</label>
+        <select formControlName="status">
+          <option *ngFor="let s of attendanceStatuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="form-group-modern mt-16">
+        <label>Notes</label>
+        <textarea formControlName="notes" rows="3" placeholder="Any comments..."></textarea>
+      </div>
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="showMarkModal.set(false)"></app-button>
+        <app-button label="Submit" type="submit" variant="primary"></app-button>
+      </div>
+    </form>
+  </app-modal>
+</div>
