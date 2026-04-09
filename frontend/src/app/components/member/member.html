@@ -15,6 +15,28 @@
       </div>
     </div>
     <div class="header-right">
+      <!-- Advanced Filters -->
+      <div class="filter-controls mr-12">
+        <select class="filter-select" [ngModel]="selectedPlanFilter()" (ngModelChange)="selectedPlanFilter.set($event)">
+          <option [ngValue]="null">All Plans</option>
+          <option *ngFor="let plan of availablePlansForFilter()" [ngValue]="plan.id">{{ plan.name }}</option>
+        </select>
+
+        <select class="filter-select" [ngModel]="selectedMonthFilter()" (ngModelChange)="selectedMonthFilter.set($event)">
+          <option [ngValue]="null">All Months</option>
+          <option *ngFor="let month of availableMonthsForFilter()" [value]="month">{{ month }}</option>
+        </select>
+
+        <button 
+          *ngIf="selectedPlanFilter() || selectedMonthFilter() || selectedFilter() !== 'all'" 
+          class="btn-reset-filters" 
+          (click)="selectedPlanFilter.set(null); selectedMonthFilter.set(null); selectedFilter.set('all')"
+          title="Clear all filters"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
       <div class="search-container mr-12">
         <div class="search-box">
           <span class="search-icon">

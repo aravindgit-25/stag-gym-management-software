@@ -7,7 +7,7 @@ import {
   Validators,
   FormsModule,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { LeadService } from '../../services/lead.service';
 import { NotificationService } from '../../services/notification.service';
@@ -40,6 +40,7 @@ export class LeadComponent implements OnInit {
 
   leads = signal<Lead[]>([]);
   searchTerm = signal<string>('');
+  selectedFilter = signal<string>('all');
   loading = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
@@ -50,6 +51,7 @@ export class LeadComponent implements OnInit {
   leadStatuses = Object.values(LeadStatus);
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private location = inject(Location);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
@@ -85,6 +87,16 @@ export class LeadComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLeads();
+    this.route.queryParams.subscribe(params => {
+      if (params['filter']) {
+        this.selectedFilter.set(params['filter']);
+      }
+      if (params['action'] === 'add') {
+        this.openAddModal();
+        // Clear param so it doesn't re-open on refresh or navigation
+        this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge' });
+      }
+    });
   }
 
   loadLeads(): void {
@@ -207,12 +219,25 @@ export class LeadComponent implements OnInit {
 
   filteredLeads = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.leads().filter(
-      (l) => l.name.toLowerCase().includes(term) || l.phone.includes(term)
-    ).map(l => ({
-      ...l,
-      rowClass: this.getStatusClass(l.status)
-    }));
+    const activeFilter = this.selectedFilter();
+
+    return this.leads()
+      .filter((l) => {
+        const matchesSearch = l.name.toLowerCase().includes(term) || l.phone.includes(term);
+        if (!matchesSearch) return false;
+
+        if (activeFilter === 'followup' && l.status !== LeadStatus.FOLLOW_UP) return false;
+        if (activeFilter === 'rejected') {
+          const isRejected = [LeadStatus.NOT_INTERESTED, LeadStatus.JOINED_ELSEWHERE].includes(l.status);
+          if (!isRejected) return false;
+        }
+
+        return true;
+      })
+      .map(l => ({
+        ...l,
+        rowClass: this.getStatusClass(l.status)
+      }));
   });
 
   getStatusClass(status: LeadStatus): string {

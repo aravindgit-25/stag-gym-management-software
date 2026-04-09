@@ -1,5 +1,6 @@
 package com.stag.gym.controller;
 
+import com.stag.gym.dto.AttendanceResponseDTO;
 import com.stag.gym.model.Attendance;
 import com.stag.gym.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
@@ -18,26 +19,28 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @PostMapping("/{employeeId}/mark")
-    public ResponseEntity<Attendance> markAttendance(
-            @PathVariable Long employeeId,
+    public ResponseEntity<AttendanceResponseDTO> markAttendance(
+            @PathVariable String employeeId,
             @RequestParam Attendance.AttendanceStatus status,
             @RequestParam(required = false) String notes) {
-        return ResponseEntity.ok(attendanceService.markAttendance(employeeId, status, notes));
+        Attendance attendance = attendanceService.markAttendance(employeeId, status, notes);
+        return ResponseEntity.ok(attendanceService.mapToResponseDTO(attendance));
     }
 
     @PostMapping("/{employeeId}/checkout")
-    public ResponseEntity<Attendance> markCheckOut(@PathVariable Long employeeId) {
-        return ResponseEntity.ok(attendanceService.markCheckOut(employeeId));
+    public ResponseEntity<AttendanceResponseDTO> markCheckOut(@PathVariable String employeeId) {
+        Attendance attendance = attendanceService.markCheckOut(employeeId);
+        return ResponseEntity.ok(attendanceService.mapToResponseDTO(attendance));
     }
 
     @GetMapping("/daily")
-    public ResponseEntity<List<Attendance>> getDailyAttendance(
+    public ResponseEntity<List<AttendanceResponseDTO>> getDailyAttendance(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(attendanceService.getDailyAttendance(date));
     }
 
     @GetMapping("/employee/{employeeId}")
-    public ResponseEntity<List<Attendance>> getEmployeeAttendance(
+    public ResponseEntity<List<AttendanceResponseDTO>> getEmployeeAttendance(
             @PathVariable Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {

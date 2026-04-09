@@ -7,7 +7,8 @@ import {
   Validators,
   FormsModule,
 } from '@angular/forms';
-import { finalize } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { AttendanceService } from '../../services/attendance.service';
 import { EmployeeService } from '../../services/employee.service';
 import { NotificationService } from '../../services/notification.service';
@@ -74,19 +75,25 @@ export class AttendanceComponent implements OnInit {
 
   loadData() {
     this.loading.set(true);
-    this.employeeService.getActiveEmployees().subscribe(employees => {
-      this.activeEmployees.set(employees);
-      this.loadAttendance();
-    });
+    forkJoin({
+      employees: this.employeeService.getActiveEmployees().pipe(catchError(() => of([]))),
+      attendance: this.attendanceService.getDailyAttendance(this.selectedDate()).pipe(catchError(() => of([])))
+    }).pipe(finalize(() => this.loading.set(false)))
+      .subscribe((res) => {
+        this.activeEmployees.set(res.employees);
+        this.attendanceRecords.set(res.attendance);
+      });
   }
 
   loadAttendance() {
     this.loading.set(true);
     this.attendanceService.getDailyAttendance(this.selectedDate())
-      .pipe(finalize(() => this.loading.set(false)))
-      .subscribe({
-        next: (data) => this.attendanceRecords.set(data),
-        error: () => this.notif.show('Failed to load attendance.', 'error')
+      .pipe(
+        catchError(() => of([])),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe((data) => {
+        this.attendanceRecords.set(data);
       });
   }
 
@@ -111,7 +118,8 @@ export class AttendanceComponent implements OnInit {
   }
 
   onCheckout(attendance: Attendance) {
-    this.attendanceService.checkoutAttendance(attendance.employee.employeeId!).subscribe({
+    if (!attendance.employee?.employeeId) return;
+    this.attendanceService.checkoutAttendance(attendance.employee.employeeId).subscribe({
       next: () => {
         this.notif.show('Checkout successful.', 'success');
         this.loadAttendance();
@@ -127,15 +135,17 @@ export class AttendanceComponent implements OnInit {
   attendanceData = computed(() => {
     return this.attendanceRecords().map(r => ({
       ...r,
-      employeeName: r.employee.name,
-      role: r.employee.role,
+      employeeName: r.employee?.name || 'Unknown',
+      role: r.employee?.role || 'N/A',
       rowClass: this.getStatusClass(r.status)
     }));
   });
 
   // Helper to see who hasn't marked attendance yet
   missingAttendance = computed(() => {
-    const presentIds = this.attendanceRecords().map(r => r.employee.id);
+    const presentIds = this.attendanceRecords()
+      .filter(r => r.employee)
+      .map(r => r.employee.id);
     return this.activeEmployees().filter(e => !presentIds.includes(e.id));
   });
 

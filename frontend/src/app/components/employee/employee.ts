@@ -7,7 +7,7 @@ import {
   Validators,
   FormsModule,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { EmployeeService } from '../../services/employee.service';
 import { NotificationService } from '../../services/notification.service';
@@ -51,6 +51,8 @@ export class EmployeeComponent implements OnInit {
   private confirm = inject(ConfirmService);
   private employeeService = inject(EmployeeService);
   private location = inject(Location);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   tableColumns = computed<StagTableColumn[]>(() => [
     { field: 'employeeId', header: 'Emp ID', width: '120px' },
@@ -88,6 +90,18 @@ export class EmployeeComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEmployees();
+    this.route.queryParams.subscribe(params => {
+      if (params['filter']) {
+        const filter = params['filter'];
+        if (filter === 'active') this.setTab('active');
+        else if (filter === 'archive') this.setTab('archive');
+        else this.setTab('active'); // Default
+      }
+      if (params['action'] === 'add') {
+        this.openAddModal();
+        this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge' });
+      }
+    });
   }
 
   loadEmployees(): void {
@@ -150,27 +164,31 @@ export class EmployeeComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.employeeForm.valid) {
-      const data = this.employeeForm.value;
-      if (this.isEditing()) {
-        this.employeeService.updateEmployee(this.editingId()!, data).subscribe({
-          next: () => {
-            this.notif.show('Employee updated successfully!', 'success');
-            this.loadEmployees();
-            this.showModal.set(false);
-          },
-          error: (err) => this.notif.show('Error updating employee.', 'error'),
-        });
-      } else {
-        this.employeeService.addEmployee(data).subscribe({
-          next: () => {
-            this.notif.show('Employee added successfully!', 'success');
-            this.loadEmployees();
-            this.showModal.set(false);
-          },
-          error: (err) => this.notif.show('Error adding employee.', 'error'),
-        });
-      }
+    if (this.employeeForm.invalid) {
+      this.employeeForm.markAllAsTouched();
+      this.notif.show('Please fill all mandatory fields correctly (*)', 'error');
+      return;
+    }
+
+    const data = this.employeeForm.value;
+    if (this.isEditing()) {
+      this.employeeService.updateEmployee(this.editingId()!, data).subscribe({
+        next: () => {
+          this.notif.show('Employee updated successfully!', 'success');
+          this.loadEmployees();
+          this.showModal.set(false);
+        },
+        error: (err) => this.notif.show('Error updating employee.', 'error'),
+      });
+    } else {
+      this.employeeService.addEmployee(data).subscribe({
+        next: () => {
+          this.notif.show('Employee added successfully!', 'success');
+          this.loadEmployees();
+          this.showModal.set(false);
+        },
+        error: (err) => this.notif.show('Error adding employee.', 'error'),
+      });
     }
   }
 
@@ -184,8 +202,26 @@ export class EmployeeComponent implements OnInit {
 
   filteredEmployees = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.employees().filter(
-      (e) => e.name.toLowerCase().includes(term) || e.employeeId?.toLowerCase().includes(term) || e.phone.includes(term)
-    );
+    return this.employees()
+      .filter((e) => {
+        const name = (e.name || '').toLowerCase();
+        const empId = (e.employeeId || '').toLowerCase();
+        const phone = (e.phone || '').toLowerCase();
+        return name.includes(term) || empId.includes(term) || phone.includes(term);
+      })
+      .map(e => ({
+        ...e,
+        rowClass: this.getStatusClass(e.status)
+      }));
   });
+
+  getStatusClass(status: EmployeeStatus): string {
+    switch (status) {
+      case EmployeeStatus.ACTIVE: return 'status-active';
+      case EmployeeStatus.INACTIVE: return 'status-inactive';
+      case EmployeeStatus.TERMINATED: return 'status-terminated';
+      case EmployeeStatus.ON_LEAVE: return 'status-leave';
+      default: return '';
+    }
+  }
 }

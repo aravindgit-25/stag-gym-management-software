@@ -7,7 +7,7 @@ import {
   Validators,
   FormsModule,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { MemberService } from '../../services/member.service';
@@ -53,12 +53,34 @@ export class MemberComponent implements OnInit {
   members = signal<Member[]>([]);
   selectedPlanIds = signal<number[]>([]);
 
+  // Filtering State
+  selectedFilter = signal<string>('all');
+  selectedPlanFilter = signal<number | null>(null);
+  selectedMonthFilter = signal<string | null>(null);
+
   planDropdownItems = computed<DropdownItem[]>(() => {
     return this.plans().map((p) => ({
       id: p.id,
       label: p.name,
       subLabel: `₹${p.price} - ${p.duration} days`,
     }));
+  });
+
+  // Dynamic filter options based on data
+  availablePlansForFilter = computed(() => {
+    return this.plans().map(p => ({ id: p.id!, name: p.name }));
+  });
+
+  availableMonthsForFilter = computed(() => {
+    const months = new Set<string>();
+    this.members().forEach(m => {
+      if (m.expiryDate) {
+        const date = new Date(m.expiryDate);
+        const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        months.add(label);
+      }
+    });
+    return Array.from(months).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   });
 
   subscriptions = signal<Subscription[]>([]);
@@ -70,6 +92,7 @@ export class MemberComponent implements OnInit {
   editingRowIndex = signal<number | null>(null);
   tableHeight = signal<string>('calc(100vh - 220px)');
   showModal = signal<boolean>(false);
+  isCompletingSetup = signal<boolean>(false);
 
   // Wizard State
   currentStep = signal<number>(1);
@@ -78,6 +101,7 @@ export class MemberComponent implements OnInit {
   paymentModes = ['Cash', 'UPI', 'Card', 'Bank Transfer'];
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private location = inject(Location);
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
@@ -178,6 +202,16 @@ export class MemberComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+    // Watch for query params
+    this.route.queryParams.subscribe(params => {
+      if (params['filter']) {
+        this.selectedFilter.set(params['filter']);
+      }
+      if (params['action'] === 'add') {
+        this.openAddModal();
+        this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge' });
+      }
+    });
   }
 
   togglePlan(plan: Plan) {
@@ -273,22 +307,46 @@ export class MemberComponent implements OnInit {
 
   onEdit(member: Member): void {
     this.isEditing.set(true);
+    this.isCompletingSetup.set(false);
     this.editingId.set(member.id || null);
     this.currentStep.set(1);
     this.memberForm.patchValue({
       registrationId: member.registrationId,
       name: member.name,
       phone: member.phone,
-      gender: member.gender,
-      branchId: member.branchId,
+      gender: member.gender || 'Male',
+      branchId: member.branchId || 1,
     });
     this.showModal.set(true);
   }
 
   onRenew(member: any): void {
-    this.isEditing.set(false);
-    this.createdMemberId.set(member.id);
-    this.currentStep.set(2);
+    const mId = member.id;
+    const memberSubs = this.subscriptions().filter(
+      (s) => Number(s.memberId || (s as any).member_id) === mId,
+    );
+
+    if (memberSubs.length === 0) {
+      // "Complete Setup" case: Start at Step 1 to fill in missing gender/branch
+      this.isEditing.set(true);
+      this.isCompletingSetup.set(true);
+      this.editingId.set(member.id);
+      this.currentStep.set(1);
+      this.memberForm.patchValue({
+        registrationId: member.registrationId || (member as any).registration_id,
+        name: member.name,
+        phone: member.phone,
+        gender: member.gender || 'Male',
+        branchId: member.branchId || 1,
+      });
+    } else {
+      // Regular Renew: Skip Step 1
+      this.isEditing.set(false);
+      this.isCompletingSetup.set(false);
+      this.createdMemberId.set(member.id);
+      this.currentStep.set(2);
+    }
+
     this.selectedPlanIds.set([]);
     this.subscriptionForm.reset({
       startDate: new Date().toISOString().split('T')[0],
@@ -314,6 +372,7 @@ export class MemberComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.currentStep.set(1);
+    this.isCompletingSetup.set(false);
   }
 
   async onSubmitMember() {
@@ -325,7 +384,12 @@ export class MemberComponent implements OnInit {
           next: () => {
             this.notif.show('Member updated successfully!', 'success');
             this.loadData();
-            this.showModal.set(false);
+            if (this.isCompletingSetup()) {
+              this.createdMemberId.set(this.editingId());
+              this.currentStep.set(2);
+            } else {
+              this.showModal.set(false);
+            }
           },
           error: (err) => this.notif.show('Error updating member.', 'error'),
         });
@@ -440,8 +504,11 @@ export class MemberComponent implements OnInit {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const activeFilter = this.selectedFilter();
+    const planFilter = this.selectedPlanFilter();
+    const monthFilter = this.selectedMonthFilter();
+
     return this.members()
-      .filter((m) => m.name.toLowerCase().includes(term) || m.phone.includes(term))
       .map((m) => {
         const mId = m.id;
         const regId = m.registrationId || (m as any).registration_id || 'N/A';
@@ -460,10 +527,14 @@ export class MemberComponent implements OnInit {
         let rowClass = '';
         let canRenew = true;
         let priority = 3;
+        let isExpired = true;
+        let isExpiringSoon = false;
+        let lastPlanId: number | null = null;
 
         if (memberSubs.length > 0) {
           const lastSub = memberSubs[0];
           const sPlanId = lastSub.planId || (lastSub as any).plan_id;
+          lastPlanId = typeof sPlanId === 'string' ? Number(sPlanId.split(',')[0]) : Number(sPlanId);
 
           const planIds =
             typeof sPlanId === 'string' ? sPlanId.split(',').map(Number) : [Number(sPlanId)];
@@ -488,21 +559,26 @@ export class MemberComponent implements OnInit {
               rowClass = 'expired';
               canRenew = true;
               priority = 1;
-            } else if (diffDays <= 3) {
-              rowClass = 'near-expiry';
-              canRenew = true;
-              priority = 2;
+              isExpired = true;
             } else {
-              canRenew = false;
-              priority = 3;
+              isExpired = false;
+              if (diffDays <= 3) {
+                rowClass = 'near-expiry';
+                canRenew = true;
+                priority = 2;
+                isExpiringSoon = true;
+              } else {
+                canRenew = false;
+                priority = 3;
+              }
             }
           }
         } else {
           priority = 0;
-          canRenew = true; // Set to true to show the "Complete Setup" button
+          canRenew = true;
+          isExpired = true;
         }
 
-        // Logical Fix: Show "Complete Setup" if no subscriptions exist
         const renewLabel = memberSubs.length === 0 ? 'Complete Setup' : canRenew ? 'Renew' : '';
         const renewLabelClass =
           memberSubs.length === 0
@@ -522,7 +598,33 @@ export class MemberComponent implements OnInit {
           priority,
           renewLabel,
           renewLabelClass,
+          isExpired,
+          isExpiringSoon,
+          lastPlanId
         };
+      })
+      .filter(m => {
+        // Search Term Filter
+        const matchesSearch = m.name.toLowerCase().includes(term) || m.phone.includes(term);
+        if (!matchesSearch) return false;
+
+        // Sidebar Status Filter
+        if (activeFilter === 'active' && m.isExpired) return false;
+        if (activeFilter === 'inactive' && !m.isExpired) return false;
+        if (activeFilter === 'expiring' && !m.isExpiringSoon) return false;
+
+        // Dropdown Plan Filter
+        if (planFilter && m.lastPlanId !== planFilter) return false;
+
+        // Dropdown Month Filter
+        if (monthFilter) {
+          if (!m.expiryDisplay || m.expiryDisplay === 'No Plan') return false;
+          const expDate = new Date(m.expiryDisplay);
+          const label = expDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+          if (label !== monthFilter) return false;
+        }
+
+        return true;
       })
       .sort((a, b) => {
         if (a.priority === b.priority) {
