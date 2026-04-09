@@ -70,6 +70,7 @@ export class MemberComponent implements OnInit {
   editingRowIndex = signal<number | null>(null);
   tableHeight = signal<string>('calc(100vh - 220px)');
   showModal = signal<boolean>(false);
+  isCompletingSetup = signal<boolean>(false);
 
   // Wizard State
   currentStep = signal<number>(1);
@@ -273,22 +274,46 @@ export class MemberComponent implements OnInit {
 
   onEdit(member: Member): void {
     this.isEditing.set(true);
+    this.isCompletingSetup.set(false);
     this.editingId.set(member.id || null);
     this.currentStep.set(1);
     this.memberForm.patchValue({
       registrationId: member.registrationId,
       name: member.name,
       phone: member.phone,
-      gender: member.gender,
-      branchId: member.branchId,
+      gender: member.gender || 'Male',
+      branchId: member.branchId || 1,
     });
     this.showModal.set(true);
   }
 
   onRenew(member: any): void {
-    this.isEditing.set(false);
-    this.createdMemberId.set(member.id);
-    this.currentStep.set(2);
+    const mId = member.id;
+    const memberSubs = this.subscriptions().filter(
+      (s) => Number(s.memberId || (s as any).member_id) === mId,
+    );
+
+    if (memberSubs.length === 0) {
+      // "Complete Setup" case: Start at Step 1 to fill in missing gender/branch
+      this.isEditing.set(true);
+      this.isCompletingSetup.set(true);
+      this.editingId.set(member.id);
+      this.currentStep.set(1);
+      this.memberForm.patchValue({
+        registrationId: member.registrationId || (member as any).registration_id,
+        name: member.name,
+        phone: member.phone,
+        gender: member.gender || 'Male',
+        branchId: member.branchId || 1,
+      });
+    } else {
+      // Regular Renew: Skip Step 1
+      this.isEditing.set(false);
+      this.isCompletingSetup.set(false);
+      this.createdMemberId.set(member.id);
+      this.currentStep.set(2);
+    }
+
     this.selectedPlanIds.set([]);
     this.subscriptionForm.reset({
       startDate: new Date().toISOString().split('T')[0],
@@ -314,6 +339,7 @@ export class MemberComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.currentStep.set(1);
+    this.isCompletingSetup.set(false);
   }
 
   async onSubmitMember() {
@@ -325,7 +351,12 @@ export class MemberComponent implements OnInit {
           next: () => {
             this.notif.show('Member updated successfully!', 'success');
             this.loadData();
-            this.showModal.set(false);
+            if (this.isCompletingSetup()) {
+              this.createdMemberId.set(this.editingId());
+              this.currentStep.set(2);
+            } else {
+              this.showModal.set(false);
+            }
           },
           error: (err) => this.notif.show('Error updating member.', 'error'),
         });
