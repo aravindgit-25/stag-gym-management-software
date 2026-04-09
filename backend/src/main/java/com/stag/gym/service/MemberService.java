@@ -137,4 +137,8 @@ public class MemberService {
     public long getActiveCount() {
         return memberRepository.countByStatus(Member.Status.ACTIVE);
     }
+
+    public boolean existsByPhone(String phone) {
+        return memberRepository.findByPhone(phone).isPresent();
+    }
 }

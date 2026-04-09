@@ -1,0 +1,185 @@
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back-modern" (click)="goBack()" title="Go Back">
+          <span class="back-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </span>
+        </button>
+        <div class="header-info">
+          <h1 class="section-title">Employee Management</h1>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="tab-group mr-12">
+        <button [class.active]="activeTab() === 'active'" (click)="setTab('active')">Current Staff</button>
+        <button [class.active]="activeTab() === 'archive'" (click)="setTab('archive')">Archive</button>
+      </div>
+      <div class="search-container mr-12">
+        <div class="search-box">
+          <span class="search-icon">
+            <svg viewBox="0 0 24 24" class="svg-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            [ngModel]="searchTerm()" 
+            (ngModelChange)="searchTerm.set($event)" 
+            placeholder="Search staff..."
+            class="search-input"
+          >
+        </div>
+      </div>
+      <app-button 
+        label="Add Employee" 
+        variant="primary" 
+        (onClick)="openAddModal()"
+      ></app-button>
+    </div>
+  </div>
+
+  <div class="table-container-card">
+    <app-stag-table 
+      [columns]="tableColumns()" 
+      [data]="filteredEmployees()"
+      [height]="'calc(100vh - 220px)'"
+      [showActions]="activeTab() === 'active'"
+      [showTerminate]="activeTab() === 'active'"
+      [loading]="loading()"
+      [emptyMessage]="loading() ? 'Loading staff...' : 'No employees found.'"
+      [filterTerm]="searchTerm()"
+      (edit)="onEdit($event)"
+      (terminate)="onTerminate($event)"
+    ></app-stag-table>
+  </div>
+
+  <!-- Employee Modal -->
+  <app-modal 
+    [isOpen]="showModal()" 
+    [title]="isEditing() ? 'Edit Employee' : 'Add New Employee'"
+    (close)="closeModal()"
+  >
+    <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()" class="employee-form">
+      <div class="form-section-title">Personal Information</div>
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
+          <label>Full Name</label>
+          <input type="text" formControlName="name" placeholder="Name">
+        </div>
+        <div class="form-group-modern">
+          <label>Phone</label>
+          <input type="text" formControlName="phone" placeholder="10-digit phone">
+        </div>
+        <div class="form-group-modern">
+          <label>Email</label>
+          <input type="email" formControlName="email" placeholder="Email address">
+        </div>
+        <div class="form-group-modern">
+          <label>Address</label>
+          <input type="text" formControlName="address" placeholder="Residential address">
+        </div>
+        <div class="form-group-modern">
+          <label>Education</label>
+          <input type="text" formControlName="education" placeholder="Education background">
+        </div>
+        <div class="form-group-modern">
+          <label>Experience</label>
+          <input type="text" formControlName="experience" placeholder="Work experience">
+        </div>
+      </div>
+
+      <div class="form-section-title mt-24">Identity & Safety</div>
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
+          <label>Aadhar Number</label>
+          <input type="text" formControlName="aadharNumber" placeholder="12-digit Aadhar">
+        </div>
+        <div class="form-group-modern">
+          <label>PAN Number</label>
+          <input type="text" formControlName="panNumber" placeholder="PAN card number">
+        </div>
+        <div class="form-group-modern">
+          <label>ID Proof Type</label>
+          <select formControlName="idProofType">
+            <option value="Aadhar">Aadhar</option>
+            <option value="Voter ID">Voter ID</option>
+            <option value="Driving License">Driving License</option>
+            <option value="Passport">Passport</option>
+          </select>
+        </div>
+        <div class="form-group-modern">
+          <label>ID Proof Number</label>
+          <input type="text" formControlName="idProofNumber" placeholder="Selected ID number">
+        </div>
+      </div>
+
+      <div class="form-section-title mt-24">Emergency Contact</div>
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
+          <label>Contact Name</label>
+          <input type="text" formControlName="emergencyContactName">
+        </div>
+        <div class="form-group-modern">
+          <label>Contact Phone</label>
+          <input type="text" formControlName="emergencyContactPhone">
+        </div>
+        <div class="form-group-modern">
+          <label>Relation</label>
+          <input type="text" formControlName="emergencyContactRelation">
+        </div>
+      </div>
+
+      <div class="form-section-title mt-24">Payroll & Professional</div>
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
+          <label>Base Salary (₹)</label>
+          <input type="number" formControlName="baseSalary">
+        </div>
+        <div class="form-group-modern">
+          <label>Bank Name</label>
+          <input type="text" formControlName="bankName">
+        </div>
+        <div class="form-group-modern">
+          <label>Account Number</label>
+          <input type="text" formControlName="bankAccountNumber">
+        </div>
+        <div class="form-group-modern">
+          <label>IFSC Code</label>
+          <input type="text" formControlName="ifscCode">
+        </div>
+        <div class="form-group-modern">
+          <label>Join Date</label>
+          <input type="date" formControlName="dateOfJoining">
+        </div>
+        <div class="form-group-modern">
+          <label>Role</label>
+          <select formControlName="role">
+            <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+          </select>
+        </div>
+        <div class="form-group-modern">
+          <label>Status</label>
+          <select formControlName="status">
+            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
+        <app-button 
+          [label]="isEditing() ? 'Update Employee' : 'Register Employee'" 
+          type="submit" 
+          [disabled]="employeeForm.invalid"
+          variant="primary"
+        ></app-button>
+      </div>
+    </form>
+  </app-modal>
+</div>

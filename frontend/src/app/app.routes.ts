@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from './components/dashboard/dashboard';
 import { MemberComponent } from './components/member/member';
+import { LeadComponent } from './components/lead/lead';
+import { EmployeeComponent } from './components/employee/employee';
+import { AttendanceComponent } from './components/attendance/attendance';
 import { PlanComponent } from './components/plan/plan';
 import { SubscriptionComponent } from './components/subscription/subscription';
 import { PaymentComponent } from './components/payment/payment';
@@ -22,6 +25,9 @@ export const routes: Routes = [
         canActivate: [adminGuard] 
       },
       { path: 'members', component: MemberComponent },
+      { path: 'leads', component: LeadComponent },
+      { path: 'staff', component: EmployeeComponent },
+      { path: 'attendance', component: AttendanceComponent },
       { path: 'plans', component: PlanComponent },
       { path: 'subscriptions', component: SubscriptionComponent },
       { 

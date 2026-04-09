@@ -41,6 +41,9 @@ export class AppStagTableComponent {
 
   @Input() showActions: boolean = false;
   @Input() showRenew: boolean = false;
+  @Input() showFollowup: boolean = false;
+  @Input() showConvert: boolean = false;
+  @Input() showTerminate: boolean = false;
   @Input() showPrint: boolean = false;
   @Input() showView: boolean = false;
 
@@ -52,6 +55,9 @@ export class AppStagTableComponent {
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
   @Output() renew = new EventEmitter<any>();
+  @Output() followup = new EventEmitter<any>();
+  @Output() convert = new EventEmitter<any>();
+  @Output() terminate = new EventEmitter<any>();
   @Output() print = new EventEmitter<any>();
   @Output() view = new EventEmitter<any>();
 
