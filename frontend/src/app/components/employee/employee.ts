@@ -164,27 +164,31 @@ export class EmployeeComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.employeeForm.valid) {
-      const data = this.employeeForm.value;
-      if (this.isEditing()) {
-        this.employeeService.updateEmployee(this.editingId()!, data).subscribe({
-          next: () => {
-            this.notif.show('Employee updated successfully!', 'success');
-            this.loadEmployees();
-            this.showModal.set(false);
-          },
-          error: (err) => this.notif.show('Error updating employee.', 'error'),
-        });
-      } else {
-        this.employeeService.addEmployee(data).subscribe({
-          next: () => {
-            this.notif.show('Employee added successfully!', 'success');
-            this.loadEmployees();
-            this.showModal.set(false);
-          },
-          error: (err) => this.notif.show('Error adding employee.', 'error'),
-        });
-      }
+    if (this.employeeForm.invalid) {
+      this.employeeForm.markAllAsTouched();
+      this.notif.show('Please fill all mandatory fields correctly (*)', 'error');
+      return;
+    }
+
+    const data = this.employeeForm.value;
+    if (this.isEditing()) {
+      this.employeeService.updateEmployee(this.editingId()!, data).subscribe({
+        next: () => {
+          this.notif.show('Employee updated successfully!', 'success');
+          this.loadEmployees();
+          this.showModal.set(false);
+        },
+        error: (err) => this.notif.show('Error updating employee.', 'error'),
+      });
+    } else {
+      this.employeeService.addEmployee(data).subscribe({
+        next: () => {
+          this.notif.show('Employee added successfully!', 'success');
+          this.loadEmployees();
+          this.showModal.set(false);
+        },
+        error: (err) => this.notif.show('Error adding employee.', 'error'),
+      });
     }
   }
 
@@ -198,8 +202,26 @@ export class EmployeeComponent implements OnInit {
 
   filteredEmployees = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.employees().filter(
-      (e) => e.name.toLowerCase().includes(term) || e.employeeId?.toLowerCase().includes(term) || e.phone.includes(term)
-    );
+    return this.employees()
+      .filter((e) => {
+        const name = (e.name || '').toLowerCase();
+        const empId = (e.employeeId || '').toLowerCase();
+        const phone = (e.phone || '').toLowerCase();
+        return name.includes(term) || empId.includes(term) || phone.includes(term);
+      })
+      .map(e => ({
+        ...e,
+        rowClass: this.getStatusClass(e.status)
+      }));
   });
+
+  getStatusClass(status: EmployeeStatus): string {
+    switch (status) {
+      case EmployeeStatus.ACTIVE: return 'status-active';
+      case EmployeeStatus.INACTIVE: return 'status-inactive';
+      case EmployeeStatus.TERMINATED: return 'status-terminated';
+      case EmployeeStatus.ON_LEAVE: return 'status-leave';
+      default: return '';
+    }
+  }
 }

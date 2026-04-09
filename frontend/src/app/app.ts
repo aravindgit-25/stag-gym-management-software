@@ -53,6 +53,9 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                 <a class="sub-nav-item" routerLink="/members" [queryParams]="{filter: 'all'}" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}" (click)="closeSidebar()">
                   All Members
                 </a>
+                <a class="sub-nav-item" routerLink="/members" [queryParams]="{action: 'add'}" (click)="closeSidebar()">
+                  Add Member
+                </a>
                 <a class="sub-nav-item" routerLink="/members" [queryParams]="{filter: 'active'}" routerLinkActive="active" (click)="closeSidebar()">
                   Active Members
                 </a>

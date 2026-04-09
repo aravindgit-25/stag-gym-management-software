@@ -207,6 +207,10 @@ export class MemberComponent implements OnInit {
       if (params['filter']) {
         this.selectedFilter.set(params['filter']);
       }
+      if (params['action'] === 'add') {
+        this.openAddModal();
+        this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge' });
+      }
     });
   }
 
