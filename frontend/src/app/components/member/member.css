@@ -1,3 +1,53 @@
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-hover);
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-medium);
+}
+
+.filter-select {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+}
+
+.btn-reset-filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--accent-red-light);
+  color: var(--accent-red);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reset-filters:hover {
+  background: var(--accent-red);
+  color: white;
+}
+
+.btn-reset-filters svg {
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
 .container.full-width {
   padding: 0;
 }
