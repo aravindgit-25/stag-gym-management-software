@@ -65,25 +65,65 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
               </div>
             </div>
 
-            <a class="nav-item" routerLink="/leads" routerLinkActive="active" (click)="closeSidebar()">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="8.5" cy="7" r="4"></circle>
-                  <polyline points="17 11 19 13 23 9"></polyline>
-                </svg>
-              </span> Leads
-            </a>
-            <a class="nav-item" routerLink="/staff" routerLinkActive="active" (click)="closeSidebar()">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </span> Staff
-            </a>
+            <div class="nav-group" [class.expanded]="leadsMenuOpen()">
+              <a class="nav-item has-submenu" (click)="toggleLeadsMenu($event)">
+                <span class="nav-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                  </svg>
+                </span> Leads
+                <span class="chevron">
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+              </a>
+              <div class="sub-nav">
+                <a class="sub-nav-item" routerLink="/leads" [queryParams]="{filter: 'all'}" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}" (click)="closeSidebar()">
+                  All Leads
+                </a>
+                <a class="sub-nav-item" routerLink="/leads" [queryParams]="{action: 'add'}" (click)="closeSidebar()">
+                  Add Lead
+                </a>
+                <a class="sub-nav-item" routerLink="/leads" [queryParams]="{filter: 'followup'}" routerLinkActive="active" (click)="closeSidebar()">
+                  Follow-ups
+                </a>
+                <a class="sub-nav-item" routerLink="/leads" [queryParams]="{filter: 'rejected'}" routerLinkActive="active" (click)="closeSidebar()">
+                  Rejected
+                </a>
+              </div>
+            </div>
+
+            <div class="nav-group" [class.expanded]="staffMenuOpen()">
+              <a class="nav-item has-submenu" (click)="toggleStaffMenu($event)">
+                <span class="nav-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </span> Staff
+                <span class="chevron">
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+              </a>
+              <div class="sub-nav">
+                <a class="sub-nav-item" routerLink="/staff" [queryParams]="{filter: 'all'}" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}" (click)="closeSidebar()">
+                  All Staff
+                </a>
+                <a class="sub-nav-item" routerLink="/staff" [queryParams]="{action: 'add'}" (click)="closeSidebar()">
+                  Add Staff
+                </a>
+                <a class="sub-nav-item" routerLink="/staff" [queryParams]="{filter: 'active'}" routerLinkActive="active" (click)="closeSidebar()">
+                  Active Staff
+                </a>
+                <a class="sub-nav-item" routerLink="/staff" [queryParams]="{filter: 'archive'}" routerLinkActive="active" (click)="closeSidebar()">
+                  Archive (Terminated)
+                </a>
+              </div>
+            </div>
+
             <a class="nav-item" routerLink="/attendance" routerLinkActive="active" (click)="closeSidebar()">
               <span class="nav-icon">
                 <svg viewBox="0 0 24 24">
@@ -401,6 +441,8 @@ export class AppComponent {
   isInvoicePage = false;
   sidebarOpen = signal<boolean>(false);
   membersMenuOpen = signal<boolean>(false);
+  leadsMenuOpen = signal<boolean>(false);
+  staffMenuOpen = signal<boolean>(false);
   userDropdownOpen = signal<boolean>(false);
   private router = inject(Router);
 
@@ -409,16 +451,26 @@ export class AppComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.isInvoicePage = event.url.includes('/invoice/');
-      // Auto-open members menu if we are on a members route
-      if (event.url.includes('/members')) {
-        this.membersMenuOpen.set(true);
-      }
+      // Auto-open menus based on route
+      if (event.url.includes('/members')) this.membersMenuOpen.set(true);
+      if (event.url.includes('/leads')) this.leadsMenuOpen.set(true);
+      if (event.url.includes('/staff')) this.staffMenuOpen.set(true);
     });
   }
 
   toggleMembersMenu(event: Event) {
     event.stopPropagation();
     this.membersMenuOpen.update(val => !val);
+  }
+
+  toggleLeadsMenu(event: Event) {
+    event.stopPropagation();
+    this.leadsMenuOpen.update(val => !val);
+  }
+
+  toggleStaffMenu(event: Event) {
+    event.stopPropagation();
+    this.staffMenuOpen.update(val => !val);
   }
 
   @HostListener('window:click')

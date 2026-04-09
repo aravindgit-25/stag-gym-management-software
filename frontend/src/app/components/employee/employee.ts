@@ -7,7 +7,7 @@ import {
   Validators,
   FormsModule,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { EmployeeService } from '../../services/employee.service';
 import { NotificationService } from '../../services/notification.service';
@@ -51,6 +51,8 @@ export class EmployeeComponent implements OnInit {
   private confirm = inject(ConfirmService);
   private employeeService = inject(EmployeeService);
   private location = inject(Location);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   tableColumns = computed<StagTableColumn[]>(() => [
     { field: 'employeeId', header: 'Emp ID', width: '120px' },
@@ -88,6 +90,18 @@ export class EmployeeComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEmployees();
+    this.route.queryParams.subscribe(params => {
+      if (params['filter']) {
+        const filter = params['filter'];
+        if (filter === 'active') this.setTab('active');
+        else if (filter === 'archive') this.setTab('archive');
+        else this.setTab('active'); // Default
+      }
+      if (params['action'] === 'add') {
+        this.openAddModal();
+        this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge' });
+      }
+    });
   }
 
   loadEmployees(): void {
