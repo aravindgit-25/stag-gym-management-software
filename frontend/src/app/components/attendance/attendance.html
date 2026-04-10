@@ -36,7 +36,17 @@
           [height]="'calc(100vh - 280px)'"
           [loading]="loading()"
           [emptyMessage]="'No attendance marked for this date.'"
-        ></app-stag-table>
+        >
+          <ng-template #cell let-row let-col="column">
+            <div *ngIf="col.field === 'actions'">
+              <button class="btn-history-mini" (click)="openHistoryModal(row)" title="View History">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" fill="none"></path>
+                </svg>
+              </button>
+            </div>
+          </ng-template>
+        </app-stag-table>
       </div>
     </div>
 
@@ -79,5 +89,60 @@
         <app-button label="Submit" type="submit" variant="primary"></app-button>
       </div>
     </form>
+  </app-modal>
+
+  <!-- Employee History Modal -->
+  <app-modal 
+    [isOpen]="showHistoryModal()" 
+    [title]="'Monthly History: ' + selectedHistoryEmployee()?.name"
+    (close)="showHistoryModal.set(false)"
+  >
+    <div class="history-container">
+      <div class="history-filters mb-20">
+        <div class="filter-controls">
+          <select [ngModel]="historyMonth()" (ngModelChange)="historyMonth.set($event); loadHistory()" class="filter-select">
+            <option [value]="1">January</option><option [value]="2">February</option>
+            <option [value]="3">March</option><option [value]="4">April</option>
+            <option [value]="5">May</option><option [value]="6">June</option>
+            <option [value]="7">July</option><option [value]="8">August</option>
+            <option [value]="9">September</option><option [value]="10">October</option>
+            <option [value]="11">November</option><option [value]="12">December</option>
+          </select>
+          <select [ngModel]="historyYear()" (ngModelChange)="historyYear.set($event); loadHistory()" class="filter-select ml-10">
+            <option [value]="2025">2025</option>
+            <option [value]="2026">2026</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="history-summary-grid">
+        <div class="summary-item present">
+          <span class="count">{{ historySummary().present }}</span>
+          <span class="label">Present</span>
+        </div>
+        <div class="summary-item absent">
+          <span class="count">{{ historySummary().absent }}</span>
+          <span class="label">Absent</span>
+        </div>
+        <div class="summary-item late">
+          <span class="count">{{ historySummary().late }}</span>
+          <span class="label">Late</span>
+        </div>
+        <div class="summary-item other">
+          <span class="count">{{ historySummary().halfDay }}</span>
+          <span class="label">Half Day</span>
+        </div>
+      </div>
+
+      <div class="history-table-wrapper mt-20">
+        <app-stag-table 
+          [columns]="historyColumns" 
+          [data]="historyRecords()"
+          [height]="'350px'"
+          [loading]="historyLoading()"
+          [emptyMessage]="'No history found for this month.'"
+        ></app-stag-table>
+      </div>
+    </div>
   </app-modal>
 </div>

@@ -59,6 +59,8 @@ export class SalaryComponent implements OnInit {
 
   tableColumns: StagTableColumn[] = [
     { field: 'employeeName', header: 'Employee', minWidth: '150px' },
+    { field: 'employeeCode', header: 'Code', width: '100px' },
+    { field: 'role', header: 'Role', width: '120px' },
     { field: 'monthYear', header: 'Month', width: '120px' },
     { field: 'baseSalary', header: 'Base', width: '100px', type: 'number' },
     { field: 'deductions', header: 'Deductions', width: '100px', type: 'number' },
@@ -73,16 +75,31 @@ export class SalaryComponent implements OnInit {
 
   loadData() {
     this.loading.set(true);
-    const monthYear = `${this.getMonthLabel(this.selectedMonth())} ${this.selectedYear()}`;
+    // Standard format MM-YYYY
+    const monthStr = this.selectedMonth().toString().padStart(2, '0');
+    const monthYear = `${monthStr}-${this.selectedYear()}`;
     
-    forkJoin({
-      employees: this.employeeService.getActiveEmployees().pipe(catchError(() => of([]))),
-      salaries: this.salaryService.getSalariesByMonth(monthYear).pipe(catchError(() => of([])))
-    }).pipe(finalize(() => this.loading.set(false)))
-      .subscribe((res) => {
-        this.activeEmployees.set(res.employees);
-        this.salaries.set(res.salaries);
+    // Also try the label format for backward compatibility if needed
+    const monthLabel = `${this.getMonthLabel(this.selectedMonth())} ${this.selectedYear()}`;
+
+    this.employeeService.getActiveEmployees().pipe(
+      catchError(() => of([])),
+      finalize(() => this.loading.set(false))
+    ).subscribe((employees) => {
+      this.activeEmployees.set(employees);
+      
+      // Try fetching by label first, then by code if empty
+      this.salaryService.getSalariesByMonth(monthLabel).subscribe(data => {
+        if (data && data.length > 0) {
+          this.salaries.set(data);
+        } else {
+          // Fallback to MM-YYYY
+          this.salaryService.getSalariesByMonth(monthYear).subscribe(data2 => {
+            this.salaries.set(data2 || []);
+          });
+        }
       });
+    });
   }
 
   getMonthLabel(month: number): string {
@@ -90,20 +107,44 @@ export class SalaryComponent implements OnInit {
   }
 
   calculateAll() {
-    this.loading.set(true);
     const employees = this.activeEmployees();
+    if (employees.length === 0) {
+      this.notif.show('No active employees found. Please load employees first.', 'error');
+      return;
+    }
+
+    this.loading.set(true);
     const month = this.selectedMonth();
     const year = this.selectedYear();
 
+    console.log(`Starting bulk calculation for ${employees.length} employees for ${month}/${year}`);
+
     const requests = employees.map(emp => 
-      this.salaryService.calculateSalary(emp.id!, month, year).pipe(catchError(() => of(null)))
+      this.salaryService.calculateSalary(emp.id!, month, year).pipe(
+        catchError(err => {
+          console.error(`Calculation failed for ${emp.name}:`, err);
+          return of(null);
+        })
+      )
     );
 
-    forkJoin(requests).pipe(finalize(() => {
-      this.loading.set(false);
-      this.loadData();
-    })).subscribe(() => {
-      this.notif.show('Salary calculation completed for all employees.', 'success');
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        const successCount = results.filter(r => r !== null).length;
+        console.log(`Bulk calculation finished. Success: ${successCount}/${employees.length}`);
+        
+        if (successCount > 0) {
+          this.notif.show(`Calculation complete for ${successCount} employees.`, 'success');
+        } else {
+          this.notif.show('Calculation failed. Ensure attendance is marked for this period.', 'error');
+        }
+        this.loadData();
+      },
+      error: (err) => {
+        console.error('Critical error during bulk calculation:', err);
+        this.notif.show('Error during calculation.', 'error');
+        this.loading.set(false);
+      }
     });
   }
 
@@ -131,11 +172,19 @@ export class SalaryComponent implements OnInit {
   }
 
   salaryData = computed(() => {
-    return this.salaries().map(s => ({
-      ...s,
-      employeeName: s.employee?.name || 'Unknown',
-      rowClass: s.status === SalaryStatus.PAID ? 'status-paid' : 'status-pending'
-    }));
+    const employees = this.activeEmployees();
+    return this.salaries().map(s => {
+      // Find employee by numeric ID
+      const emp = employees.find(e => e.id === s.employeeId) || s.employee;
+      
+      return {
+        ...s,
+        employeeName: emp?.name || 'Unknown',
+        employeeCode: emp?.employeeId || 'N/A',
+        role: emp?.role || 'N/A',
+        rowClass: s.status === SalaryStatus.PAID ? 'status-paid' : 'status-pending'
+      };
+    });
   });
 
   totalPayout = computed(() => {

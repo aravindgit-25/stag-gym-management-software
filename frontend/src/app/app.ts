@@ -124,6 +124,9 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                 <a class="sub-nav-item" routerLink="/staff" [queryParams]="{filter: 'archive'}" routerLinkActive="active" (click)="closeSidebar()">
                   Archive (Terminated)
                 </a>
+                <a class="sub-nav-item" routerLink="/salary" routerLinkActive="active" (click)="closeSidebar()">
+                  Payroll & Salary
+                </a>
               </div>
             </div>
 
