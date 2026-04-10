@@ -55,6 +55,7 @@ export class AttendanceComponent implements OnInit {
 
   tableColumns: StagTableColumn[] = [
     { field: 'employeeName', header: 'Employee', minWidth: '150px' },
+    { field: 'employeeCode', header: 'Code', width: '100px' },
     { field: 'role', header: 'Role', width: '120px' },
     { field: 'status', header: 'Status', width: '120px' },
     { field: 'checkInTime', header: 'In', width: '100px' },
@@ -118,8 +119,12 @@ export class AttendanceComponent implements OnInit {
   }
 
   onCheckout(attendance: Attendance) {
-    if (!attendance.employee?.employeeId) return;
-    this.attendanceService.checkoutAttendance(attendance.employee.employeeId).subscribe({
+    const employeeCode = attendance.employeeCode || attendance.employee?.employeeId;
+    if (!employeeCode) {
+      this.notif.show('Employee code not found for checkout.', 'error');
+      return;
+    }
+    this.attendanceService.checkoutAttendance(employeeCode).subscribe({
       next: () => {
         this.notif.show('Checkout successful.', 'success');
         this.loadAttendance();
@@ -133,20 +138,31 @@ export class AttendanceComponent implements OnInit {
   }
 
   attendanceData = computed(() => {
-    return this.attendanceRecords().map(r => ({
-      ...r,
-      employeeName: r.employee?.name || 'Unknown',
-      role: r.employee?.role || 'N/A',
-      rowClass: this.getStatusClass(r.status)
-    }));
+    const employees = this.activeEmployees();
+    return this.attendanceRecords().map(r => {
+      // Try to find employee by numeric ID (employeeId from API might match Employee.id)
+      const emp = employees.find(e => e.id === r.employeeId) || r.employee;
+      
+      return {
+        ...r,
+        employeeName: emp?.name || r.employeeName || 'Unknown',
+        employeeCode: emp?.employeeId || r.employeeCode || 'N/A',
+        role: emp?.role || 'N/A',
+        rowClass: this.getStatusClass(r.status)
+      };
+    });
   });
 
   // Helper to see who hasn't marked attendance yet
   missingAttendance = computed(() => {
-    const presentIds = this.attendanceRecords()
-      .filter(r => r.employee)
-      .map(r => r.employee.id);
-    return this.activeEmployees().filter(e => !presentIds.includes(e.id));
+    const employees = this.activeEmployees();
+    const attendance = this.attendanceRecords();
+    
+    const presentIds = attendance
+      .map(r => r.employeeId || r.employee?.id)
+      .filter(id => !!id);
+      
+    return employees.filter(e => !presentIds.includes(e.id));
   });
 
   getStatusClass(status: AttendanceStatus): string {

@@ -56,6 +56,12 @@
                       </button>
                     }
                   }
+                  @case ('template') {
+                    <ng-container *ngTemplateOutlet="cellTemplate; context: { $implicit: row, column: col }"></ng-container>
+                  }
+                  @case ('number') {
+                    <span class="cell-content">{{ row[col.field] | currency:'INR':'symbol':'1.0-2' }}</span>
+                  }
                   @default {
                     <span class="cell-content">{{ row[col.field] }}</span>
                   }

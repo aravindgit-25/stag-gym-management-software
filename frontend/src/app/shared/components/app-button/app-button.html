@@ -1,8 +1,11 @@
 <button 
   [type]="type"
-  [disabled]="disabled"
+  [disabled]="disabled || loading"
   [class]="'btn btn-' + variant"
+  [class.loading]="loading"
   (click)="handleClick()"
 >
-  {{ label }}
+  <span *ngIf="loading" class="spinner"></span>
+  <span *ngIf="!loading && icon" class="material-icons">{{ icon }}</span>
+  <span class="btn-text">{{ label }}</span>
 </button>

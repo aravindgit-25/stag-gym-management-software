@@ -13,10 +13,12 @@ export class AppButtonComponent {
   @Input() type: 'button' | 'submit' = 'button';
   @Input() variant: 'primary' | 'secondary' | 'danger' = 'primary';
   @Input() disabled: boolean = false;
+  @Input() loading: boolean = false;
+  @Input() icon?: string;
   @Output() onClick = new EventEmitter<void>();
 
   handleClick() {
-    if (!this.disabled) {
+    if (!this.disabled && !this.loading) {
       this.onClick.emit();
     }
   }
