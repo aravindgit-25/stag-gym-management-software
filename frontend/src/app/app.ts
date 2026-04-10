@@ -141,6 +141,19 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                 </svg>
               </span> Attendance
             </a>
+
+            <a class="nav-item" routerLink="/diet-plans" routerLinkActive="active" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                  <line x1="6" y1="1" x2="6" y2="4"></line>
+                  <line x1="10" y1="1" x2="10" y2="4"></line>
+                  <line x1="14" y1="1" x2="14" y2="4"></line>
+                </svg>
+              </span> Diet Plans
+            </a>
+
             <a class="nav-item" routerLink="/plans" routerLinkActive="active" (click)="closeSidebar()">
               <span class="nav-icon">
                 <svg viewBox="0 0 24 24">
@@ -151,21 +164,13 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                 </svg>
               </span> Plans
             </a>
-            <a class="nav-item" routerLink="/subscriptions" routerLinkActive="active" (click)="closeSidebar()">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </span> Subscriptions
-            </a>
             <a *ngIf="authService.isAdmin()" class="nav-item" routerLink="/payments" routerLinkActive="active" (click)="closeSidebar()">
               <span class="nav-icon">
                 <svg viewBox="0 0 24 24">
                   <line x1="12" y1="1" x2="12" y2="23"></line>
                   <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
-              </span> Payments
+              </span> Accounts & Finance
             </a>
           </nav>
           

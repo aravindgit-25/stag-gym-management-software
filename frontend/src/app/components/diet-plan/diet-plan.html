@@ -1,0 +1,172 @@
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back-modern" (click)="goBack()" title="Go Back">
+          <span class="back-icon">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </span>
+        </button>
+        <div class="header-info">
+          <h1 class="section-title">Diet Plan Management</h1>
+          <p class="section-subtitle">Tier-based nutrition planning & macro calculation</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container-card mt-24">
+    <div class="card-header-simple">Eligible Members</div>
+    <app-stag-table 
+      [columns]="columns" 
+      [data]="members()"
+      [height]="'calc(100vh - 280px)'"
+      [loading]="loading()"
+      [emptyMessage]="'No members eligible for diet plan found.'"
+    >
+      <ng-template #cell let-row let-col="column">
+        <div *ngIf="col.field === 'actions'">
+          <button class="btn-build-mini" (click)="openBuilder(row)">
+            Configure Plan
+          </button>
+        </div>
+        <div *ngIf="col.field === 'tier'">
+          <span class="tier-badge" [class]="'tier-' + row.tier?.toLowerCase()">{{ row.tier || 'BASIC' }}</span>
+        </div>
+      </ng-template>
+    </app-stag-table>
+  </div>
+
+  <app-modal 
+    [isOpen]="showBuildModal()" 
+    [title]="'Diet Builder: ' + selectedMember()?.name"
+    (close)="showBuildModal.set(false)"
+  >
+    <div class="builder-container">
+      <div class="calc-section">
+        <div class="tier-info-banner mb-16" *ngIf="currentPlan()?.tier === 'STANDARD'">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Standard Plan: {{ currentPlan()?.modificationCount }} / {{ currentPlan()?.monthlyUpdateLimit }} Updates Used this month
+        </div>
+
+        <form [formGroup]="calcForm" class="calc-form">
+          <div class="form-grid-4">
+            <div class="form-group-modern">
+              <label>Weight (kg)</label>
+              <input type="number" formControlName="weight">
+            </div>
+            <div class="form-group-modern">
+              <label>Height (cm)</label>
+              <input type="number" formControlName="height">
+            </div>
+            <div class="form-group-modern">
+              <label>Age</label>
+              <input type="number" formControlName="age">
+            </div>
+            <div class="form-group-modern">
+              <label>Tier</label>
+              <select formControlName="tier">
+                <option value="BASIC">Basic</option>
+                <option value="STANDARD">Standard</option>
+                <option value="PREMIUM">Premium</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group-modern mt-16">
+            <label>Activity Level</label>
+            <select formControlName="activityLevel">
+              <option *ngFor="let level of activityLevels" [value]="level.value">{{ level.label }}</option>
+            </select>
+          </div>
+        </form>
+
+        <div class="results-dashboard mt-24">
+          <div class="result-item">
+            <span class="label">BMR</span>
+            <span class="value">{{ currentPlan()?.bmr }} kcal</span>
+          </div>
+          <div class="result-item highlight">
+            <span class="label">TDEE (Daily Target)</span>
+            <span class="value">{{ currentPlan()?.tdee }} kcal</span>
+          </div>
+          <div class="result-item">
+            <span class="label">BMI</span>
+            <span class="value">{{ currentPlan()?.bmi }}</span>
+            <span class="sub-label">{{ getBMIStatus(currentPlan()?.bmi || 0) }}</span>
+          </div>
+        </div>
+
+        <!-- Real-time Macro Comparison -->
+        <div class="macros-comparison mt-20">
+          <div class="macro-compare-item">
+            <div class="label-row">
+              <span>Protein (Target: {{ currentPlan()?.targetProtein }}g)</span>
+              <span class="actual">{{ currentPlan()?.totalAssignedProtein || 0 }}g</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-fill protein" [style.width]="getProgressWidth(currentPlan()?.totalAssignedProtein, currentPlan()?.targetProtein)"></div>
+            </div>
+          </div>
+          <div class="macro-compare-item">
+            <div class="label-row">
+              <span>Carbs (Target: {{ currentPlan()?.targetCarbs }}g)</span>
+              <span class="actual">{{ currentPlan()?.totalAssignedCarbs || 0 }}g</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-fill carbs" [style.width]="getProgressWidth(currentPlan()?.totalAssignedCarbs, currentPlan()?.targetCarbs)"></div>
+            </div>
+          </div>
+          <div class="macro-compare-item">
+            <div class="label-row">
+              <span>Fats (Target: {{ currentPlan()?.targetFats }}g)</span>
+              <span class="actual">{{ currentPlan()?.totalAssignedFats || 0 }}g</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-fill fats" [style.width]="getProgressWidth(currentPlan()?.totalAssignedFats, currentPlan()?.targetFats)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-builder-section mt-32">
+        <h3 class="builder-title">Daily Meal Plan</h3>
+        
+        <div class="meals-stack">
+          <div *ngFor="let meal of currentPlan()?.meals" class="meal-block">
+            <div class="meal-header">
+              <span class="time">{{ meal.time }}</span>
+              <span class="cal-count">{{ meal.totalCalories }} kcal</span>
+            </div>
+            <div class="meal-foods">
+              <div *ngIf="meal.foods.length === 0" class="empty-meal">No foods assigned</div>
+              <div *ngFor="let food of meal.foods; let i = index" class="food-chip-modern">
+                <div class="food-info">
+                  <span class="name">{{ food.name }}</span>
+                  <span class="details">{{ food.calories }}cal | P:{{ food.protein }}g</span>
+                </div>
+                <button class="btn-remove-food" (click)="removeFood(meal, i)" *ngIf="currentPlan()?.tier !== 'BASIC'">&times;</button>
+              </div>
+            </div>
+            
+            <div class="food-search mt-12" *ngIf="currentPlan()?.tier !== 'BASIC'">
+              <select #foodSelect (change)="addFoodToMeal(meal, foodSelect.value); foodSelect.value = ''" class="food-picker">
+                <option value="">+ Add food to {{ meal.time }}...</option>
+                <option *ngFor="let food of foodDatabase()" [value]="food.id">{{ food.name }} ({{ food.calories }}cal)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions-modern mt-32">
+        <app-button label="Cancel" variant="secondary" (onClick)="showBuildModal.set(false)"></app-button>
+        <app-button 
+          [label]="canSave() ? 'Generate & Save Plan' : 'Update Limit Reached'" 
+          variant="primary" 
+          [disabled]="!canSave()"
+          (onClick)="savePlan()"
+        ></app-button>
+      </div>
+    </div>
+  </app-modal>
+</div>

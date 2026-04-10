@@ -24,6 +24,9 @@ public class MemberService {
         if (member.getJoinDate() == null) {
             member.setJoinDate(LocalDate.now());
         }
+        if (member.getJoiningDate() == null) {
+            member.setJoiningDate(LocalDate.now());
+        }
         member.setRegistrationId(generateRegistrationId());
         return memberRepository.save(member);
     }
@@ -110,7 +113,20 @@ public class MemberService {
         
         member.setName(memberDetails.getName());
         member.setPhone(memberDetails.getPhone());
+        member.setEmail(memberDetails.getEmail());
+        member.setDob(memberDetails.getDob());
+        member.setAddress(memberDetails.getAddress());
+        member.setBloodGroup(memberDetails.getBloodGroup());
+        member.setWeight(memberDetails.getWeight());
+        member.setHeight(memberDetails.getHeight());
+        member.setFitnessGoal(memberDetails.getFitnessGoal());
+        member.setEmergencyContactName(memberDetails.getEmergencyContactName());
+        member.setEmergencyContactPhone(memberDetails.getEmergencyContactPhone());
         member.setGender(memberDetails.getGender());
+        member.setJoinDate(memberDetails.getJoinDate());
+        member.setJoiningDate(memberDetails.getJoiningDate());
+        member.setIdProofType(memberDetails.getIdProofType());
+        member.setIdProofNumber(memberDetails.getIdProofNumber());
         member.setStatus(memberDetails.getStatus());
         member.setBranch(memberDetails.getBranch());
         
