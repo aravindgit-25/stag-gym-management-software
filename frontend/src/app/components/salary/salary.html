@@ -1,0 +1,105 @@
+<div class="container full-width">
+  <div class="table-header-section">
+    <div class="header-left">
+      <div class="title-with-back">
+        <button class="btn-back-modern" (click)="goBack()" title="Go Back">
+          <span class="back-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </span>
+        </button>
+        <div class="header-info">
+          <h1 class="section-title">Salary Management</h1>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="filter-group">
+        <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event); loadData()" class="filter-input">
+          <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+        </select>
+        <select [ngModel]="selectedYear()" (ngModelChange)="selectedYear.set($event); loadData()" class="filter-input">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+      
+      <app-button 
+        label="Generate Salaries" 
+        variant="primary" 
+        icon="calculate"
+        (onClick)="calculateAll()"
+        [loading]="loading()"
+      ></app-button>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <span class="label">Total Employees</span>
+      <span class="value">{{ activeEmployees().length }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="label">Calculated This Month</span>
+      <span class="value">{{ salaries().length }}</span>
+    </div>
+    <div class="summary-card highlight">
+      <span class="label">Total Net Payout</span>
+      <span class="value">{{ totalPayout() | currency:'INR' }}</span>
+    </div>
+  </div>
+
+  <div class="table-container-card mt-24">
+    <app-stag-table 
+      [columns]="tableColumns" 
+      [data]="salaryData()"
+      [height]="'calc(100vh - 380px)'"
+      [loading]="loading()"
+      [emptyMessage]="'No salary records for this period. Click Generate to calculate.'"
+    >
+      <ng-template #cell let-row let-col="column">
+        <div *ngIf="col.field === 'actions'">
+          <button 
+            *ngIf="row.status === 'PENDING'"
+            class="btn-pay-mini" 
+            (click)="openPayModal(row)"
+          >Pay Now</button>
+          <span *ngIf="row.status === 'PAID'" class="paid-badge">Paid</span>
+        </div>
+      </ng-template>
+    </app-stag-table>
+  </div>
+
+  <!-- Payment Modal -->
+  <app-modal 
+    [isOpen]="showPayModal()" 
+    [title]="'Record Payment: ' + selectedSalary()?.employee?.name"
+    (close)="showPayModal.set(false)"
+  >
+    <div class="payment-details">
+      <div class="detail-row">
+        <span>Net Salary:</span>
+        <span class="amount">{{ selectedSalary()?.netSalary | currency:'INR' }}</span>
+      </div>
+      <div class="detail-row">
+        <span>Month:</span>
+        <span>{{ selectedSalary()?.monthYear }}</span>
+      </div>
+
+      <div class="form-group-modern mt-16">
+        <label>Payment Method</label>
+        <select [ngModel]="paymentMethod()" (ngModelChange)="paymentMethod.set($event)" class="w-full">
+          <option value="CASH">Cash</option>
+          <option value="BANK TRANSFER">Bank Transfer</option>
+          <option value="UPI">UPI / GPay</option>
+          <option value="CHEQUE">Cheque</option>
+        </select>
+      </div>
+
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="showPayModal.set(false)"></app-button>
+        <app-button label="Confirm Payment" variant="primary" (onClick)="onPay()"></app-button>
+      </div>
+    </div>
+  </app-modal>
+</div>

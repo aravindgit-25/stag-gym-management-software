@@ -31,10 +31,28 @@ public class Member extends BaseEntity {
     @Column(unique = true, nullable = false)
     private String phone;
 
+    private String email;
+    private LocalDate dob;
+    private String address;
+    private String bloodGroup;
+    private Double weight;
+    private Double height;
+    private String fitnessGoal;
+
+    // Emergency Contact
+    private String emergencyContactName;
+    private String emergencyContactPhone;
+
     private String gender;
 
     @Column(name = "join_date")
     private LocalDate joinDate;
+
+    private LocalDate joiningDate; // Explicit joining date field as requested
+
+    // ID Proof
+    private String idProofType;
+    private String idProofNumber;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -45,6 +63,6 @@ public class Member extends BaseEntity {
     private Branch branch;
 
     public enum Status {
-        ACTIVE, INACTIVE
+        ACTIVE, INACTIVE, EXPIRED
     }
 }

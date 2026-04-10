@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 export class AppModalComponent {
   @Input() title: string = '';
   @Input() isOpen: boolean = false;
+  @Input() width: string = '800px';
   @Output() close = new EventEmitter<void>();
 
   onClose() {

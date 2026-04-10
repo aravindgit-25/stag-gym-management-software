@@ -28,7 +28,11 @@ export class AttendanceService {
     });
   }
 
-  getEmployeeAttendanceHistory(employeeId: string, start: string, end: string): Observable<Attendance[]> {
+  getEmployeeAttendanceHistory(employeeId: string, month: number, year: number): Observable<Attendance[]> {
+    const start = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const end = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+    
     return this.http.get<Attendance[]>(`${this.apiUrl}/employee/${employeeId}`, {
       params: { start, end }
     });

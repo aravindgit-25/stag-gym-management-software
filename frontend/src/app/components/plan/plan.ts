@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } 
 import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
-import { Plan } from '../../models/plan.model';
+import { Plan, PlanType } from '../../models/plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
 import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
@@ -25,29 +25,34 @@ export class PlanComponent implements OnInit {
   editingId = signal<number | null>(null);
   showModal = signal<boolean>(false);
   
+  planTypes = Object.values(PlanType);
+
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
   private location = inject(Location);
 
   columns: StagTableColumn[] = [
     { field: 'id', header: 'ID', width: '80px' },
-    { field: 'name', header: 'Plan Name', minWidth: '250px' },
-    { field: 'duration', header: 'Duration (Days)', width: '150px' },
-    { field: 'price', header: 'Price (₹)', width: '150px' }
+    { field: 'name', header: 'Plan Name', minWidth: '200px' },
+    { field: 'type', header: 'Type', width: '120px' },
+    { field: 'duration', header: 'Duration (Days)', width: '120px' },
+    { field: 'price', header: 'Price (₹)', width: '120px' }
   ];
 
   filteredPlans = computed(() => {
     const term = this.searchTerm().toLowerCase();
     return this.plans().filter(p => 
-      p.name.toLowerCase().includes(term)
+      p.name.toLowerCase().includes(term) || p.type.toLowerCase().includes(term)
     );
   });
 
   constructor(private fb: FormBuilder, private planService: PlanService) {
     this.planForm = this.fb.group({
       name: ['', Validators.required],
+      type: [PlanType.MEMBERSHIP, Validators.required],
       duration: ['', [Validators.required, Validators.min(1)]],
-      price: ['', [Validators.required, Validators.min(0)]]
+      price: ['', [Validators.required, Validators.min(0)]],
+      description: ['']
     });
   }
 
@@ -76,7 +81,7 @@ export class PlanComponent implements OnInit {
   openAddModal() {
     this.isEditing.set(false);
     this.editingId.set(null);
-    this.planForm.reset();
+    this.planForm.reset({ type: PlanType.MEMBERSHIP });
     this.showModal.set(true);
   }
 
@@ -110,25 +115,20 @@ export class PlanComponent implements OnInit {
   async onSubmit() {
     if (this.planForm.valid) {
       const planData = this.planForm.value;
-      const action = this.isEditing() ? 'update' : 'save';
-      
-      const confirmed = await this.confirm.ask(`Are you sure you want to ${action} this plan?`);
-      if (!confirmed) return;
-
       if (this.isEditing()) {
         this.planService.updatePlan(this.editingId()!, planData).subscribe({
           next: (updated) => {
-            this.notif.show('Plan updated successfully!', 'success');
-            this.plans.update(prev => prev.map(p => p.id === updated.id ? updated : p));
+            this.notif.show('Plan updated!', 'success');
+            this.loadPlans();
             this.closeModal();
           },
           error: (err) => this.notif.show('Error updating plan.', 'error')
         });
       } else {
         this.planService.addPlan(planData).subscribe({
-          next: (newPlan) => {
-            this.notif.show('Plan added successfully!', 'success');
-            this.plans.update(prev => [...prev, newPlan]);
+          next: () => {
+            this.notif.show('Plan added!', 'success');
+            this.loadPlans();
             this.closeModal();
           },
           error: (err) => this.notif.show('Error adding plan.', 'error')

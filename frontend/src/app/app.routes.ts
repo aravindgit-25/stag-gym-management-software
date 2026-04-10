@@ -28,6 +28,16 @@ export const routes: Routes = [
       { path: 'leads', component: LeadComponent },
       { path: 'staff', component: EmployeeComponent },
       { path: 'attendance', component: AttendanceComponent },
+      { 
+        path: 'diet-plans', 
+        loadComponent: () => import('./components/diet-plan/diet-plan').then(m => m.DietPlanComponent),
+        canActivate: [adminGuard]
+      },
+      { 
+        path: 'salary', 
+        loadComponent: () => import('./components/salary/salary').then(m => m.SalaryComponent),
+        canActivate: [adminGuard]
+      },
       { path: 'plans', component: PlanComponent },
       { path: 'subscriptions', component: SubscriptionComponent },
       { 

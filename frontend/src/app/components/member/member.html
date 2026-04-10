@@ -1,222 +1,117 @@
 <div class="container full-width">
+  <!-- Header Section -->
   <div class="table-header-section">
     <div class="header-left">
       <div class="title-with-back">
         <button class="btn-back-modern" (click)="goBack()" title="Go Back">
           <span class="back-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </span>
         </button>
         <div class="header-info">
-          <h1 class="section-title">Members</h1>
+          <h1 class="section-title">Members Directory</h1>
+          <p class="section-subtitle">Manage member profiles, subscriptions, and billing</p>
         </div>
       </div>
     </div>
     <div class="header-right">
-      <!-- Advanced Filters -->
-      <div class="filter-controls mr-12">
-        <select class="filter-select" [ngModel]="selectedPlanFilter()" (ngModelChange)="selectedPlanFilter.set($event)">
-          <option [ngValue]="null">All Plans</option>
-          <option *ngFor="let plan of availablePlansForFilter()" [ngValue]="plan.id">{{ plan.name }}</option>
-        </select>
-
-        <select class="filter-select" [ngModel]="selectedMonthFilter()" (ngModelChange)="selectedMonthFilter.set($event)">
-          <option [ngValue]="null">All Months</option>
-          <option *ngFor="let month of availableMonthsForFilter()" [value]="month">{{ month }}</option>
-        </select>
-
-        <button 
-          *ngIf="selectedPlanFilter() || selectedMonthFilter() || selectedFilter() !== 'all'" 
-          class="btn-reset-filters" 
-          (click)="selectedPlanFilter.set(null); selectedMonthFilter.set(null); selectedFilter.set('all')"
-          title="Clear all filters"
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
+      <div class="search-box-modern mr-16">
+        <span class="search-icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </span>
+        <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Search by name or phone...">
       </div>
-
-      <div class="search-container mr-12">
-        <div class="search-box">
-          <span class="search-icon">
-            <svg viewBox="0 0 24 24" class="svg-icon">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input 
-            type="text" 
-            [ngModel]="searchTerm()" 
-            (ngModelChange)="searchTerm.set($event)" 
-            placeholder="Search members..."
-            class="search-input"
-          >
-        </div>
-      </div>
-      <app-button 
-        label="Refresh" 
-        variant="secondary" 
-        (onClick)="loadMembers()"
-        class="mr-12"
-      ></app-button>
-      <app-button 
-        label="Add Member" 
-        variant="primary" 
-        (onClick)="openAddModal()"
-      ></app-button>
+      <app-button label="Add New Member" variant="primary" (onClick)="openAddModal()"></app-button>
     </div>
   </div>
 
-  <div class="table-container-card">
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-card" [class.active]="selectedFilter() === 'all'" (click)="selectedFilter.set('all')">
+      <span class="stat-label">Total Members</span>
+      <span class="stat-value">{{ members().length }}</span>
+    </div>
+    <div class="stat-card active-members" [class.active]="selectedFilter() === 'active'" (click)="selectedFilter.set('active')">
+      <span class="stat-label">Active</span>
+      <span class="stat-value">{{ (members() | filterByStatus:'ACTIVE').length }}</span>
+    </div>
+    <div class="stat-card expiring-members" [class.active]="selectedFilter() === 'expiring'" (click)="selectedFilter.set('expiring')">
+      <span class="stat-label">Expiring Soon</span>
+      <span class="stat-value">{{ (members() | filterByStatus:'EXPIRING').length }}</span>
+    </div>
+    <div class="stat-card expired-members" [class.active]="selectedFilter() === 'inactive'" (click)="selectedFilter.set('inactive')">
+      <span class="stat-label">Expired / Inactive</span>
+      <span class="stat-value">{{ (members() | filterByStatus:'INACTIVE').length }}</span>
+    </div>
+  </div>
+
+  <!-- Filters Row -->
+  <div class="filters-row mt-24">
+    <div class="filter-group">
+      <label>Filter by Plan</label>
+      <select [ngModel]="selectedPlanFilter()" (ngModelChange)="selectedPlanFilter.set($event)" class="filter-select">
+        <option [value]="null">All Plans</option>
+        <option *ngFor="let plan of availablePlansForFilter()" [value]="plan.id">{{ plan.name }}</option>
+      </select>
+    </div>
+    <div class="filter-group ml-16">
+      <label>Expiry Month</label>
+      <select [ngModel]="selectedMonthFilter()" (ngModelChange)="selectedMonthFilter.set($event)" class="filter-select">
+        <option [value]="null">Any Month</option>
+        <option *ngFor="let month of availableMonthsForFilter()" [value]="month">{{ month }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Members Table Card -->
+  <div class="table-container-card mt-20">
     <app-stag-table 
       [columns]="tableColumns()" 
       [data]="filteredMembers()"
       [height]="tableHeight()"
-      [showActions]="true"
-      [showRenew]="true"
-      [showView]="true"
       [loading]="loading()"
-      [emptyMessage]="loading() ? 'Loading members...' : 'No members found.'"
-      [showSelectionColumn]="true"
-      [enableBulkActions]="false"
-      [filterTerm]="searchTerm()"
-      [storageKey]="'member-table-columns'"
-      [editingRowIndex]="editingRowIndex()"
+      [showActions]="true"
+      [showView]="true"
+      (view)="onEdit($event)"
       (edit)="onEdit($event)"
-      (renew)="onRenew($event)"
       (delete)="onDelete($event)"
-      (view)="onViewInvoice($event)"
-      (selectionChange)="onTableSelectionChange($event)"
-      (rowClick)="onRowClick($event)"
-    ></app-stag-table>
+      [emptyMessage]="'No members found matching your criteria.'"
+    >
+      <ng-template #cell let-row let-col="column">
+        <div *ngIf="col.field === 'expiryDisplay'" class="expiry-cell">
+          <span [class]="'expiry-badge ' + row.rowClass">{{ row.expiryDisplay }}</span>
+        </div>
+        <div *ngIf="col.field === 'actions'" class="action-buttons-cell">
+          <button class="btn-addon-mini" (click)="openAddonModal(row)">
+            Add Service
+          </button>
+        </div>
+      </ng-template>
+    </app-stag-table>
   </div>
 
-  <!-- Unified Onboarding Modal -->
+  <!-- Add-on Service Modal -->
   <app-modal 
-    [isOpen]="showModal()" 
-    [title]="isEditing() ? 'Edit Member' : (currentStep() === 1 ? 'Step 1: Member Registration' : (currentStep() === 2 ? 'Step 2: Select Plan' : 'Step 3: Payment Details'))"
-    (close)="closeModal()"
+    [isOpen]="showAddonModal()" 
+    [title]="'Add-on Service / Upgrade'"
+    (close)="showAddonModal.set(false)"
   >
-    <!-- Step Indicator -->
-    <div class="step-indicator-modern" *ngIf="!isEditing()">
-      <div class="step-node" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
-        <span class="step-number">1</span>
-        <span class="step-label">Register</span>
-      </div>
-      <div class="step-connector" [class.active]="currentStep() > 1"></div>
-      <div class="step-node" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">
-        <span class="step-number">2</span>
-        <span class="step-label">Plan</span>
-      </div>
-      <div class="step-connector" [class.active]="currentStep() > 2"></div>
-      <div class="step-node" [class.active]="currentStep() >= 3">
-        <span class="step-number">3</span>
-        <span class="step-label">Payment</span>
-      </div>
-    </div>
-
-    <!-- STEP 1: Member Form -->
-    <form *ngIf="currentStep() === 1" [formGroup]="memberForm" (ngSubmit)="onSubmitMember()" class="member-form">
-      <div class="form-grid-modern">
-        <div class="form-group-modern">
-          <label>Registration ID</label>
-          <input type="text" formControlName="registrationId" readonly class="readonly-input-modern">
-        </div>
-
-        <div class="form-group-modern">
-          <label>Full Name</label>
-          <input type="text" formControlName="name" placeholder="Enter full name">
-        </div>
-
-        <div class="form-group-modern">
-          <label>Phone Number</label>
-          <input type="text" formControlName="phone" placeholder="10-digit mobile number">
-        </div>
-
-        <div class="form-group-modern">
-          <label>Gender</label>
-          <select formControlName="gender">
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div class="form-group-modern">
-          <label>Branch ID</label>
-          <input type="number" formControlName="branchId">
-        </div>
+    <form [formGroup]="addonForm" (ngSubmit)="onSubmitAddon()" class="wizard-form">
+      <p class="modal-info-text">Select an add-on service like Premium Diet, Personal Training, etc.</p>
+      
+      <div class="form-group-modern mt-16">
+        <label>Select Service</label>
+        <select formControlName="planId" (change)="onAddonPlanChange()">
+          <option value="">-- Choose Add-on --</option>
+          <option *ngFor="let plan of availableAddons()" [value]="plan.id">{{ plan.name }} (₹{{ plan.price }})</option>
+        </select>
       </div>
 
-      <div class="form-actions-modern">
-        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
-        <app-button 
-          [label]="isEditing() ? 'Update Details' : 'Save & Continue'" 
-          type="submit" 
-          [disabled]="memberForm.invalid"
-          variant="primary"
-        ></app-button>
-      </div>
-    </form>
-
-    <!-- STEP 2: Plan Selection -->
-    <form *ngIf="currentStep() === 2" [formGroup]="subscriptionForm" (ngSubmit)="onSubmitSubscription()" class="member-form">
-      <div class="form-grid-modern single-col">
+      <div class="form-grid-2 mt-20">
         <div class="form-group-modern">
-          <label>Select Membership Plans</label>
-          <app-stag-dropdown 
-            [items]="planDropdownItems()"
-            placeholder="Select one or more plans..."
-            [selectedIds]="selectedPlanIds"
-            (selectionChange)="selectedPlanIds.set($event); togglePlan({id: 0, name: '', price: 0, duration: 0})" 
-          ></app-stag-dropdown>
-          <div class="selection-summary-modern" *ngIf="selectedPlanIds().length > 0">
-            <span>{{ selectedPlanIds().length }} Plan(s) Selected</span>
-            <span class="price-pill">Total: ₹{{ paymentForm.get('amount')?.value }}</span>
-          </div>
+          <label>Amount to Pay (₹)</label>
+          <input type="number" formControlName="paidAmount">
         </div>
-
-        <div class="form-group-modern">
-          <label>Start Date</label>
-          <input type="date" formControlName="startDate">
-        </div>
-      </div>
-
-      <div class="form-actions-modern">
-        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
-        <app-button 
-          [label]="'Confirm & Proceed to Payment'" 
-          type="submit" 
-          [disabled]="selectedPlanIds().length === 0 || !!subscriptionForm.get('startDate')?.invalid"
-          variant="primary"
-        ></app-button>
-      </div>
-    </form>
-
-    <!-- STEP 3: Payment Details -->
-    <form *ngIf="currentStep() === 3" [formGroup]="paymentForm" (ngSubmit)="onSubmitPayment()" class="member-form">
-      <div class="form-grid-modern">
-        <div class="form-group-modern">
-          <label>Total Plan Amount (₹)</label>
-          <input type="number" formControlName="amount" readonly class="readonly-input-modern">
-        </div>
-
-        <div class="form-group-modern">
-          <label>Amount Paid Now (₹)</label>
-          <input type="number" formControlName="paidAmount" placeholder="Enter amount paid">
-        </div>
-
-        <div class="form-group-modern">
-          <label>Balance Amount (₹)</label>
-          <input type="number" [value]="paymentForm.get('balanceAmount')?.value" readonly class="readonly-input-modern">
-        </div>
-
-        <div class="form-group-modern">
-          <label>Balance Due Date</label>
-          <input type="date" formControlName="balanceDueDate" [attr.disabled]="paymentForm.get('balanceAmount')?.value <= 0 ? true : null">
-        </div>
-
         <div class="form-group-modern">
           <label>Payment Mode</label>
           <select formControlName="paymentMode">
@@ -225,16 +120,186 @@
         </div>
       </div>
 
-      <div class="form-actions-modern">
-        <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
-        <app-button 
-          [label]="'Finalize & Generate Invoice'" 
-          type="submit" 
-          [disabled]="paymentForm.invalid"
-          variant="primary"
-        ></app-button>
+      <div class="form-actions-modern mt-32">
+        <app-button label="Cancel" variant="secondary" (onClick)="showAddonModal.set(false)"></app-button>
+        <app-button label="Activate & Pay" type="submit" variant="primary" [disabled]="addonForm.invalid"></app-button>
       </div>
     </form>
   </app-modal>
-</div>
 
+  <!-- Member Profile / Registration Modal -->
+  <app-modal 
+    [isOpen]="showModal()" 
+    [title]="isEditing() ? 'Update Member Profile' : 'New Member Registration'"
+    (close)="closeModal()"
+    [width]="'900px'"
+  >
+    <div class="profile-wizard">
+      <!-- Wizard Steps Header -->
+      <div class="wizard-steps">
+        <div class="step" [class.active]="currentStep() >= 1" (click)="currentStep.set(1)">
+          <span class="step-num">1</span>
+          <span class="step-label">Personal Info</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" [class.active]="currentStep() >= 2" (click)="currentStep.set(2)">
+          <span class="step-num">2</span>
+          <span class="step-label">Plan & Package</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" [class.active]="currentStep() >= 3" (click)="currentStep.set(3)">
+          <span class="step-num">3</span>
+          <span class="step-label">Payment</span>
+        </div>
+      </div>
+
+      <!-- Step 1: Personal Info -->
+      <form [formGroup]="memberForm" *ngIf="currentStep() === 1" (ngSubmit)="onSubmitMember()" class="wizard-form">
+        <div class="form-grid-3">
+          <div class="form-group-modern">
+            <label>Registration ID</label>
+            <input type="text" formControlName="registrationId" readonly class="readonly-input">
+          </div>
+          <div class="form-group-modern">
+            <label>Full Name *</label>
+            <input type="text" formControlName="name" placeholder="Enter name">
+          </div>
+          <div class="form-group-modern">
+            <label>Phone Number *</label>
+            <input type="text" formControlName="phone" placeholder="10-digit mobile">
+          </div>
+          <div class="form-group-modern">
+            <label>Gender *</label>
+            <select formControlName="gender">
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div class="form-group-modern">
+            <label>Date of Birth</label>
+            <input type="date" formControlName="dob">
+          </div>
+          <div class="form-group-modern">
+            <label>Blood Group</label>
+            <input type="text" formControlName="bloodGroup" placeholder="e.g. O+ve">
+          </div>
+        </div>
+
+        <div class="form-group-modern mt-16">
+          <label>Address</label>
+          <textarea formControlName="address" rows="2" placeholder="Full residential address"></textarea>
+        </div>
+
+        <div class="form-divider"><span>Physical Metrics</span></div>
+        <div class="form-grid-3">
+          <div class="form-group-modern">
+            <label>Weight (kg)</label>
+            <input type="number" formControlName="weight" placeholder="e.g. 75">
+          </div>
+          <div class="form-group-modern">
+            <label>Height (cm)</label>
+            <input type="number" formControlName="height" placeholder="e.g. 175">
+          </div>
+          <div class="form-group-modern">
+            <label>Fitness Goal</label>
+            <input type="text" formControlName="fitnessGoal" placeholder="Weight Loss, Bulk, etc.">
+          </div>
+        </div>
+
+        <div class="form-divider"><span>Emergency Contact</span></div>
+        <div class="form-grid-2">
+          <div class="form-group-modern">
+            <label>Contact Name</label>
+            <input type="text" formControlName="emergencyContactName" placeholder="Name of relative/friend">
+          </div>
+          <div class="form-group-modern">
+            <label>Contact Phone</label>
+            <input type="text" formControlName="emergencyContactPhone" placeholder="Emergency mobile number">
+          </div>
+        </div>
+
+        <div class="form-actions-modern mt-24">
+          <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
+          <app-button label="Next: Select Plan" type="submit" variant="primary"></app-button>
+        </div>
+      </form>
+
+      <!-- Step 2: Plan Selection (Subscription) -->
+      <div *ngIf="currentStep() === 2" class="wizard-form">
+        <div class="plan-selection-area">
+          <h3>Choose Membership Plan</h3>
+          <div class="plan-grid">
+            <div *ngFor="let plan of plans()" 
+                 class="plan-card" 
+                 [class.selected]="isPlanSelected(plan.id)"
+                 (click)="togglePlan(plan)">
+              <div class="plan-header">
+                <span class="plan-name">{{ plan.name }}</span>
+                <span class="plan-price">₹{{ plan.price }}</span>
+              </div>
+              <div class="plan-details">
+                <span>Duration: {{ plan.duration }} days</span>
+                <p>{{ plan.description }}</p>
+              </div>
+              <div class="selection-indicator">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form [formGroup]="subscriptionForm" class="mt-24">
+          <div class="form-group-modern">
+            <label>Subscription Start Date</label>
+            <input type="date" formControlName="startDate">
+          </div>
+        </form>
+
+        <div class="form-actions-modern mt-24">
+          <app-button label="Back" variant="secondary" (onClick)="currentStep.set(1)"></app-button>
+          <app-button label="Next: Payment" variant="primary" (onClick)="onSubmitSubscription()"></app-button>
+        </div>
+      </div>
+
+      <!-- Step 3: Payment -->
+      <form [formGroup]="paymentForm" *ngIf="currentStep() === 3" (ngSubmit)="onSubmitPayment()" class="wizard-form">
+        <div class="payment-summary-card">
+          <div class="summary-row">
+            <span>Selected Plan Total</span>
+            <span class="amount">₹{{ paymentForm.get('amount')?.value }}</span>
+          </div>
+        </div>
+
+        <div class="form-grid-2 mt-20">
+          <div class="form-group-modern">
+            <label>Amount Paid Now</label>
+            <input type="number" formControlName="paidAmount" placeholder="Enter amount received">
+          </div>
+          <div class="form-group-modern">
+            <label>Payment Mode</label>
+            <select formControlName="paymentMode">
+              <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2 mt-16" *ngIf="paymentForm.get('balanceAmount')?.value > 0">
+          <div class="form-group-modern">
+            <label>Remaining Balance</label>
+            <input type="number" formControlName="balanceAmount" readonly class="readonly-input danger-text">
+          </div>
+          <div class="form-group-modern">
+            <label>Balance Due Date</label>
+            <input type="date" formControlName="balanceDueDate">
+          </div>
+        </div>
+
+        <div class="form-actions-modern mt-24">
+          <app-button label="Back" variant="secondary" (onClick)="currentStep.set(2)"></app-button>
+          <app-button label="Complete Registration" type="submit" variant="primary"></app-button>
+        </div>
+      </form>
+    </div>
+  </app-modal>
+</div>

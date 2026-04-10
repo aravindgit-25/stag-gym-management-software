@@ -10,7 +10,10 @@ export enum AttendanceStatus {
 
 export interface Attendance {
   id?: number;
-  employee: Employee;
+  employeeId?: number;
+  employeeName?: string;
+  employeeCode?: string;
+  employee?: Employee;
   date: string;
   status: AttendanceStatus;
   checkInTime?: string;

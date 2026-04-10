@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, ContentChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -30,6 +30,8 @@ export class AppStagTableComponent {
   @Input() data: any[] = [];
   @Input() height: string = 'auto';
   @Input() loading: boolean = false;
+  
+  @ContentChild('cell') cellTemplate?: TemplateRef<any>;
   @Input() totalRecords: number = 0;
   @Input() storageKey: string = '';
   @Input() showSelectionColumn: boolean = false;

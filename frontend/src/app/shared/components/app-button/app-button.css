@@ -19,6 +19,28 @@
   cursor: not-allowed;
 }
 
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.btn-secondary .spinner {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--primary-grey);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.material-icons {
+  font-size: 18px;
+}
+
 .btn-primary {
   background: var(--primary-grey);
   color: white;

@@ -103,6 +103,146 @@
 .status-absent { border-left: 4px solid var(--accent-red); }
 .status-half { border-left: 4px solid #60a5fa; }
 
+/* Mark Attendance Form Styles */
+.mark-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px;
+}
+
+.form-group-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-modern label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.form-group-modern select,
+.form-group-modern textarea {
+  padding: 12px;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  background: white;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group-modern select:focus,
+.form-group-modern textarea:focus {
+  border-color: var(--primary-grey);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-group-modern textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-actions-modern {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+
+/* History Button */
+.btn-history-mini {
+  background: none;
+  border: 1.5px solid var(--border-medium);
+  color: var(--text-muted);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-history-mini:hover {
+  border-color: var(--primary-grey);
+  color: var(--primary-grey);
+  background: var(--bg-hover);
+}
+
+/* History Modal Styles */
+.history-container {
+  padding: 10px;
+}
+
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.summary-item {
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--border-light);
+}
+
+.summary-item .count {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.summary-item .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.summary-item.present { background: #f0fdf4; border-color: #dcfce7; }
+.summary-item.present .count { color: #166534; }
+
+.summary-item.absent { background: #fef2f2; border-color: #fee2e2; }
+.summary-item.absent .count { color: #991b1b; }
+
+.summary-item.late { background: #fffbeb; border-color: #fef3c7; }
+.summary-item.late .count { color: #92400e; }
+
+.summary-item.other { background: #f0f9ff; border-color: #e0f2fe; }
+.summary-item.other .count { color: #075985; }
+
+.filter-select {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: white;
+  cursor: pointer;
+}
+
+.mb-20 { margin-bottom: 20px; }
+.mt-20 { margin-top: 20px; }
+.ml-10 { margin-left: 10px; }
+
 @media screen and (max-width: 1024px) {
   .attendance-layout { grid-template-columns: 1fr; }
   .attendance-sidebar { order: -1; }
