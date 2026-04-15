@@ -15,7 +15,7 @@ import { PaymentService } from '../../services/payment.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { Member } from '../../models/member.model';
-import { Plan } from '../../models/plan.model';
+import { Plan, PlanType } from '../../models/plan.model';
 import { Subscription } from '../../models/subscription.model';
 import { Payment } from '../../models/payment.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
@@ -45,6 +45,7 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
   styleUrl: './subscription.css',
 })
 export class SubscriptionComponent implements OnInit {
+  PlanType = PlanType; // Expose PlanType to the template
   renewalForm: FormGroup;
   selectedPlanIds = signal<number[]>([]);
   searchTerm = signal<string>('');
