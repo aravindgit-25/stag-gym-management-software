@@ -61,14 +61,15 @@ export class DietPlanComponent implements OnInit {
   });
   
   showBuildModal = signal<boolean>(false);
+  showViewModal = signal<boolean>(false);
   calcForm: FormGroup;
   
   columns: StagTableColumn[] = [
     { field: 'registrationId', header: 'Reg ID', width: '100px' },
     { field: 'name', header: 'Member Name', minWidth: '200px' },
-    { field: 'tier', header: 'Tier', width: '120px', type: 'template' },
+    { field: 'tier', header: 'Plan Tier', width: '120px', type: 'template' },
     { field: 'status', header: 'Status', width: '120px' },
-    { field: 'actions', header: 'Action', width: '150px', type: 'template' }
+    { field: 'actions', header: 'Actions', width: '180px', type: 'template' }
   ];
 
   activityLevels = [
@@ -147,7 +148,23 @@ export class DietPlanComponent implements OnInit {
 
   openBuilder(member: Member) {
     this.selectedMember.set(member);
-    
+    this.loadMemberPlan(member, () => {
+      this.showBuildModal.set(true);
+    });
+  }
+
+  openView(member: Member) {
+    this.selectedMember.set(member);
+    this.loadMemberPlan(member, () => {
+      if (!this.currentPlan()?.id) {
+        this.notif.show('No active plan found. Please configure one first.', 'error');
+        return;
+      }
+      this.showViewModal.set(true);
+    });
+  }
+
+  loadMemberPlan(member: Member, callback?: Function) {
     this.dietService.getDietPlanByMemberId(member.id!).subscribe({
       next: (existingPlan) => {
         if (existingPlan) {
@@ -159,16 +176,48 @@ export class DietPlanComponent implements OnInit {
             activityLevel: existingPlan.activityLevel,
             tier: existingPlan.tier
           }, { emitEvent: false });
+          if (callback) callback();
         } else {
           this.createNewPlan(member);
+          if (callback) callback();
         }
-        this.showBuildModal.set(true);
       },
       error: () => {
         this.createNewPlan(member);
-        this.showBuildModal.set(true);
+        if (callback) callback();
       }
     });
+  }
+
+  printPlan() {
+    window.print();
+  }
+
+  shareWhatsApp() {
+    const plan = this.currentPlan();
+    const member = this.selectedMember();
+    if (!plan || !member) return;
+
+    let text = `*STAG FITNESS - DIET PLAN*\n`;
+    text += `*Member:* ${member.name}\n`;
+    text += `*Tier:* ${plan.tier}\n\n`;
+    text += `*Daily Targets:*\n`;
+    text += `- Calories: ${plan.targetCalories} kcal\n`;
+    text += `- Protein: ${plan.targetProtein}g\n`;
+    text += `- Carbs: ${plan.targetCarbs}g\n`;
+    text += `- Fats: ${plan.targetFats}g\n\n`;
+    text += `*Meal Schedule:*\n`;
+    
+    plan.meals.forEach(m => {
+      if (m.foods.length > 0) {
+        text += `*${m.time}:* ${m.foods.map(f => f.name).join(', ')} (${m.totalCalories} kcal)\n`;
+      }
+    });
+
+    let phone = member.phone;
+    if (phone && phone.length === 10) phone = '91' + phone;
+    
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
   }
 
   createNewPlan(member: Member) {

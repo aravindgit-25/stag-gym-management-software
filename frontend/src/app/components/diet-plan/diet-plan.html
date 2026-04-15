@@ -25,9 +25,12 @@
       [emptyMessage]="'No members eligible for diet plan found.'"
     >
       <ng-template #cell let-row let-col="column">
-        <div *ngIf="col.field === 'actions'">
-          <button class="btn-build-mini" (click)="openBuilder(row)">
-            Configure Plan
+        <div *ngIf="col.field === 'actions'" class="table-actions-mini">
+          <button class="btn-view-mini" (click)="openView(row)" title="View Plan">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <button class="btn-build-mini" (click)="openBuilder(row)" title="Configure">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
         </div>
         <div *ngIf="col.field === 'tier'">
@@ -36,6 +39,87 @@
       </ng-template>
     </app-stag-table>
   </div>
+
+  <!-- View Details Modal -->
+  <app-modal 
+    [isOpen]="showViewModal()" 
+    [title]="'Member Diet Plan'"
+    (close)="showViewModal.set(false)"
+    [width]="'800px'"
+  >
+    <div class="plan-view-container" id="printable-diet-plan">
+      <div class="plan-hero-header">
+        <div class="hero-left">
+          <h2 class="gym-name">STAG FITNESS</h2>
+          <p class="hero-sub">LIFESTYLE & FITNESS STUDIO</p>
+        </div>
+        <div class="hero-right">
+          <div class="plan-type-pill">{{ currentPlan()?.tier }} PLAN</div>
+        </div>
+      </div>
+
+      <div class="member-meta-strip">
+        <div class="meta-box">
+          <span class="label">MEMBER NAME</span>
+          <span class="value">{{ selectedMember()?.name }}</span>
+        </div>
+        <div class="meta-box">
+          <span class="label">REGISTRATION ID</span>
+          <span class="value">{{ selectedMember()?.registrationId }}</span>
+        </div>
+        <div class="meta-box">
+          <span class="label">TARGET CALORIES</span>
+          <span class="value highlight">{{ currentPlan()?.targetCalories }} kcal</span>
+        </div>
+      </div>
+
+      <div class="macro-stats-row">
+        <div class="macro-stat-card p">
+          <span class="m-val">{{ currentPlan()?.targetProtein }}g</span>
+          <span class="m-lab">PROTEIN</span>
+        </div>
+        <div class="macro-stat-card c">
+          <span class="m-val">{{ currentPlan()?.targetCarbs }}g</span>
+          <span class="m-lab">CARBS</span>
+        </div>
+        <div class="macro-stat-card f">
+          <span class="m-val">{{ currentPlan()?.targetFats }}g</span>
+          <span class="m-lab">FATS</span>
+        </div>
+      </div>
+
+      <div class="meal-plan-grid-view">
+        <div *ngFor="let meal of currentPlan()?.meals" class="meal-view-card">
+          <div class="mv-header">
+            <span class="time">{{ meal.time }}</span>
+            <span class="cals">{{ meal.totalCalories }} kcal</span>
+          </div>
+          <div class="mv-body">
+            <ul class="food-list-simple">
+              <li *ngFor="let f of meal.foods">
+                {{ f.name }} <span class="f-info">({{ f.calories }} cal)</span>
+              </li>
+              <li *ngIf="meal.foods.length === 0" class="empty-list">No items assigned</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="plan-footer-note">
+        <p>* Stick to the assigned macros for best results. Stay Hydrated!</p>
+      </div>
+    </div>
+
+    <div class="form-actions-modern mt-32 no-print">
+      <app-button label="Close" variant="secondary" (onClick)="showViewModal.set(false)"></app-button>
+      <div class="action-group-right">
+        <button class="btn-whatsapp-modern mr-12" (click)='shareWhatsApp()'>
+          Share WhatsApp
+        </button>
+        <app-button label="Download PDF" variant="primary" (onClick)="printPlan()"></app-button>
+      </div>
+    </div>
+  </app-modal>
 
   <app-modal 
     [isOpen]="showBuildModal()" 

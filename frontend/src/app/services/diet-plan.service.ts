@@ -24,6 +24,15 @@ export class DietPlanService {
     );
   }
 
+  getDietPlans(): Observable<DietPlan[]> {
+    return this.http.get<any[]>(this.apiUrl).pipe(
+      map(plans => plans.map(plan => ({
+        ...plan,
+        tier: plan.type || plan.tier || DietPlanTier.STANDARD
+      })))
+    );
+  }
+
   saveDietPlan(plan: DietPlan): Observable<DietPlan> {
     const payload = {
       ...plan,
