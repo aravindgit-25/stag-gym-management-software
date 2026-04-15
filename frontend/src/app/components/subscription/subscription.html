@@ -119,7 +119,7 @@
           [items]="planDropdownItems()"
           placeholder="Select plans..."
           [selectedIds]="selectedPlanIds"
-          (selectionChange)="selectedPlanIds.set($event); togglePlan({id: 0, name: '', price: 0, duration: 0})"
+          (selectionChange)="selectedPlanIds.set($event); togglePlan({id: 0, name: '', price: 0, duration: 0, type: PlanType.MEMBERSHIP})"
         ></app-stag-dropdown>
       </div>
 
