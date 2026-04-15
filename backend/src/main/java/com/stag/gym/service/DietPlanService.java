@@ -50,7 +50,7 @@ public class DietPlanService {
     @Transactional
     public DietPlanResponseDTO createOrUpdateDietPlan(Long memberId, DietPlan.PlanType type, DietPlan.DietCategory category) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
+                .orElseThrow(() -> new RuntimeException("Member not found with ID: " + memberId));
 
         DietPlan dietPlan = dietPlanRepository.findByMemberId(memberId)
                 .orElse(DietPlan.builder()
@@ -74,7 +74,12 @@ public class DietPlanService {
         dietPlan.setLastModifiedDate(LocalDate.now());
         dietPlan.setModificationCount(dietPlan.getModificationCount() + 1);
 
-        // Update calculations if data is available
+        updatePlanCalculations(dietPlan, member);
+
+        return mapToResponseDTO(dietPlanRepository.save(dietPlan));
+    }
+
+    private void updatePlanCalculations(DietPlan dietPlan, Member member) {
         if (member.getWeight() != null && member.getHeight() != null && member.getDob() != null) {
             int age = Period.between(member.getDob(), LocalDate.now()).getYears();
             dietPlan.setBmi(calculateBMI(member.getWeight(), member.getHeight()));
@@ -87,39 +92,62 @@ public class DietPlanService {
             dietPlan.setTargetCarbs((dietPlan.getTargetCalories() * 0.4) / 4);
             dietPlan.setTargetFats((dietPlan.getTargetCalories() * 0.3) / 9);
         }
-
-        return mapToResponseDTO(dietPlanRepository.save(dietPlan));
     }
 
     @Transactional
     public DietPlanResponseDTO addFoodToPlan(Long memberId, DietPlanFoodRequestDTO request) {
+        if (request.getFoodItemId() == null) {
+            throw new RuntimeException("foodItemId is required in the request body");
+        }
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found with ID: " + memberId));
+
         DietPlan dietPlan = dietPlanRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new RuntimeException("Diet Plan not found. Please create one first."));
+                .orElseGet(() -> {
+                    DietPlan newPlan = DietPlan.builder()
+                            .member(member)
+                            .type(DietPlan.PlanType.STANDARD)
+                            .category(DietPlan.DietCategory.VEG)
+                            .details(new ArrayList<>())
+                            .modificationCount(0)
+                            .build();
+                    updatePlanCalculations(newPlan, member);
+                    return dietPlanRepository.save(newPlan);
+                });
 
         if (dietPlan.getType() == DietPlan.PlanType.BASIC) {
             throw new RuntimeException("Basic plans cannot be modified. Upgrade to Standard or Premium.");
         }
 
         FoodItem foodItem = foodItemRepository.findById(request.getFoodItemId())
-                .orElseThrow(() -> new RuntimeException("Food Item not found"));
+                .orElseThrow(() -> new RuntimeException("Food Item not found with ID: " + request.getFoodItemId()));
 
-        double multiplier = request.getQuantity() / 100.0; // Assuming food DB stores per 100g unit defaults
+        if (dietPlan.getDetails() == null) {
+            dietPlan.setDetails(new ArrayList<>());
+        }
+
+        double multiplier = (request.getQuantity() != null ? request.getQuantity() : 100.0) / 100.0;
 
         DietPlanDetail detail = DietPlanDetail.builder()
                 .dietPlan(dietPlan)
                 .foodItem(foodItem)
-                .mealTime(request.getMealTime())
-                .quantity(request.getQuantity())
-                .totalCalories(foodItem.getCalories() * multiplier)
-                .totalProtein(foodItem.getProtein() * multiplier)
-                .totalCarbs(foodItem.getCarbs() * multiplier)
-                .totalFats(foodItem.getFats() * multiplier)
+                .mealTime(request.getMealTime() != null ? request.getMealTime() : "Unscheduled")
+                .quantity(request.getQuantity() != null ? request.getQuantity() : 100.0)
+                .totalCalories(safeMultiply(foodItem.getCalories(), multiplier))
+                .totalProtein(safeMultiply(foodItem.getProtein(), multiplier))
+                .totalCarbs(safeMultiply(foodItem.getCarbs(), multiplier))
+                .totalFats(safeMultiply(foodItem.getFats(), multiplier))
                 .build();
 
         dietPlan.getDetails().add(detail);
         dietPlanDetailRepository.save(detail);
 
         return mapToResponseDTO(dietPlan);
+    }
+
+    private Double safeMultiply(Double val, Double mult) {
+        return (val != null) ? val * mult : 0.0;
     }
 
     @Transactional

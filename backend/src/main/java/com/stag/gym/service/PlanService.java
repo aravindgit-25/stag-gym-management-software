@@ -26,6 +26,7 @@ public class PlanService {
                 .name(requestDTO.getName())
                 .duration(requestDTO.getDuration())
                 .price(requestDTO.getPrice())
+                .type(requestDTO.getType())
                 .build();
         
         Plan savedPlan = planRepository.save(plan);
@@ -34,6 +35,12 @@ public class PlanService {
 
     public List<PlanResponseDTO> getAllPlans() {
         return planRepository.findAll().stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PlanResponseDTO> getPlansByType(Plan.PlanType type) {
+        return planRepository.findByType(type).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -52,6 +59,7 @@ public class PlanService {
         plan.setName(requestDTO.getName());
         plan.setDuration(requestDTO.getDuration());
         plan.setPrice(requestDTO.getPrice());
+        plan.setType(requestDTO.getType());
         
         Plan updatedPlan = planRepository.save(plan);
         return mapToResponseDTO(updatedPlan);
@@ -76,6 +84,7 @@ public class PlanService {
                 .name(plan.getName())
                 .duration(plan.getDuration())
                 .price(plan.getPrice())
+                .type(plan.getType())
                 .createdAt(plan.getCreatedAt())
                 .updatedAt(plan.getUpdatedAt())
                 .build();

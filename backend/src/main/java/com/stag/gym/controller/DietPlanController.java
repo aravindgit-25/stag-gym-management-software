@@ -1,5 +1,6 @@
 package com.stag.gym.controller;
 
+import com.stag.gym.dto.DietPlanCreateRequestDTO;
 import com.stag.gym.dto.DietPlanFoodRequestDTO;
 import com.stag.gym.dto.DietPlanResponseDTO;
 import com.stag.gym.model.DietPlan;
@@ -15,12 +16,21 @@ public class DietPlanController {
 
     private final DietPlanService dietPlanService;
 
-    @PostMapping("/member/{memberId}/generate")
+    @PostMapping("/generate")
     public ResponseEntity<DietPlanResponseDTO> createOrUpdateDietPlan(
-            @PathVariable Long memberId,
+            @RequestParam Long memberId,
             @RequestParam DietPlan.PlanType type,
             @RequestParam DietPlan.DietCategory category) {
         return ResponseEntity.ok(dietPlanService.createOrUpdateDietPlan(memberId, type, category));
+    }
+
+    @PostMapping
+    public ResponseEntity<DietPlanResponseDTO> createOrUpdateDietPlanBody(
+            @RequestBody DietPlanCreateRequestDTO request) {
+        return ResponseEntity.ok(dietPlanService.createOrUpdateDietPlan(
+                request.getMemberId(), 
+                request.getType(), 
+                request.getCategory()));
     }
 
     @GetMapping("/member/{memberId}")

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { DietPlan, FoodItem, DietPlanTier } from '../models/diet-plan.model';
 import { environment } from '../../environments/environment';
 
@@ -13,15 +13,34 @@ export class DietPlanService {
   constructor(private http: HttpClient) { }
 
   getDietPlanByMemberId(memberId: number): Observable<DietPlan> {
-    return this.http.get<DietPlan>(`${this.apiUrl}/member/${memberId}`);
+    return this.http.get<any>(`${this.apiUrl}/member/${memberId}`).pipe(
+      map(plan => {
+        if (!plan) return plan;
+        return {
+          ...plan,
+          tier: plan.type || plan.tier || DietPlanTier.STANDARD
+        };
+      })
+    );
   }
 
   saveDietPlan(plan: DietPlan): Observable<DietPlan> {
-    return this.http.post<DietPlan>(this.apiUrl, plan);
+    const payload = {
+      ...plan,
+      type: plan.tier || 'STANDARD',
+      category: (plan as any).category || 'VEG',
+      plan_type: plan.tier || 'STANDARD', // Backup for snake_case
+      planType: plan.tier || 'STANDARD'   // Backup for camelCase
+    };
+    return this.http.post<DietPlan>(this.apiUrl, payload);
   }
 
   getFoodItems(): Observable<FoodItem[]> {
-    return this.http.get<FoodItem[]>(`${this.apiUrl}/foods`);
+    return this.http.get<FoodItem[]>(`${environment.apiUrl}/food-items`);
+  }
+
+  addFoodToMemberPlan(memberId: number, foodData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/member/${memberId}/food`, foodData);
   }
 
   // CORE LOGIC: BMR Calculation (Mifflin-St Jeor Equation)

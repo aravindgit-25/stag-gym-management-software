@@ -58,8 +58,7 @@
 :host ::ng-deep .status-new { border-left: 4px solid var(--accent-red); }
 :host ::ng-deep .status-followup { border-left: 4px solid #facc15; } /* yellow-400 */
 :host ::ng-deep .status-joined { border-left: 4px solid #4ade80; } /* green-400 */
-:host ::ng-deep .status-not-interested { border-left: 4px solid var(--secondary-grey); }
-:host ::ng-deep .status-elsewhere { border-left: 4px solid var(--text-muted); }
+:host ::ng-deep .status-rejected { border-left: 4px solid #ef4444; } /* red-500 */
 
 @media screen and (max-width: 768px) {
   .form-grid-modern { grid-template-columns: 1fr; }

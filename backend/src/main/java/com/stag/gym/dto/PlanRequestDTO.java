@@ -1,5 +1,7 @@
 package com.stag.gym.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.stag.gym.model.Plan;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,4 +26,8 @@ public class PlanRequestDTO {
     @NotNull(message = "Price is required")
     @Min(value = 0, message = "Price must be at least 0")
     private Double price;
+
+    @NotNull(message = "Plan type is required")
+    @JsonProperty("type")
+    private Plan.PlanType type;
 }
