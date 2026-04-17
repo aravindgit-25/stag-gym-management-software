@@ -45,7 +45,7 @@
     [isOpen]="showViewModal()" 
     [title]="'Member Diet Plan'"
     (close)="showViewModal.set(false)"
-    [width]="'800px'"
+    [width]="'900px'"
   >
     <div class="plan-view-container" id="printable-diet-plan">
       <div class="plan-hero-header">
@@ -64,49 +64,91 @@
           <span class="value">{{ selectedMember()?.name }}</span>
         </div>
         <div class="meta-box">
-          <span class="label">REGISTRATION ID</span>
+          <span class="label">REG ID</span>
           <span class="value">{{ selectedMember()?.registrationId }}</span>
         </div>
         <div class="meta-box">
-          <span class="label">TARGET CALORIES</span>
-          <span class="value highlight">{{ currentPlan()?.targetCalories }} kcal</span>
+          <span class="label">WEIGHT / BMI</span>
+          <span class="value">{{ currentPlan()?.weight }}kg / {{ currentPlan()?.bmi }} ({{ getBMIStatus(currentPlan()?.bmi || 0) }})</span>
+        </div>
+        <div class="meta-box">
+          <span class="label">ASSIGNED CALORIES</span>
+          <span class="value highlight">{{ currentPlan()?.totalAssignedCalories }} / {{ currentPlan()?.targetCalories }} kcal</span>
         </div>
       </div>
 
       <div class="macro-stats-row">
         <div class="macro-stat-card p">
-          <span class="m-val">{{ currentPlan()?.targetProtein }}g</span>
-          <span class="m-lab">PROTEIN</span>
+          <span class="m-val">{{ currentPlan()?.totalAssignedProtein }}g</span>
+          <span class="m-lab">PROTEIN (Target: {{ currentPlan()?.targetProtein }}g)</span>
         </div>
         <div class="macro-stat-card c">
-          <span class="m-val">{{ currentPlan()?.targetCarbs }}g</span>
-          <span class="m-lab">CARBS</span>
+          <span class="m-val">{{ currentPlan()?.totalAssignedCarbs }}g</span>
+          <span class="m-lab">CARBS (Target: {{ currentPlan()?.targetCarbs }}g)</span>
         </div>
         <div class="macro-stat-card f">
-          <span class="m-val">{{ currentPlan()?.targetFats }}g</span>
-          <span class="m-lab">FATS</span>
+          <span class="m-val">{{ currentPlan()?.totalAssignedFats }}g</span>
+          <span class="m-lab">FATS (Target: {{ currentPlan()?.targetFats }}g)</span>
         </div>
       </div>
 
-      <div class="meal-plan-grid-view">
-        <div *ngFor="let meal of currentPlan()?.meals" class="meal-view-card">
-          <div class="mv-header">
-            <span class="time">{{ meal.time }}</span>
-            <span class="cals">{{ meal.totalCalories }} kcal</span>
-          </div>
-          <div class="mv-body">
-            <ul class="food-list-simple">
-              <li *ngFor="let f of meal.foods">
-                {{ f.name }} <span class="f-info">({{ f.calories }} cal)</span>
-              </li>
-              <li *ngIf="meal.foods.length === 0" class="empty-list">No items assigned</li>
-            </ul>
-          </div>
-        </div>
+      <div class="section-divider">
+        <span>DAILY MEAL CHART</span>
       </div>
+
+      <div class="meal-chart-wrapper">
+        <table class="meal-chart-table-modern">
+          <thead>
+            <tr>
+              <th>Meal</th>
+              <th>Food Items & Quantity</th>
+              <th>Calories</th>
+              <th>Macros (P/C/F)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let meal of currentPlan()?.meals">
+              <td class="meal-name-cell">
+                <span class="m-name">{{ meal.time }}</span>
+              </td>
+              <td class="food-items-cell">
+                <div *ngFor="let f of meal.foods" class="food-line">
+                  <span class="f-dot">•</span> {{ f.name }} <span class="f-unit" *ngIf="f.unit">({{ f.unit }})</span>
+                </div>
+                <div *ngIf="meal.foods.length === 0" class="no-foods">No items assigned</div>
+              </td>
+              <td class="cal-cell"><strong>{{ meal.totalCalories }}</strong> <small>kcal</small></td>
+              <td class="macro-cell">
+                <div class="macro-mini-pills">
+                  <span class="mini-p">P: {{ getMealProtein(meal) }}g</span>
+                  <span class="mini-c">C: {{ getMealCarbs(meal) }}g</span>
+                  <span class="mini-f">F: {{ getMealFats(meal) }}g</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="chart-footer-row">
+              <td colspan="2">TOTAL DAILY INTAKE</td>
+              <td><strong>{{ currentPlan()?.totalAssignedCalories }} kcal</strong></td>
+              <td>
+                <div class="macro-mini-pills">
+                  <span class="mini-p">P: {{ currentPlan()?.totalAssignedProtein }}g</span>
+                  <span class="mini-c">C: {{ currentPlan()?.totalAssignedCarbs }}g</span>
+                  <span class="mini-f">F: {{ currentPlan()?.totalAssignedFats }}g</span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Keep existing grid view for printable/mobile variety if preferred, but table is primary now -->
+      <!-- <div class="meal-plan-grid-view mt-24 no-print"> ... </div> -->
       
       <div class="plan-footer-note">
         <p>* Stick to the assigned macros for best results. Stay Hydrated!</p>
+        <p class="mt-4">Plan Generated on {{ currentPlan()?.lastModified | date:'mediumDate' }}</p>
       </div>
     </div>
 

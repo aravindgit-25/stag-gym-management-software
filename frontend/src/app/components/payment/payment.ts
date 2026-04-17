@@ -80,6 +80,7 @@ export class PaymentComponent implements OnInit {
     const plans = this.plans();
     
     return this.paymentsList().map(pay => {
+      const id = pay.id || (pay as any).payment_id;
       const subId = pay.subscriptionId || (pay as any).subscription_id;
       const sub = subs.find(s => s.id === subId);
       const memberId = sub?.memberId || (sub as any)?.member_id;
@@ -90,6 +91,7 @@ export class PaymentComponent implements OnInit {
 
       return {
         ...pay,
+        id, // Ensure id is flat
         regId: member?.registrationId || 'N/A',
         memberName: member?.name || 'Unknown',
         planName: plan?.name || 'N/A',
@@ -144,7 +146,15 @@ export class PaymentComponent implements OnInit {
   });
 
   onPrintReceipt(payment: any): void {
-    const url = this.router.serializeUrl(this.router.createUrlTree(['/invoice', payment.id]));
+    const id = payment.id || payment.payment_id || payment.paymentId;
+    
+    if (!id) {
+      this.notif.show('Cannot print invoice: Payment ID missing.', 'error');
+      return;
+    }
+
+    // prepareExternalUrl adds the '#' if HashLocationStrategy is used
+    const url = this.location.prepareExternalUrl(`/invoice/${id}`);
     window.open(url, '_blank');
   }
 

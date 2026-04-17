@@ -273,10 +273,15 @@ export class MemberComponent implements OnInit {
         subscriptionId: sub.id!,
         ...this.paymentForm.value
       };
-      this.paymentService.addPayment(payData as any).subscribe(() => {
+      this.paymentService.addPayment(payData as any).subscribe(pay => {
         this.notif.show('Registration Complete!', 'success');
         this.loadData();
         this.closeModal();
+
+        // Open invoice in new tab
+        const id = pay.id || (pay as any).payment_id;
+        const url = this.location.prepareExternalUrl(`/invoice/${id}`);
+        window.open(url, '_blank');
       });
     });
   }
@@ -312,10 +317,16 @@ export class MemberComponent implements OnInit {
           paidAmount: paidAmount,
           paymentMode: paymentMode
         };
-        this.paymentService.addPayment(payData as any).subscribe(() => {
+        this.paymentService.addPayment(payData as any).subscribe(pay => {
           this.notif.show('Add-on Service Activated!', 'success');
           this.loadData();
           this.showAddonModal.set(false);
+
+          // Open invoice in new tab
+          const id = pay.id || (pay as any).payment_id;
+          const url = this.location.prepareExternalUrl(`/invoice/${id}`);
+          window.open(url, '_blank');
+
           // Redirect to Diet Plans if it was a diet plan
           const plan = this.plans().find(p => p.id === Number(planId));
           if (plan?.name.toLowerCase().includes('diet')) {

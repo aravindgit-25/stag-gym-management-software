@@ -167,8 +167,22 @@ export class DietPlanComponent implements OnInit {
   loadMemberPlan(member: Member, callback?: Function) {
     this.dietService.getDietPlanByMemberId(member.id!).subscribe({
       next: (existingPlan) => {
+        console.log('DEBUG: Diet Plan from backend:', existingPlan);
+        
         if (existingPlan) {
+          // Ensure meals array is properly structured if service grouping didn't find assignments
+          if (!existingPlan.meals || existingPlan.meals.length === 0) {
+            existingPlan.meals = [
+              { time: 'Breakfast', foods: [], totalCalories: 0 },
+              { time: 'Lunch', foods: [], totalCalories: 0 },
+              { time: 'Evening Snack', foods: [], totalCalories: 0 },
+              { time: 'Dinner', foods: [], totalCalories: 0 }
+            ];
+          }
+
           this.currentPlan.set(existingPlan);
+          this.updatePlanTotals();
+
           this.calcForm.patchValue({
             weight: existingPlan.weight,
             height: existingPlan.height,
@@ -187,6 +201,18 @@ export class DietPlanComponent implements OnInit {
         if (callback) callback();
       }
     });
+  }
+
+  getMealProtein(meal: Meal): number {
+    return meal.foods.reduce((sum, f) => sum + (f.protein || 0), 0);
+  }
+
+  getMealCarbs(meal: Meal): number {
+    return meal.foods.reduce((sum, f) => sum + (f.carbs || 0), 0);
+  }
+
+  getMealFats(meal: Meal): number {
+    return meal.foods.reduce((sum, f) => sum + (f.fats || 0), 0);
   }
 
   printPlan() {
