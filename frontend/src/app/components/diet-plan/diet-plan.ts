@@ -34,30 +34,49 @@ export class DietPlanComponent implements OnInit {
 
   // Eligible members for diet plans
   members = computed(() => {
-    return this.allMembers().filter(m => {
+    return this.allMembers().map(m => {
       const memberSubs = this.subscriptions().filter(s => Number(s.memberId || (s as any).member_id) === Number(m.id));
-      if (memberSubs.length === 0) return false;
-
+      
       // Check if member has ANY subscription to an ADD_ON plan with "diet" in the name
-      const hasDietAddon = memberSubs.some(s => {
+      const dietSubs = memberSubs.filter(s => {
         const pId = s.planId || (s as any).plan_id;
         const plan = this.plans().find(p => Number(p.id) === Number(pId));
         return plan && plan.type === PlanType.ADD_ON && plan.name.toLowerCase().includes('diet');
       });
 
-      if (hasDietAddon) return true;
+      let tier = DietPlanTier.NONE;
+      
+      if (dietSubs.length > 0) {
+        // Determine tier from plan name (Premium, Standard, Basic)
+        const latestDietSub = dietSubs.sort((a, b) => b.id! - a.id!)[0];
+        const pId = latestDietSub.planId || (latestDietSub as any).plan_id;
+        const plan = this.plans().find(p => Number(p.id) === Number(pId));
+        const planName = plan?.name.toLowerCase() || '';
+        
+        if (planName.includes('premium')) tier = DietPlanTier.PREMIUM;
+        else if (planName.includes('standard')) tier = DietPlanTier.STANDARD;
+        else tier = DietPlanTier.BASIC;
+      } else {
+        // If no specific addon, check membership duration (Must be >= 90 days / 3 months)
+        const maxMembershipDuration = memberSubs
+          .map(s => {
+            const pId = s.planId || (s as any).plan_id;
+            const plan = this.plans().find(p => Number(p.id) === Number(pId));
+            return (plan && plan.type === PlanType.MEMBERSHIP) ? plan.duration : 0;
+          })
+          .reduce((max, d) => Math.max(max, d), 0);
 
-      // If no specific addon, check membership duration (Must be >= 90 days / 3 months)
-      const maxMembershipDuration = memberSubs
-        .map(s => {
-          const pId = s.planId || (s as any).plan_id;
-          const plan = this.plans().find(p => Number(p.id) === Number(pId));
-          return (plan && plan.type === PlanType.MEMBERSHIP) ? plan.duration : 0;
-        })
-        .reduce((max, d) => Math.max(max, d), 0);
+        if (maxMembershipDuration >= 90) {
+          tier = DietPlanTier.BASIC;
+        }
+      }
 
-      return maxMembershipDuration >= 90;
-    });
+      return {
+        ...m,
+        tier,
+        status: tier !== DietPlanTier.NONE ? 'Eligible' : 'Not Eligible'
+      };
+    }).filter(m => m.tier !== DietPlanTier.NONE);
   });
   
   showBuildModal = signal<boolean>(false);
@@ -146,9 +165,14 @@ export class DietPlanComponent implements OnInit {
     });
   }
 
-  openBuilder(member: Member) {
+  openBuilder(member: any) {
     this.selectedMember.set(member);
     this.loadMemberPlan(member, () => {
+      // If a new plan is being created (no id yet), ensure the correct tier from the table is used
+      if (!this.currentPlan()?.id) {
+        this.currentPlan.update(p => p ? { ...p, tier: member.tier || DietPlanTier.BASIC } : null);
+        this.calcForm.patchValue({ tier: member.tier || DietPlanTier.BASIC }, { emitEvent: false });
+      }
       this.showBuildModal.set(true);
     });
   }

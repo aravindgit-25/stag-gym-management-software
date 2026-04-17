@@ -264,7 +264,7 @@ export class MemberComponent implements OnInit {
     
     const subData = {
       memberId: memberId!,
-      planId: planIds[0],
+      planId: planIds.join(','), // Support multiple plans joined by comma
       startDate: this.subscriptionForm.value.startDate
     };
 

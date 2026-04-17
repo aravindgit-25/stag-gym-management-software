@@ -90,11 +90,9 @@ export class InvoiceComponent implements OnInit {
     
     const startDate = mainSub.startDate || (mainSub as any).start_date;
     
-    // Find related plans for this transaction
-    const relatedSubs = subs.filter(s => 
-      Number(s.memberId || (s as any).member_id) === Number(mId) &&
-      (s.startDate || (s as any).start_date) === startDate
-    );
+    // Fix: Only show the specific subscription linked to this payment
+    // Instead of filtering by startDate (which groups unrelated add-ons), we use only mainSub
+    const relatedSubs = [mainSub];
 
     const selectedPlans: any[] = [];
     relatedSubs.forEach(rs => {
