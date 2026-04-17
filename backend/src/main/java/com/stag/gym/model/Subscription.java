@@ -37,6 +37,12 @@ public class Subscription extends BaseEntity {
     @NotNull(message = "End date is required")
     private LocalDate endDate;
 
+    @Column(name = "discount_amount")
+    private Double discountAmount;
+
+    @Column(name = "discount_reason")
+    private String discountReason;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Status status = Status.ACTIVE;

@@ -1,3 +1,50 @@
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.search-box-modern {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 0 12px;
+  width: 450px; /* Increased from 300px */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-box-modern:focus-within {
+  border-color: var(--primary-grey);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05);
+  width: 500px; /* Further expand on focus */
+}
+
+.search-box-modern input {
+  border: none;
+  background: transparent;
+  padding: 10px 8px;
+  width: 100%;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.search-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.search-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  fill: none;
+}
+
 .collection-stats-grid {
   display: grid;
   grid-template-columns: 1fr 2fr;

@@ -115,9 +115,13 @@
         <span>SGST (0%)</span>
         <span>₹0.00</span>
       </div>
+      <div class="summary-row" *ngIf="invoiceData().discountAmount > 0">
+        <span>Discount ({{ invoiceData().discountReason || 'Offer' }})</span>
+        <span class="text-red">- ₹{{ invoiceData().discountAmount | number }}</span>
+      </div>
       <div class="summary-row highlight">
-        <span>Total Amount</span>
-        <span>₹{{ invoiceData().totalAmount | number }}</span>
+        <span>Net Amount</span>
+        <span>₹{{ (invoiceData().totalAmount - invoiceData().discountAmount) | number }}</span>
       </div>
       <div class="summary-row highlight paid">
         <span>Amount Paid</span>

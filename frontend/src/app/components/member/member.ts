@@ -137,6 +137,8 @@ export class MemberComponent implements OnInit {
 
     this.paymentForm = this.fb.group({
       amount: [0],
+      discountAmount: [0, [Validators.min(0)]],
+      discountReason: [''],
       paidAmount: [0, [Validators.required, Validators.min(0)]],
       balanceAmount: [0],
       balanceDueDate: [''],
@@ -145,8 +147,29 @@ export class MemberComponent implements OnInit {
 
     this.addonForm = this.fb.group({
       planId: ['', Validators.required],
+      discountAmount: [0, [Validators.min(0)]],
+      discountReason: [''],
       paidAmount: [0, [Validators.required, Validators.min(0)]],
       paymentMode: ['Cash', Validators.required]
+    });
+
+    // Auto-calculate paid amount on addon form when discount changes
+    this.addonForm.get('discountAmount')?.valueChanges.subscribe(disc => {
+      const planId = this.addonForm.get('planId')?.value;
+      const plan = this.plans().find(p => p.id === Number(planId));
+      if (plan) {
+        const net = plan.price - (disc || 0);
+        this.addonForm.patchValue({ paidAmount: Math.max(0, net) }, { emitEvent: false });
+      }
+    });
+
+    // Auto-calculate balance on payment form
+    this.paymentForm.valueChanges.subscribe(val => {
+      if (val.amount !== undefined && val.paidAmount !== undefined) {
+        const disc = val.discountAmount || 0;
+        const balance = val.amount - disc - val.paidAmount;
+        this.paymentForm.patchValue({ balanceAmount: Math.max(0, balance) }, { emitEvent: false });
+      }
     });
 
     this.paymentForm.get('paidAmount')?.valueChanges.subscribe(paid => {
@@ -313,7 +336,9 @@ export class MemberComponent implements OnInit {
       this.subscriptionService.addSubscription(subData as any).subscribe(sub => {
         const payData = {
           subscriptionId: sub.id!,
-          amount: paidAmount,
+          amount: (this.plans().find(p => p.id === Number(planId))?.price || 0),
+          discountAmount: this.addonForm.value.discountAmount || 0,
+          discountReason: this.addonForm.value.discountReason || '',
           paidAmount: paidAmount,
           paymentMode: paymentMode
         };

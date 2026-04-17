@@ -40,6 +40,8 @@ public class SubscriptionService {
                 .plan(plan)
                 .startDate(requestDTO.getStartDate())
                 .endDate(endDate)
+                .discountAmount(requestDTO.getDiscountAmount())
+                .discountReason(requestDTO.getDiscountReason())
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : Subscription.Status.ACTIVE)
                 .build();
 
@@ -69,6 +71,8 @@ public class SubscriptionService {
                 .planType(subscription.getPlan().getType())
                 .startDate(subscription.getStartDate())
                 .endDate(subscription.getEndDate())
+                .discountAmount(subscription.getDiscountAmount())
+                .discountReason(subscription.getDiscountReason())
                 .status(subscription.getStatus())
                 .createdAt(subscription.getCreatedAt())
                 .build();

@@ -34,6 +34,8 @@ public class PaymentService {
                 .paidAmount(requestDTO.getPaidAmount())
                 .balanceAmount(requestDTO.getBalanceAmount())
                 .balanceDueDate(requestDTO.getBalanceDueDate())
+                .discountAmount(requestDTO.getDiscountAmount())
+                .discountReason(requestDTO.getDiscountReason())
                 .paymentMode(requestDTO.getPaymentMode())
                 .paymentDate(requestDTO.getPaymentDate() != null ? requestDTO.getPaymentDate() : LocalDate.now())
                 .build();
@@ -74,6 +76,8 @@ public class PaymentService {
                 .amount(payment.getAmount())
                 .paidAmount(payment.getPaidAmount())
                 .balanceAmount(payment.getBalanceAmount())
+                .discountAmount(payment.getDiscountAmount())
+                .discountReason(payment.getDiscountReason())
                 .balanceDueDate(payment.getBalanceDueDate())
                 .paymentDate(payment.getPaymentDate())
                 .paymentMode(payment.getPaymentMode())

@@ -21,6 +21,8 @@ public class PaymentResponseDTO {
     private Double amount;
     private Double paidAmount;
     private Double balanceAmount;
+    private Double discountAmount;
+    private String discountReason;
     private LocalDate balanceDueDate;
     private LocalDate paymentDate;
     private Payment.PaymentMode paymentMode;

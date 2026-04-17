@@ -21,7 +21,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
         <aside class="app-sidebar" [class.open]="sidebarOpen()">
           <div class="sidebar-logo">
             <div class="mark"></div>
-            STAG <strong>FITNESS</strong>
+            STAG <strong>GYM</strong>
           </div>
           <nav class="sidebar-nav">
             <a *ngIf="authService.isAdmin()" class="nav-item" routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebar()">

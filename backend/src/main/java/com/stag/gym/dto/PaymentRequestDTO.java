@@ -1,5 +1,6 @@
 package com.stag.gym.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.stag.gym.model.Payment;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -28,6 +29,12 @@ public class PaymentRequestDTO {
     private Double balanceAmount;
 
     private LocalDate balanceDueDate;
+
+    @JsonAlias("discount_amount")
+    private Double discountAmount;
+
+    @JsonAlias("discount_reason")
+    private String discountReason;
 
     @NotNull(message = "Payment mode is required")
     private Payment.PaymentMode paymentMode;

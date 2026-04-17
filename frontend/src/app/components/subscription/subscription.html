@@ -125,6 +125,23 @@
 
       <div class="form-grid-modern">
         <div class="form-group-modern">
+          <label>Discount Amount (₹)</label>
+          <input type="number" formControlName="discountAmount" placeholder="e.g. 500">
+        </div>
+        <div class="form-group-modern">
+          <label>Offer Type / Reason</label>
+          <select formControlName="discountReason">
+            <option value="">No Discount</option>
+            <option value="Renewal Offer">Renewal Offer</option>
+            <option value="Festival Deal">Festival Special</option>
+            <option value="Loyalty Bonus">Loyalty Bonus</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
           <label>Start Date</label>
           <input type="date" formControlName="startDate">
         </div>
@@ -137,8 +154,10 @@
       </div>
 
       <div class="selection-summary-modern mt-20">
-        <span>Renewal Total</span>
-        <span class="price-pill">₹{{ renewalForm.get('amount')?.value }}</span>
+        <div class="summary-line">
+          <span>Net Payable</span>
+          <span class="price-pill">₹{{ renewalForm.get('amount')?.value }}</span>
+        </div>
       </div>
 
       <div class="form-actions-modern">
@@ -151,19 +170,38 @@
 <!-- Complete Payment Modal -->
 <app-modal [isOpen]="showCompletePaymentModal()" [title]="'Complete Payment: ' + selectedMemberName()" (close)="closeCompletePaymentModal()">
     <form [formGroup]="renewalForm" (ngSubmit)="onSaveCompletePayment()" class="member-form">
-      <div class="form-group-modern mb-20">
-        <label>Payment Amount (₹)</label>
-        <input type="number" formControlName="amount" placeholder="0.00">
+      
+      <div class="form-grid-modern">
+        <div class="form-group-modern">
+          <label>Discount Amount (₹)</label>
+          <input type="number" formControlName="discountAmount" placeholder="e.g. 500">
+        </div>
+        <div class="form-group-modern">
+          <label>Offer Reason</label>
+          <select formControlName="discountReason">
+            <option value="">No Discount</option>
+            <option value="Referral Offer">Referral Offer</option>
+            <option value="Special Waiver">Special Waiver</option>
+            <option value="Early Bird">Early Bird</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
       </div>
 
-      <div class="form-group-modern mb-20">
-        <label>Payment Mode</label>
-        <select formControlName="paymentMode">
-          <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
-        </select>
+      <div class="form-grid-modern mt-20">
+        <div class="form-group-modern">
+          <label>Final Payable (₹)</label>
+          <input type="number" formControlName="amount" placeholder="0.00">
+        </div>
+        <div class="form-group-modern">
+          <label>Payment Mode</label>
+          <select formControlName="paymentMode">
+            <option *ngFor="let mode of paymentModes" [value]="mode">{{ mode }}</option>
+          </select>
+        </div>
       </div>
 
-      <div class="form-actions-modern">
+      <div class="form-actions-modern mt-32">
         <app-button label="Cancel" variant="secondary" (onClick)="closeCompletePaymentModal()"></app-button>
         <app-button label="Save & Generate Invoice" type="submit" [disabled]="renewalForm.invalid" variant="primary"></app-button>
       </div>

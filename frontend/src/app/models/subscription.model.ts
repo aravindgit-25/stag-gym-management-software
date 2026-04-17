@@ -3,4 +3,6 @@ export interface Subscription {
   memberId: number;
   planId: number;
   startDate: string;
+  discountAmount?: number;
+  discountReason?: string;
 }
