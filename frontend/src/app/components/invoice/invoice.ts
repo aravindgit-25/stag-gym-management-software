@@ -47,7 +47,7 @@ export class InvoiceComponent implements OnInit {
       plans: this.planService.getPlans().pipe(retry(2), catchError(() => of([])))
     }).subscribe({
       next: (result) => {
-        const payment = result.payments.find(p => Number(p.id) === Number(paymentId));
+        const payment = result.payments.find(p => Number(p.id || (p as any).payment_id) === Number(paymentId));
         
         if (!payment) {
           // If not found immediately, wait 2 seconds and try one more time (case where DB write is slow)
@@ -55,7 +55,7 @@ export class InvoiceComponent implements OnInit {
             switchMap(() => this.paymentService.getPayments()),
             take(1)
           ).subscribe(retryPayments => {
-            const retryPayment = retryPayments.find(p => Number(p.id) === Number(paymentId));
+            const retryPayment = retryPayments.find(p => Number(p.id || (p as any).payment_id) === Number(paymentId));
             if (retryPayment) {
               this.processData(retryPayment, result.subs, result.members, result.plans);
             } else {
@@ -90,11 +90,9 @@ export class InvoiceComponent implements OnInit {
     
     const startDate = mainSub.startDate || (mainSub as any).start_date;
     
-    // Find related plans for this transaction
-    const relatedSubs = subs.filter(s => 
-      Number(s.memberId || (s as any).member_id) === Number(mId) &&
-      (s.startDate || (s as any).start_date) === startDate
-    );
+    // Fix: Only show the specific subscription linked to this payment
+    // Instead of filtering by startDate (which groups unrelated add-ons), we use only mainSub
+    const relatedSubs = [mainSub];
 
     const selectedPlans: any[] = [];
     relatedSubs.forEach(rs => {
@@ -115,15 +113,15 @@ export class InvoiceComponent implements OnInit {
     expDate.setDate(expDate.getDate() + maxDuration);
 
     this.invoiceData.set({
-      receiptNo: `REC-${payment.id?.toString().padStart(4, '0')}`,
-      regId: member?.registrationId || `SG-${member?.id?.toString().padStart(3, '0')}`,
+      receiptNo: `REC-${(payment.id || payment.payment_id)?.toString().padStart(4, '0')}`,
+      regId: member?.registrationId || member?.registration_id || `SG-${(member?.id || member?.member_id)?.toString().padStart(3, '0')}`,
       memberName: member?.name,
       phone: member?.phone,
       plans: selectedPlans,
       startDate: this.formatDate(startDate),
       endDate: expDate.toISOString().split('T')[0],
       amountPaid: payment.paidAmount || (payment as any).paid_amount || payment.amount,
-      totalAmount: payment.amount,
+      totalAmount: payment.amount || (payment as any).total_amount,
       balance: payment.balanceAmount || (payment as any).balance_amount || 0,
       paymentMode: payment.paymentMode || (payment as any).payment_mode,
       date: this.formatDate(payment.paymentDate || (payment as any).payment_date || new Date().toISOString())

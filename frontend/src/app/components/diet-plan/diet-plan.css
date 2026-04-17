@@ -191,15 +191,109 @@
 .food-list-simple li:last-child { border-bottom: none; }
 .food-list-simple .f-info { font-size: 11px; color: #94a3b8; margin-left: 4px; }
 
-.plan-footer-note {
-  margin-top: 32px;
-  padding-top: 16px;
-  border-top: 1px dashed #cbd5e1;
-  font-size: 12px;
-  font-style: italic;
-  color: #64748b;
-  text-align: center;
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 32px 0 20px;
 }
+
+.section-divider span {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.section-divider::after {
+  content: "";
+  height: 1.5px;
+  background: #e2e8f0;
+  width: 100%;
+}
+
+.meal-chart-wrapper {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.meal-chart-table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.meal-chart-table-modern th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 800;
+  color: #475569;
+  border-bottom: 1.5px solid #e2e8f0;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.meal-chart-table-modern td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.meal-name-cell .m-name {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.food-line {
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.f-dot { color: #cbd5e1; font-size: 18px; line-height: 1; }
+.f-unit { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+.no-foods { font-style: italic; color: #94a3b8; font-size: 13px; }
+
+.cal-cell { font-size: 15px; color: #0f172a; }
+.cal-cell small { color: #64748b; font-weight: 600; }
+
+.macro-mini-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.macro-mini-pills span {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mini-p { background: #eff6ff; color: #2563eb; }
+.mini-c { background: #f0fdf4; color: #16a34a; }
+.mini-f { background: #fffbeb; color: #d97706; }
+
+.chart-footer-row {
+  background: #f8fafc;
+}
+
+.chart-footer-row td {
+  border-bottom: none;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.mt-4 { margin-top: 4px; }
 
 /* Share Buttons */
 .action-group-right {

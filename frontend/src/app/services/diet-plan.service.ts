@@ -12,24 +12,91 @@ export class DietPlanService {
 
   constructor(private http: HttpClient) { }
 
-  getDietPlanByMemberId(memberId: number): Observable<DietPlan> {
-    return this.http.get<any>(`${this.apiUrl}/member/${memberId}`).pipe(
-      map(plan => {
-        if (!plan) return plan;
+  private mapDietPlan(plan: any): DietPlan {
+    if (!plan) return plan;
+    
+    // Ensure tier is set
+    const mappedPlan: DietPlan = {
+      ...plan,
+      tier: plan.type || plan.tier || DietPlanTier.STANDARD
+    };
+
+    // Try to find assignments in common fields, including 'details' seen in debug log
+    const assignments = plan.foodAssignments || plan.assignments || plan.planItems || plan.diet_items || plan.details || [];
+    
+    // If we have assignments, group them into meals
+    if (assignments.length > 0) {
+      const mealTimes = ['Breakfast', 'Lunch', 'Evening Snack', 'Dinner'];
+      mappedPlan.meals = mealTimes.map(time => {
+        const mealAssignments = assignments.filter((a: any) => 
+          (a.mealTime || a.meal_time || a.type)?.toLowerCase() === time.toLowerCase()
+        );
+        
+        const foods = mealAssignments.map((a: any) => {
+          // Food might be nested in foodItem, food_item, or flat in the assignment
+          const food = a.foodItem || a.food_item || a.foodItemDetails || (a.name ? a : null);
+          if (!food) return null;
+
+          return {
+            id: food.id,
+            name: food.name,
+            calories: Number(food.calories || a.calories || 0),
+            protein: Number(food.protein || a.protein || 0),
+            carbs: Number(food.carbs || a.carbs || 0),
+            fats: Number(food.fats || a.fats || 0),
+            unit: food.unit || a.unit || ''
+          };
+        }).filter((f: any) => f !== null);
+
         return {
-          ...plan,
-          tier: plan.type || plan.tier || DietPlanTier.STANDARD
+          time,
+          foods,
+          totalCalories: foods.reduce((sum: number, f: any) => sum + f.calories, 0)
         };
-      })
+      });
+    } else if (plan.meals && plan.meals.length > 0) {
+      // If meals already exist but might have different internal structure
+      mappedPlan.meals = plan.meals.map((m: any) => {
+        const foods = (m.foods || m.items || m.assignments || []).map((f: any) => ({
+          id: f.id,
+          name: f.name || (f.foodItem?.name),
+          calories: Number(f.calories || f.foodItem?.calories || 0),
+          protein: Number(f.protein || f.foodItem?.protein || 0),
+          carbs: Number(f.carbs || f.foodItem?.carbs || 0),
+          fats: Number(f.fats || f.foodItem?.fats || 0),
+          unit: f.unit || f.foodItem?.unit || ''
+        }));
+
+        return {
+          time: m.time || m.mealTime || m.meal_time,
+          foods: foods,
+          totalCalories: m.totalCalories || foods.reduce((sum: number, f: any) => sum + f.calories, 0)
+        };
+      });
+    }
+
+    // If still no meals, provide empty structure
+    if (!mappedPlan.meals || mappedPlan.meals.length === 0) {
+      mappedPlan.meals = [
+        { time: 'Breakfast', foods: [], totalCalories: 0 },
+        { time: 'Lunch', foods: [], totalCalories: 0 },
+        { time: 'Evening Snack', foods: [], totalCalories: 0 },
+        { time: 'Dinner', foods: [], totalCalories: 0 }
+      ];
+    }
+
+    return mappedPlan;
+  }
+
+  getDietPlanByMemberId(member_id: number): Observable<DietPlan> {
+    return this.http.get<any>(`${this.apiUrl}/member/${member_id}`).pipe(
+      map(plan => this.mapDietPlan(plan))
     );
   }
 
   getDietPlans(): Observable<DietPlan[]> {
     return this.http.get<any[]>(this.apiUrl).pipe(
-      map(plans => plans.map(plan => ({
-        ...plan,
-        tier: plan.type || plan.tier || DietPlanTier.STANDARD
-      })))
+      map(plans => plans.map(plan => this.mapDietPlan(plan)))
     );
   }
 

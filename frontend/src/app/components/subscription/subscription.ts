@@ -337,7 +337,11 @@ export class SubscriptionComponent implements OnInit {
           this.loadData();
           this.loadSubscriptions();
           this.closeCompletePaymentModal();
-          this.router.navigate(['/invoice', pay.id]);
+          
+          // Use hash-safe URL for opening in a new tab
+          const id = pay.id || (pay as any).payment_id;
+          const url = this.location.prepareExternalUrl(`/invoice/${id}`);
+          window.open(url, '_blank');
         },
         error: (err) => this.notif.show('Failed to record payment.', 'error'),
       });
@@ -397,11 +401,16 @@ export class SubscriptionComponent implements OnInit {
           };
 
           this.paymentService.addPayment(paymentData).subscribe({
-            next: () => {
+            next: (pay) => {
               this.notif.show('Membership renewed and payment recorded!', 'success');
               this.loadData();
               this.loadSubscriptions();
               this.closeModal();
+
+              // Open invoice in new tab
+              const id = pay.id || (pay as any).payment_id;
+              const url = this.location.prepareExternalUrl(`/invoice/${id}`);
+              window.open(url, '_blank');
             },
             error: (err) => this.notif.show('Subscription created but Payment failed.', 'error'),
           });
