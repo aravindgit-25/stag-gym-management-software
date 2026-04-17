@@ -1,5 +1,6 @@
 package com.stag.gym.dto;
 
+import com.stag.gym.model.Plan;
 import com.stag.gym.model.Subscription;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,7 @@ public class SubscriptionResponseDTO {
     private String memberName;
     private Long planId;
     private String planName;
+    private Plan.PlanType planType;
     private LocalDate startDate;
     private LocalDate endDate;
     private Subscription.Status status;

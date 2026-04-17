@@ -30,4 +30,14 @@ public class Plan extends BaseEntity {
     @NotNull(message = "Price is required")
     @Min(value = 0, message = "Price must be at least 0")
     private Double price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @NotNull(message = "Plan type is required")
+    @Builder.Default
+    private PlanType type = PlanType.MEMBERSHIP;
+
+    public enum PlanType {
+        MEMBERSHIP, ADD_ON
+    }
 }

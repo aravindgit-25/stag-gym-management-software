@@ -226,7 +226,10 @@ export class LeadComponent implements OnInit {
         const matchesSearch = l.name.toLowerCase().includes(term) || l.phone.includes(term);
         if (!matchesSearch) return false;
 
-        if (activeFilter === 'followup' && l.status !== LeadStatus.FOLLOW_UP) return false;
+        if (activeFilter === 'followup') {
+          const isFollowUp = l.status === LeadStatus.FOLLOW_UP || (!!l.nextFollowUpDate && l.status !== LeadStatus.JOINED);
+          if (!isFollowUp) return false;
+        }
         if (activeFilter === 'rejected') {
           const isRejected = [LeadStatus.NOT_INTERESTED, LeadStatus.JOINED_ELSEWHERE].includes(l.status);
           if (!isRejected) return false;
@@ -245,8 +248,8 @@ export class LeadComponent implements OnInit {
       case LeadStatus.NEW: return 'status-new';
       case LeadStatus.FOLLOW_UP: return 'status-followup';
       case LeadStatus.JOINED: return 'status-joined';
-      case LeadStatus.NOT_INTERESTED: return 'status-not-interested';
-      case LeadStatus.JOINED_ELSEWHERE: return 'status-elsewhere';
+      case LeadStatus.NOT_INTERESTED:
+      case LeadStatus.JOINED_ELSEWHERE: return 'status-rejected';
       default: return '';
     }
   }

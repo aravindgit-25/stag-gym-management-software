@@ -2,6 +2,7 @@ package com.stag.gym.controller;
 
 import com.stag.gym.dto.PlanRequestDTO;
 import com.stag.gym.dto.PlanResponseDTO;
+import com.stag.gym.model.Plan;
 import com.stag.gym.service.PlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,10 @@ public class PlanController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PlanResponseDTO>> getAllPlans() {
+    public ResponseEntity<List<PlanResponseDTO>> getAllPlans(@RequestParam(required = false) Plan.PlanType type) {
+        if (type != null) {
+            return ResponseEntity.ok(planService.getPlansByType(type));
+        }
         return ResponseEntity.ok(planService.getAllPlans());
     }
 

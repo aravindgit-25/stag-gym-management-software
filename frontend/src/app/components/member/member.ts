@@ -347,19 +347,25 @@ export class MemberComponent implements OnInit {
 
     return this.members()
       .map(m => {
-        const memberSubs = this.subscriptions().filter(s => s.memberId === m.id);
+        const memberSubs = this.subscriptions().filter(s => Number(s.memberId || (s as any).member_id) === Number(m.id));
         let expiryDisplay = 'No Plan';
         let rowClass = '';
         let isExpiringSoon = false;
         let isExpired = true;
-        let lastPlanId = null;
+        let lastPlanId: number | null = null;
 
         if (memberSubs.length > 0) {
-          const latest = memberSubs.sort((a,b) => new Date(b.startDate!).getTime() - new Date(a.startDate!).getTime())[0];
-          lastPlanId = latest.planId;
-          const plan = this.plans().find(p => p.id === latest.planId);
+          const latest = memberSubs.sort((a,b) => {
+            const dateA = new Date(a.startDate || (a as any).start_date).getTime();
+            const dateB = new Date(b.startDate || (b as any).start_date).getTime();
+            return dateB - dateA;
+          })[0];
+          
+          lastPlanId = latest.planId || (latest as any).plan_id;
+          const plan = this.plans().find(p => Number(p.id) === Number(lastPlanId));
           if (plan) {
-            const expDate = new Date(latest.startDate!);
+            const sDate = latest.startDate || (latest as any).start_date;
+            const expDate = new Date(sDate);
             expDate.setDate(expDate.getDate() + plan.duration);
             expiryDisplay = expDate.toISOString().split('T')[0];
             
@@ -380,7 +386,7 @@ export class MemberComponent implements OnInit {
         if (filter === 'inactive' && !m.isExpired) return false;
         if (filter === 'expiring' && !m.isExpiringSoon) return false;
         
-        if (planId && m.lastPlanId !== Number(planId)) return false;
+        if (planId && Number(m.lastPlanId) !== Number(planId)) return false;
         
         if (month) {
           const expMonth = new Date(m.expiryDisplay).toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -391,7 +397,7 @@ export class MemberComponent implements OnInit {
       });
   });
 
-  availablePlansForFilter = computed(() => this.plans().map(p => ({ id: p.id, name: p.name })));
+  availablePlansForFilter = computed(() => this.plans().filter(p => p.type === PlanType.MEMBERSHIP).map(p => ({ id: p.id, name: p.name })));
   
   availableMonthsForFilter = computed(() => {
     const months = new Set<string>();

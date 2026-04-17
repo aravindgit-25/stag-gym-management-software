@@ -66,6 +66,7 @@ public class SubscriptionService {
                 .memberName(subscription.getMember().getName())
                 .planId(subscription.getPlan().getId())
                 .planName(subscription.getPlan().getName())
+                .planType(subscription.getPlan().getType())
                 .startDate(subscription.getStartDate())
                 .endDate(subscription.getEndDate())
                 .status(subscription.getStatus())

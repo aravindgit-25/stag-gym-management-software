@@ -45,7 +45,7 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
   styleUrl: './subscription.css',
 })
 export class SubscriptionComponent implements OnInit {
-  PlanType = PlanType; // Expose PlanType to the template
+  readonly PlanType = PlanType; // Expose PlanType to the template
   renewalForm: FormGroup;
   selectedPlanIds = signal<number[]>([]);
   searchTerm = signal<string>('');

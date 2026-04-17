@@ -110,7 +110,13 @@
   background: var(--bg-hover);
 }
 
-/* Status markers */
+/* Status markers - Generic */
+.stag-table tr.status-new td:first-child { border-left: 4px solid var(--accent-red); }
+.stag-table tr.status-followup td:first-child { border-left: 4px solid #facc15; }
+.stag-table tr.status-joined td:first-child { border-left: 4px solid #4ade80; }
+.stag-table tr.status-rejected td:first-child { border-left: 4px solid #ef4444; }
+
+/* Status markers - Specific */
 .stag-table tr.expired td:first-child {
   border-left: 3px solid var(--accent-red);
 }

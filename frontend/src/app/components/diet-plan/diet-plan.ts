@@ -3,8 +3,12 @@ import { CommonModule, Location } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MemberService } from '../../services/member.service';
 import { DietPlanService } from '../../services/diet-plan.service';
+import { SubscriptionService } from '../../services/subscription.service';
+import { PlanService } from '../../services/plan.service';
 import { NotificationService } from '../../services/notification.service';
 import { Member } from '../../models/member.model';
+import { Subscription } from '../../models/subscription.model';
+import { Plan, PlanType } from '../../models/plan.model';
 import { DietPlan, FoodItem, DietPlanTier, Meal } from '../../models/diet-plan.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import { AppStagTableComponent, StagTableColumn } from '../../shared/components/stag-table/stag-table';
@@ -21,20 +25,51 @@ import { catchError, finalize } from 'rxjs/operators';
 })
 export class DietPlanComponent implements OnInit {
   loading = signal<boolean>(false);
-  members = signal<Member[]>([]);
+  allMembers = signal<Member[]>([]);
+  plans = signal<Plan[]>([]);
+  subscriptions = signal<Subscription[]>([]);
   foodDatabase = signal<FoodItem[]>([]);
   selectedMember = signal<Member | null>(null);
   currentPlan = signal<DietPlan | null>(null);
+
+  // Eligible members for diet plans
+  members = computed(() => {
+    return this.allMembers().filter(m => {
+      const memberSubs = this.subscriptions().filter(s => Number(s.memberId || (s as any).member_id) === Number(m.id));
+      if (memberSubs.length === 0) return false;
+
+      // Check if member has ANY subscription to an ADD_ON plan with "diet" in the name
+      const hasDietAddon = memberSubs.some(s => {
+        const pId = s.planId || (s as any).plan_id;
+        const plan = this.plans().find(p => Number(p.id) === Number(pId));
+        return plan && plan.type === PlanType.ADD_ON && plan.name.toLowerCase().includes('diet');
+      });
+
+      if (hasDietAddon) return true;
+
+      // If no specific addon, check membership duration (Must be >= 90 days / 3 months)
+      const maxMembershipDuration = memberSubs
+        .map(s => {
+          const pId = s.planId || (s as any).plan_id;
+          const plan = this.plans().find(p => Number(p.id) === Number(pId));
+          return (plan && plan.type === PlanType.MEMBERSHIP) ? plan.duration : 0;
+        })
+        .reduce((max, d) => Math.max(max, d), 0);
+
+      return maxMembershipDuration >= 90;
+    });
+  });
   
   showBuildModal = signal<boolean>(false);
+  showViewModal = signal<boolean>(false);
   calcForm: FormGroup;
   
   columns: StagTableColumn[] = [
     { field: 'registrationId', header: 'Reg ID', width: '100px' },
     { field: 'name', header: 'Member Name', minWidth: '200px' },
-    { field: 'tier', header: 'Tier', width: '120px', type: 'template' },
+    { field: 'tier', header: 'Plan Tier', width: '120px', type: 'template' },
     { field: 'status', header: 'Status', width: '120px' },
-    { field: 'actions', header: 'Action', width: '150px', type: 'template' }
+    { field: 'actions', header: 'Actions', width: '180px', type: 'template' }
   ];
 
   activityLevels = [
@@ -49,6 +84,8 @@ export class DietPlanComponent implements OnInit {
     private fb: FormBuilder,
     private memberService: MemberService,
     private dietService: DietPlanService,
+    private subService: SubscriptionService,
+    private planService: PlanService,
     private notif: NotificationService,
     private location: Location
   ) {
@@ -71,10 +108,14 @@ export class DietPlanComponent implements OnInit {
     this.loading.set(true);
     forkJoin({
       members: this.memberService.getMembers().pipe(catchError(() => of([]))),
+      plans: this.planService.getPlans().pipe(catchError(() => of([]))),
+      subs: this.subService.getSubscriptions().pipe(catchError(() => of([]))),
       foods: this.dietService.getFoodItems().pipe(catchError(() => of([])))
     }).pipe(finalize(() => this.loading.set(false)))
       .subscribe(res => {
-        this.members.set(res.members);
+        this.allMembers.set(res.members);
+        this.plans.set(res.plans);
+        this.subscriptions.set(res.subs);
         this.foodDatabase.set(res.foods);
       });
   }
@@ -107,7 +148,23 @@ export class DietPlanComponent implements OnInit {
 
   openBuilder(member: Member) {
     this.selectedMember.set(member);
-    
+    this.loadMemberPlan(member, () => {
+      this.showBuildModal.set(true);
+    });
+  }
+
+  openView(member: Member) {
+    this.selectedMember.set(member);
+    this.loadMemberPlan(member, () => {
+      if (!this.currentPlan()?.id) {
+        this.notif.show('No active plan found. Please configure one first.', 'error');
+        return;
+      }
+      this.showViewModal.set(true);
+    });
+  }
+
+  loadMemberPlan(member: Member, callback?: Function) {
     this.dietService.getDietPlanByMemberId(member.id!).subscribe({
       next: (existingPlan) => {
         if (existingPlan) {
@@ -119,16 +176,48 @@ export class DietPlanComponent implements OnInit {
             activityLevel: existingPlan.activityLevel,
             tier: existingPlan.tier
           }, { emitEvent: false });
+          if (callback) callback();
         } else {
           this.createNewPlan(member);
+          if (callback) callback();
         }
-        this.showBuildModal.set(true);
       },
       error: () => {
         this.createNewPlan(member);
-        this.showBuildModal.set(true);
+        if (callback) callback();
       }
     });
+  }
+
+  printPlan() {
+    window.print();
+  }
+
+  shareWhatsApp() {
+    const plan = this.currentPlan();
+    const member = this.selectedMember();
+    if (!plan || !member) return;
+
+    let text = `*STAG FITNESS - DIET PLAN*\n`;
+    text += `*Member:* ${member.name}\n`;
+    text += `*Tier:* ${plan.tier}\n\n`;
+    text += `*Daily Targets:*\n`;
+    text += `- Calories: ${plan.targetCalories} kcal\n`;
+    text += `- Protein: ${plan.targetProtein}g\n`;
+    text += `- Carbs: ${plan.targetCarbs}g\n`;
+    text += `- Fats: ${plan.targetFats}g\n\n`;
+    text += `*Meal Schedule:*\n`;
+    
+    plan.meals.forEach(m => {
+      if (m.foods.length > 0) {
+        text += `*${m.time}:* ${m.foods.map(f => f.name).join(', ')} (${m.totalCalories} kcal)\n`;
+      }
+    });
+
+    let phone = member.phone;
+    if (phone && phone.length === 10) phone = '91' + phone;
+    
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
   }
 
   createNewPlan(member: Member) {
@@ -155,15 +244,30 @@ export class DietPlanComponent implements OnInit {
 
   addFoodToMeal(meal: Meal, foodId: string) {
     const plan = this.currentPlan();
-    if (plan?.tier === DietPlanTier.BASIC) {
-      this.notif.show('Basic tier cannot customize foods.', 'error');
+    const memberId = plan?.memberId || this.selectedMember()?.id;
+    
+    if (!memberId) {
+      this.notif.show('No member selected.', 'error');
       return;
     }
 
     const food = this.foodDatabase().find(f => f.id === Number(foodId));
     if (food) {
-      meal.foods.push({ ...food });
-      this.updatePlanTotals();
+      // Create request body as expected by the new backend endpoint
+      const foodAssignment = {
+        foodItemId: food.id, // Exact camelCase field name as requested
+        mealTime: meal.time, // Breakfast, Lunch, etc.
+        quantity: 1 // Default to 1
+      };
+
+      this.dietService.addFoodToMemberPlan(memberId, foodAssignment).subscribe({
+        next: () => {
+          meal.foods.push({ ...food });
+          this.updatePlanTotals();
+          this.notif.show(`${food.name} added to ${meal.time}`, 'success');
+        },
+        error: () => this.notif.show('Failed to add food item.', 'error')
+      });
     }
   }
 
