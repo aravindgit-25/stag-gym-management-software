@@ -48,6 +48,7 @@ body {
   grid-template-columns: var(--sidebar-width) 1fr;
   grid-template-rows: var(--header-height) 1fr;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .app-header {
@@ -75,6 +76,7 @@ body {
   height: 100vh;
   z-index: 1000;
   border-right: 1px solid var(--border-medium);
+  overflow-y: auto; /* Enable scrolling */
 }
 
 .app-main {
