@@ -109,8 +109,25 @@
 
       <div class="form-grid-2 mt-20">
         <div class="form-group-modern">
-          <label>Amount to Pay (₹)</label>
-          <input type="number" formControlName="paidAmount">
+          <label>Discount Amount (₹)</label>
+          <input type="number" formControlName="discountAmount" placeholder="e.g. 200">
+        </div>
+        <div class="form-group-modern">
+          <label>Offer Type / Reason</label>
+          <select formControlName="discountReason">
+            <option value="">No Discount</option>
+            <option value="Referral Offer">Referral Offer</option>
+            <option value="Existing Client Offer">Existing Client Offer</option>
+            <option value="Festival Special">Festival Special</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-2 mt-20">
+        <div class="form-group-modern">
+          <label>Final Amount to Pay (₹)</label>
+          <input type="number" formControlName="paidAmount" readonly class="readonly-input">
         </div>
         <div class="form-group-modern">
           <label>Payment Mode</label>
@@ -266,12 +283,36 @@
       <form [formGroup]="paymentForm" *ngIf="currentStep() === 3" (ngSubmit)="onSubmitPayment()" class="wizard-form">
         <div class="payment-summary-card">
           <div class="summary-row">
-            <span>Selected Plan Total</span>
-            <span class="amount">₹{{ paymentForm.get('amount')?.value }}</span>
+            <span>Base Total</span>
+            <span class="amount gray">₹{{ paymentForm.get('amount')?.value }}</span>
+          </div>
+          <div class="summary-row mt-12" *ngIf="paymentForm.get('discountAmount')?.value > 0">
+            <span>Discount ({{ paymentForm.get('discountReason')?.value || 'Offer' }})</span>
+            <span class="amount discount">- ₹{{ paymentForm.get('discountAmount')?.value }}</span>
+          </div>
+          <div class="summary-row mt-12 pt-12 border-top-dashed">
+            <span>Net Payable</span>
+            <span class="amount highlight">₹{{ paymentForm.get('amount')?.value - paymentForm.get('discountAmount')?.value }}</span>
           </div>
         </div>
 
         <div class="form-grid-2 mt-20">
+          <div class="form-group-modern">
+            <label>Discount Amount (₹)</label>
+            <input type="number" formControlName="discountAmount" placeholder="e.g. 500">
+          </div>
+          <div class="form-group-modern">
+            <label>Offer Type / Reason</label>
+            <select formControlName="discountReason">
+              <option value="">No Discount</option>
+              <option value="Referral Offer">Referral Offer</option>
+              <option value="New Year Special">New Year Special</option>
+              <option value="Student Discount">Student Discount</option>
+              <option value="Existing Client Reward">Existing Client Reward</option>
+              <option value="Corporate Tie-up">Corporate Tie-up</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
           <div class="form-group-modern">
             <label>Amount Paid Now</label>
             <input type="number" formControlName="paidAmount" placeholder="Enter amount received">

@@ -122,6 +122,8 @@ export class InvoiceComponent implements OnInit {
       endDate: expDate.toISOString().split('T')[0],
       amountPaid: payment.paidAmount || (payment as any).paid_amount || payment.amount,
       totalAmount: payment.amount || (payment as any).total_amount,
+      discountAmount: payment.discountAmount || (payment as any).discount_amount || 0,
+      discountReason: payment.discountReason || (payment as any).discount_reason || '',
       balance: payment.balanceAmount || (payment as any).balance_amount || 0,
       paymentMode: payment.paymentMode || (payment as any).payment_mode,
       date: this.formatDate(payment.paymentDate || (payment as any).payment_date || new Date().toISOString())

@@ -42,6 +42,12 @@ public class Payment extends BaseEntity {
     @NotNull(message = "Payment date is required")
     private LocalDate paymentDate;
 
+    @Column(name = "discount_amount")
+    private Double discountAmount;
+
+    @Column(name = "discount_reason")
+    private String discountReason;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_mode", nullable = false)
     @NotNull(message = "Payment mode is required")

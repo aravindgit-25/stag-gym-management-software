@@ -115,32 +115,40 @@ export class PaymentComponent implements OnInit {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     
-    const oneMonthAgo = new Date(); oneMonthAgo.setMonth(now.getMonth() - 1);
     const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(now.getMonth() - 6);
     const oneYearAgo = new Date(); oneYearAgo.setFullYear(now.getFullYear() - 1);
 
-    const calc = (items: any[]) => items.reduce((sum, item) => sum + (item.paidAmount || 0), 0);
+    const calc = (items: any[]) => items.reduce((sum, item) => {
+      // Handle both camelCase and snake_case for stats
+      const amt = Number(item.paidAmount || item.paid_amount || 0);
+      return sum + amt;
+    }, 0);
+
+    const isCash = (mode: string) => String(mode || '').toLowerCase() === 'cash';
 
     const todayList = list.filter(p => p.paymentDate === todayStr);
     
     return {
       today: calc(todayList),
-      todayCash: calc(todayList.filter(p => p.paymentMode === 'Cash')),
-      todayAccount: calc(todayList.filter(p => p.paymentMode !== 'Cash')),
+      todayCash: calc(todayList.filter(p => isCash(p.paymentMode))),
+      todayAccount: calc(todayList.filter(p => !isCash(p.paymentMode))),
       
       thisMonth: calc(list.filter(p => {
+        if (!p.paymentDate || p.paymentDate === 'N/A') return false;
         const d = new Date(p.paymentDate);
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       })),
       
       lastMonth: calc(list.filter(p => {
+        if (!p.paymentDate || p.paymentDate === 'N/A') return false;
         const d = new Date(p.paymentDate);
-        return d.getMonth() === (now.getMonth() === 0 ? 11 : now.getMonth() - 1) && 
-               d.getFullYear() === (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+        const lm = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        const ly = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        return d.getMonth() === lm && d.getFullYear() === ly;
       })),
       
-      sixMonths: calc(list.filter(p => new Date(p.paymentDate) >= sixMonthsAgo)),
-      oneYear: calc(list.filter(p => new Date(p.paymentDate) >= oneYearAgo)),
+      sixMonths: calc(list.filter(p => p.paymentDate !== 'N/A' && new Date(p.paymentDate) >= sixMonthsAgo)),
+      oneYear: calc(list.filter(p => p.paymentDate !== 'N/A' && new Date(p.paymentDate) >= oneYearAgo)),
       total: calc(list)
     };
   });

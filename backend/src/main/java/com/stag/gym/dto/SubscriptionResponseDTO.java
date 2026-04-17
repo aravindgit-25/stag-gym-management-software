@@ -23,6 +23,8 @@ public class SubscriptionResponseDTO {
     private Plan.PlanType planType;
     private LocalDate startDate;
     private LocalDate endDate;
+    private Double discountAmount;
+    private String discountReason;
     private Subscription.Status status;
     private LocalDateTime createdAt;
 }

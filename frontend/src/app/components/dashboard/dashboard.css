@@ -283,9 +283,9 @@
 }
 
 @media screen and (max-width: 768px) {
-  .quick-nav-section { grid-template-columns: repeat(2, 1fr); }
-  .stat-value { font-size: 24px; }
-  .graph-container-standard { height: 200px; }
+  .quick-nav-section, .stats-grid { grid-template-columns: 1fr !important; }
+  .stat-value { font-size: 28px; }
+  .graph-container-modern { margin-top: 20px; padding-left: 30px; }
 }
 
 

@@ -207,8 +207,31 @@ export class SubscriptionComponent implements OnInit {
       planId: [''],
       startDate: [new Date().toISOString().split('T')[0], Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
+      discountAmount: [0, [Validators.min(0)]],
+      discountReason: [''],
       paymentMode: ['Cash', Validators.required],
     });
+
+    // Auto-calculate payable amount on renewal form
+    this.renewalForm.get('discountAmount')?.valueChanges.subscribe(() => this.calculateRenewalNet());
+    this.renewalForm.get('planId')?.valueChanges.subscribe(() => this.calculateRenewalNet());
+    
+    // For manual amount field in Complete Payment, we also want to allow manual overrides 
+    // but might want a helper to handle the logic if discount is entered
+    this.renewalForm.get('amount')?.valueChanges.subscribe(val => {
+      // Logic for manual overrides if needed
+    });
+  }
+
+  private calculateRenewalNet() {
+    const planId = this.renewalForm.get('planId')?.value;
+    const plan = this.plans().find(p => p.id === Number(planId));
+    const discount = this.renewalForm.get('discountAmount')?.value || 0;
+    
+    if (plan) {
+      const net = plan.price - discount;
+      this.renewalForm.patchValue({ amount: Math.max(0, net) }, { emitEvent: false });
+    }
   }
 
   ngOnInit(): void {
@@ -323,10 +346,19 @@ export class SubscriptionComponent implements OnInit {
       const details = this.selectedSubDetails();
       const formVal = this.renewalForm.value;
 
+      // When completing payment, 'amount' in form is the net payable
+      // We need to calculate if there's an original total vs what was paid
+      const planIds = typeof details.planId === 'string' ? details.planId.split(',') : [details.planId];
+      const originalTotal = this.plans()
+        .filter(p => planIds.includes(String(p.id)) || planIds.includes(Number(p.id)))
+        .reduce((sum, p) => sum + p.price, 0);
+
       const paymentData = {
         subscriptionId: details.id,
-        amount: Number(formVal.amount),
-        paidAmount: Number(formVal.amount),
+        amount: originalTotal,
+        discountAmount: formVal.discountAmount || 0,
+        discountReason: formVal.discountReason || '',
+        paidAmount: formVal.amount, // Net after discount
         balanceAmount: 0,
         paymentMode: formVal.paymentMode,
       };
@@ -361,13 +393,15 @@ export class SubscriptionComponent implements OnInit {
       planId: '',
       startDate: new Date().toISOString().split('T')[0],
       amount: '',
+      discountAmount: 0,
+      discountReason: ''
     });
     this.showRenewalModal.set(true);
   }
 
   closeModal(): void {
     this.showRenewalModal.set(false);
-    this.renewalForm.reset({ paymentMode: 'Cash' });
+    this.renewalForm.reset({ paymentMode: 'Cash', discountAmount: 0, discountReason: '' });
     this.selectedPlanIds.set([]);
   }
 
@@ -392,10 +426,17 @@ export class SubscriptionComponent implements OnInit {
 
       this.subscriptionService.addSubscription(subData).subscribe({
         next: (newSub) => {
+          const planIds = typeof formVal.planId === 'string' ? formVal.planId.split(',') : [formVal.planId];
+          const totalOriginal = this.plans()
+            .filter(p => planIds.includes(String(p.id)))
+            .reduce((sum, p) => sum + p.price, 0);
+
           const paymentData = {
             subscriptionId: newSub.id!,
-            amount: formVal.amount,
-            paidAmount: formVal.amount,
+            amount: totalOriginal,
+            discountAmount: formVal.discountAmount || 0,
+            discountReason: formVal.discountReason || '',
+            paidAmount: formVal.amount, // This is the net amount after discount
             balanceAmount: 0,
             paymentMode: formVal.paymentMode,
           };
