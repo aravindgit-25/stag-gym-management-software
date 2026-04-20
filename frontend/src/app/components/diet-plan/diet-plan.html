@@ -16,7 +16,6 @@
   </div>
 
   <div class="table-container-card mt-24">
-    <div class="card-header-simple">Eligible Members</div>
     <app-stag-table 
       [columns]="columns" 
       [data]="members()"
@@ -143,9 +142,6 @@
         </table>
       </div>
 
-      <!-- Keep existing grid view for printable/mobile variety if preferred, but table is primary now -->
-      <!-- <div class="meal-plan-grid-view mt-24 no-print"> ... </div> -->
-      
       <div class="plan-footer-note">
         <p>* Stick to the assigned macros for best results. Stay Hydrated!</p>
         <p class="mt-4">Plan Generated on {{ currentPlan()?.lastModified | date:'mediumDate' }}</p>
