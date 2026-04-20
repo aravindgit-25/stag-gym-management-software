@@ -14,6 +14,22 @@ export enum EmployeeRole {
   OWNER = 'OWNER'
 }
 
+export interface PersonalTraining {
+  memberName: string;
+  memberId: number;
+  goal: string;
+  duration: string;
+  isPaid: boolean;
+  startDate: string;
+}
+
+export interface Feedback {
+  clientName: string;
+  comment: string;
+  rating: number;
+  date: string;
+}
+
 export interface Employee {
   id?: number;
   employeeId?: string;
@@ -38,4 +54,7 @@ export interface Employee {
   dateOfTermination?: string;
   status: EmployeeStatus;
   role: EmployeeRole;
+  rating?: number;
+  feedbacks?: Feedback[];
+  personalTrainings?: PersonalTraining[];
 }

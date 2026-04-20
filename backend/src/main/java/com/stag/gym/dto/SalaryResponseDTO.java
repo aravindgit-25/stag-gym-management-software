@@ -24,7 +24,9 @@ public class SalaryResponseDTO {
     private Integer daysLate;
     private Double deductions;
     private Double bonus;
+    private Double tillNowSalary;
     private Double netSalary;
+    private java.util.List<java.time.LocalDate> absentDates;
     private Salary.SalaryStatus status;
     private LocalDate paidDate;
     private String paymentMethod;

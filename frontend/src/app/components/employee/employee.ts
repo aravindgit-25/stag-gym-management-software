@@ -10,9 +10,11 @@ import {
 import { Router, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { EmployeeService } from '../../services/employee.service';
+import { MemberService } from '../../services/member.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { Employee, EmployeeStatus, EmployeeRole } from '../../models/employee.model';
+import { Member } from '../../models/member.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import {
   AppStagTableComponent,
@@ -36,20 +38,34 @@ import { AppModalComponent } from '../../shared/components/app-modal/app-modal';
 })
 export class EmployeeComponent implements OnInit {
   employeeForm: FormGroup;
+  ptForm: FormGroup;
+  feedbackForm: FormGroup;
+  
   employees = signal<Employee[]>([]);
+  activeMembers = signal<Member[]>([]);
+  
   searchTerm = signal<string>('');
   loading = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   editingId = signal<number | null>(null);
+  
   showModal = signal<boolean>(false);
+  showProfileModal = signal<boolean>(false);
+  showAssignPTModal = signal<boolean>(false);
+  showAddFeedbackModal = signal<boolean>(false);
+  
+  selectedEmployee = signal<Employee | null>(null);
   activeTab = signal<'active' | 'archive'>('active');
+  activeProfileTab = signal<'info' | 'pt' | 'feedback'>('info');
 
   roles = Object.values(EmployeeRole);
   statuses = Object.values(EmployeeStatus);
+  starArray = [1, 2, 3, 4, 5];
 
   private notif = inject(NotificationService);
   private confirm = inject(ConfirmService);
   private employeeService = inject(EmployeeService);
+  private memberService = inject(MemberService);
   private location = inject(Location);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -61,6 +77,7 @@ export class EmployeeComponent implements OnInit {
     { field: 'role', header: 'Role', width: '130px' },
     { field: 'status', header: 'Status', width: '120px' },
     { field: 'dateOfJoining', header: 'Joined', width: '120px' },
+    { field: 'actions', header: 'Actions', width: '150px', type: 'template' }
   ]);
 
   constructor(private fb: FormBuilder) {
@@ -86,10 +103,26 @@ export class EmployeeComponent implements OnInit {
       status: [EmployeeStatus.ACTIVE, Validators.required],
       role: [EmployeeRole.TRAINER, Validators.required],
     });
+
+    this.ptForm = this.fb.group({
+      memberId: [null, Validators.required],
+      goal: ['', Validators.required],
+      duration: ['', Validators.required],
+      startDate: [new Date().toISOString().split('T')[0], Validators.required],
+      isPaid: [false]
+    });
+
+    this.feedbackForm = this.fb.group({
+      clientName: ['', Validators.required],
+      rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
+      comment: ['', Validators.required],
+      date: [new Date().toISOString().split('T')[0], Validators.required]
+    });
   }
 
   ngOnInit(): void {
     this.loadEmployees();
+    this.loadMembers();
     this.route.queryParams.subscribe(params => {
       if (params['filter']) {
         const filter = params['filter'];
@@ -123,6 +156,10 @@ export class EmployeeComponent implements OnInit {
       });
   }
 
+  loadMembers() {
+    this.memberService.getActiveMembers().subscribe(data => this.activeMembers.set(data));
+  }
+
   setTab(tab: 'active' | 'archive') {
     this.activeTab.set(tab);
     this.loadEmployees();
@@ -146,6 +183,28 @@ export class EmployeeComponent implements OnInit {
     this.editingId.set(employee.id || null);
     this.employeeForm.patchValue(employee);
     this.showModal.set(true);
+  }
+
+  onViewProfile(employee: Employee): void {
+    if (!employee.id) return;
+    this.activeProfileTab.set('info'); // Reset to first tab
+    this.refreshProfile(employee.id);
+  }
+
+  refreshProfile(id: number) {
+    this.loading.set(true);
+    // Important: Clear selection first to avoid showing old data
+    this.selectedEmployee.set(null);
+    
+    this.employeeService.getEmployeeProfile(id).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe({
+      next: (fullProfile) => {
+        this.selectedEmployee.set(fullProfile);
+        this.showProfileModal.set(true);
+      },
+      error: (err) => this.notif.show('Error fetching profile details.', 'error')
+    });
   }
 
   async onTerminate(employee: Employee) {
@@ -194,6 +253,58 @@ export class EmployeeComponent implements OnInit {
 
   closeModal() {
     this.showModal.set(false);
+  }
+
+  openAssignPTModal() {
+    this.ptForm.reset({
+      startDate: new Date().toISOString().split('T')[0],
+      isPaid: false
+    });
+    this.showAssignPTModal.set(true);
+  }
+
+  onAssignPT() {
+    if (this.ptForm.invalid) return;
+    const empId = this.selectedEmployee()?.id;
+    if (!empId) return;
+
+    this.loading.set(true);
+    this.employeeService.assignPTMember(empId, this.ptForm.value).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe({
+      next: () => {
+        this.notif.show('Member assigned successfully!', 'success');
+        this.showAssignPTModal.set(false);
+        this.refreshProfile(empId);
+      },
+      error: () => this.notif.show('Failed to assign member.', 'error')
+    });
+  }
+
+  openAddFeedbackModal() {
+    this.feedbackForm.reset({
+      rating: 5,
+      date: new Date().toISOString().split('T')[0]
+    });
+    this.showAddFeedbackModal.set(true);
+  }
+
+  onAddFeedback() {
+    if (this.feedbackForm.invalid) return;
+    const empId = this.selectedEmployee()?.id;
+    if (!empId) return;
+
+    this.loading.set(true);
+    this.employeeService.addFeedback(empId, this.feedbackForm.value).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe({
+      next: () => {
+        this.notif.show('Feedback added successfully!', 'success');
+        this.showAddFeedbackModal.set(false);
+        this.refreshProfile(empId);
+      },
+      error: () => this.notif.show('Failed to add feedback.', 'error')
+    });
   }
 
   goBack(): void {

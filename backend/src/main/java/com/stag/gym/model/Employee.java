@@ -62,6 +62,8 @@ public class Employee extends BaseEntity {
     @Builder.Default
     private Status status = Status.ACTIVE;
 
+    private Double averageRating;
+
     private LocalDate dateOfJoining;
     private LocalDate dateOfTermination;
 

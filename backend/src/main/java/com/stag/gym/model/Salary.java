@@ -31,6 +31,7 @@ public class Salary extends BaseEntity {
     private Integer daysLate;
     private Double deductions;
     private Double bonus;
+    private Double tillNowSalary;
     private Double netSalary;
 
     @Enumerated(EnumType.STRING)

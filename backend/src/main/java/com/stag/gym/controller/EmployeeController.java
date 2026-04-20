@@ -1,5 +1,6 @@
 package com.stag.gym.controller;
 
+import com.stag.gym.dto.EmployeeProfileResponseDTO;
 import com.stag.gym.model.Employee;
 import com.stag.gym.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
@@ -38,12 +39,17 @@ public class EmployeeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<EmployeeProfileResponseDTO> getEmployeeProfile(@PathVariable Long id) {
+        return ResponseEntity.ok(employeeService.getEmployeeProfile(id));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee employee) {
         return ResponseEntity.ok(employeeService.updateEmployee(id, employee));
     }
 
-    @PostMapping("/{id}/terminate")
+    @PatchMapping("/{id}/terminate")
     public ResponseEntity<Void> terminateEmployee(@PathVariable Long id) {
         employeeService.terminateEmployee(id);
         return ResponseEntity.noContent().build();

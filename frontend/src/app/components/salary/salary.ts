@@ -38,6 +38,7 @@ export class SalaryComponent implements OnInit {
   selectedYear = signal<number>(new Date().getFullYear());
   
   showPayModal = signal<boolean>(false);
+  showDetailsModal = signal<boolean>(false);
   selectedSalary = signal<Salary | null>(null);
   paymentMethod = signal<string>('CASH');
 
@@ -51,6 +52,7 @@ export class SalaryComponent implements OnInit {
   ];
 
   years = [2024, 2025, 2026, 2027];
+  starArray = [1, 2, 3, 4, 5];
 
   private salaryService = inject(SalaryService);
   private employeeService = inject(EmployeeService);
@@ -59,14 +61,13 @@ export class SalaryComponent implements OnInit {
 
   tableColumns: StagTableColumn[] = [
     { field: 'employeeName', header: 'Employee', minWidth: '150px' },
-    { field: 'employeeCode', header: 'Code', width: '100px' },
     { field: 'role', header: 'Role', width: '120px' },
-    { field: 'monthYear', header: 'Month', width: '120px' },
     { field: 'baseSalary', header: 'Base', width: '100px', type: 'number' },
-    { field: 'deductions', header: 'Deductions', width: '100px', type: 'number' },
+    { field: 'daysPresent', header: 'Present', width: '80px' },
+    { field: 'tillNowSalary', header: 'Till Now', width: '110px', type: 'number' },
     { field: 'netSalary', header: 'Net Payable', width: '120px', type: 'number' },
     { field: 'status', header: 'Status', width: '100px' },
-    { field: 'actions', header: 'Actions', width: '100px', type: 'template' }
+    { field: 'actions', header: 'Actions', width: '150px', type: 'template' }
   ];
 
   ngOnInit(): void {
@@ -149,9 +150,49 @@ export class SalaryComponent implements OnInit {
   }
 
   openPayModal(salary: Salary) {
-    this.selectedSalary.set(salary);
+    const employees = this.activeEmployees();
+    const emp = employees.find(e => e.id === salary.employeeId) || salary.employee;
+    
+    this.selectedSalary.set({
+      ...salary,
+      employeeName: emp?.name || 'Unknown'
+    });
     this.paymentMethod.set('CASH');
     this.showPayModal.set(true);
+  }
+
+  openDetailsModal(salary: Salary) {
+    const employees = this.activeEmployees();
+    const emp = employees.find(e => e.id === salary.employeeId) || salary.employee;
+    
+    const daysInMonth = new Date(this.selectedYear(), this.selectedMonth(), 0).getDate();
+    const fallbackTillNow = Math.round((salary.baseSalary / daysInMonth) * salary.daysPresent);
+    const tillNowSalary = salary.till_now_salary || salary.tillNowSalary || fallbackTillNow;
+
+    this.loading.set(true);
+    this.employeeService.getEmployeeProfile(salary.employeeId).pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe({
+      next: (fullProfile) => {
+        this.selectedSalary.set({
+          ...salary,
+          employeeName: fullProfile.name,
+          employee: fullProfile,
+          tillNowSalary: tillNowSalary
+        });
+        this.showDetailsModal.set(true);
+      },
+      error: (err) => {
+        this.selectedSalary.set({
+          ...salary,
+          employeeName: emp?.name || 'Unknown',
+          employee: emp,
+          tillNowSalary: tillNowSalary
+        });
+        this.showDetailsModal.set(true);
+        this.notif.show('Some employee details could not be loaded.', 'error');
+      }
+    });
   }
 
   onPay() {
@@ -173,15 +214,24 @@ export class SalaryComponent implements OnInit {
 
   salaryData = computed(() => {
     const employees = this.activeEmployees();
+    const today = new Date();
+    const daysInMonth = new Date(this.selectedYear(), this.selectedMonth(), 0).getDate();
+    
     return this.salaries().map(s => {
       // Find employee by numeric ID
       const emp = employees.find(e => e.id === s.employeeId) || s.employee;
+      
+      // Calculate Salary Till Now (Fallback if backend doesn't provide it)
+      const fallbackTillNow = Math.round((s.baseSalary / daysInMonth) * s.daysPresent);
+      const tillNowSalary = s.till_now_salary || s.tillNowSalary || fallbackTillNow;
       
       return {
         ...s,
         employeeName: emp?.name || 'Unknown',
         employeeCode: emp?.employeeId || 'N/A',
         role: emp?.role || 'N/A',
+        tillNowSalary: tillNowSalary,
+        absentDates: s.absent_dates || s.absentDates || [],
         rowClass: s.status === SalaryStatus.PAID ? 'status-paid' : 'status-pending'
       };
     });

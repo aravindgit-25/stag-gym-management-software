@@ -1,7 +1,10 @@
 package com.stag.gym.service;
 
+import com.stag.gym.dto.EmployeeProfileResponseDTO;
 import com.stag.gym.model.Employee;
+import com.stag.gym.repository.EmployeeFeedbackRepository;
 import com.stag.gym.repository.EmployeeRepository;
+import com.stag.gym.repository.PersonalTrainerMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,8 @@ import java.util.Optional;
 public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private final EmployeeFeedbackRepository feedbackRepository;
+    private final PersonalTrainerMemberRepository trainingRepository;
 
     @Transactional
     public Employee createEmployee(Employee employee) {
@@ -89,6 +94,18 @@ public class EmployeeService {
         employee.setStatus(Employee.Status.TERMINATED);
         employee.setDateOfTermination(LocalDate.now());
         employeeRepository.save(employee);
+    }
+
+    @Transactional(readOnly = true)
+    public EmployeeProfileResponseDTO getEmployeeProfile(Long id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        return EmployeeProfileResponseDTO.builder()
+                .employee(employee)
+                .feedbacks(feedbackRepository.findByEmployeeId(id))
+                .trainingSessions(trainingRepository.findByTrainerId(id))
+                .build();
     }
 
     public List<Employee> getActiveEmployees() {
