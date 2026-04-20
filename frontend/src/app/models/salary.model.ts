@@ -20,6 +20,14 @@ export interface Salary {
   status: SalaryStatus;
   paidDate?: string;
   paymentMethod?: string;
+  absentDates?: string[];
+  presentDates?: string[];
+  employeeName?: string;
+  tillNowSalary?: number;
+  
+  // Backend snake_case variants
+  till_now_salary?: number;
+  absent_dates?: string[];
 }
 
 export interface AttendanceSummary {

@@ -49,15 +49,177 @@
       [columns]="tableColumns()" 
       [data]="filteredEmployees()"
       [height]="'calc(100vh - 220px)'"
+      [loading]="loading()"
+      [showView]="true"
       [showActions]="activeTab() === 'active'"
       [showTerminate]="activeTab() === 'active'"
-      [loading]="loading()"
       [emptyMessage]="loading() ? 'Loading staff...' : 'No employees found.'"
       [filterTerm]="searchTerm()"
+      (view)="onViewProfile($event)"
       (edit)="onEdit($event)"
       (terminate)="onTerminate($event)"
-    ></app-stag-table>
+    >
+      <!-- If you still need specific custom cell templates, keep them, but remove the actions one -->
+    </app-stag-table>
   </div>
+
+  <!-- Profile View Modal -->
+  <app-modal 
+    [isOpen]="showProfileModal()" 
+    [title]="'Employee Profile: ' + selectedEmployee()?.name"
+    (close)="showProfileModal.set(false)"
+    [width]="'900px'"
+  >
+    <div class="profile-modal-content" *ngIf="selectedEmployee()">
+      <div class="profile-tabs">
+        <button [class.active]="activeProfileTab() === 'info'" (click)="activeProfileTab.set('info')">Details</button>
+        <button [class.active]="activeProfileTab() === 'pt'" (click)="activeProfileTab.set('pt')">Personal Training</button>
+        <button [class.active]="activeProfileTab() === 'feedback'" (click)="activeProfileTab.set('feedback')">Feedback</button>
+      </div>
+
+      <!-- Tab: Info -->
+      <div class="tab-content" *ngIf="activeProfileTab() === 'info'">
+        <div class="profile-info-grid">
+          <div class="info-group">
+            <h4 class="info-label">Basic Info</h4>
+            <div class="info-row"><span>ID:</span> <strong>{{ selectedEmployee()?.employeeId }}</strong></div>
+            <div class="info-row"><span>Email:</span> {{ selectedEmployee()?.email }}</div>
+            <div class="info-row"><span>Phone:</span> {{ selectedEmployee()?.phone }}</div>
+            <div class="info-row"><span>Status:</span> <span class="badge">{{ selectedEmployee()?.status }}</span></div>
+          </div>
+          <div class="info-group">
+            <h4 class="info-label">Professional</h4>
+            <div class="info-row"><span>Role:</span> {{ selectedEmployee()?.role }}</div>
+            <div class="info-row"><span>Salary:</span> {{ selectedEmployee()?.baseSalary | currency:'INR' }}</div>
+            <div class="info-row"><span>Joined:</span> {{ selectedEmployee()?.dateOfJoining | date }}</div>
+            <div class="info-row"><span>Exp:</span> {{ selectedEmployee()?.experience }}</div>
+          </div>
+          <div class="info-group full-width">
+            <h4 class="info-label">Emergency & ID</h4>
+            <div class="profile-sub-grid">
+              <div class="info-row"><span>Contact:</span> {{ selectedEmployee()?.emergencyContactName }} ({{ selectedEmployee()?.emergencyContactRelation }})</div>
+              <div class="info-row"><span>Aadhar:</span> {{ selectedEmployee()?.aadharNumber }}</div>
+              <div class="info-row"><span>Bank:</span> {{ selectedEmployee()?.bankName }} - {{ selectedEmployee()?.bankAccountNumber }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="profile-actions-footer mt-24" *ngIf="selectedEmployee()?.status !== 'TERMINATED'">
+          <app-button label="Terminate Employee" variant="danger" (onClick)="onTerminate(selectedEmployee()!)"></app-button>
+        </div>
+      </div>
+
+      <!-- Tab: PT -->
+      <div class="tab-content" *ngIf="activeProfileTab() === 'pt'">
+        <div class="tab-action-bar">
+          <app-button label="Assign Member" variant="primary" (onClick)="openAssignPTModal()"></app-button>
+        </div>
+        <div class="pt-grid-view">
+          <div class="pt-member-card" *ngFor="let pt of selectedEmployee()?.personalTrainings">
+            <div class="member-header">
+              <span class="member-name">{{ pt.memberName }}</span>
+              <span class="payment-badge" [class.paid]="pt.isPaid">{{ pt.isPaid ? 'Paid' : 'Pending' }}</span>
+            </div>
+            <div class="member-details">
+              <div><span>Goal:</span> {{ pt.goal }}</div>
+              <div><span>Duration:</span> {{ pt.duration }}</div>
+              <div><span>Started:</span> {{ pt.startDate | date }}</div>
+            </div>
+          </div>
+          <div *ngIf="!selectedEmployee()?.personalTrainings?.length" class="empty-state">No PT members assigned.</div>
+        </div>
+      </div>
+
+      <!-- Tab: Feedback -->
+      <div class="tab-content" *ngIf="activeProfileTab() === 'feedback'">
+        <div class="tab-action-bar">
+          <div class="rating-header-mini">
+            <span class="big-rating">{{ selectedEmployee()?.rating }}</span>
+            <span class="material-icons star-main">star</span>
+          </div>
+          <app-button label="Add Feedback" variant="primary" (onClick)="openAddFeedbackModal()"></app-button>
+        </div>
+        <div class="feedback-grid-view">
+          <div class="feedback-card" *ngFor="let fb of selectedEmployee()?.feedbacks">
+            <div class="fb-top">
+              <strong>{{ fb.clientName }}</strong>
+              <span class="fb-date">{{ fb.date | date }}</span>
+            </div>
+            <div class="fb-stars">
+              <span class="material-icons star-small" *ngFor="let i of starArray" [class.filled]="i <= fb.rating">star</span>
+            </div>
+            <p>"{{ fb.comment }}"</p>
+          </div>
+          <div *ngIf="!selectedEmployee()?.feedbacks?.length" class="empty-state">No feedback available yet.</div>
+        </div>
+      </div>
+    </div>
+  </app-modal>
+
+  <!-- Assign PT Modal -->
+  <app-modal [isOpen]="showAssignPTModal()" title="Assign Member for PT" (close)="showAssignPTModal.set(false)" width="500px">
+    <form [formGroup]="ptForm" (ngSubmit)="onAssignPT()" class="modal-form">
+      <div class="form-group-modern">
+        <label>Select Member *</label>
+        <select formControlName="memberId" class="w-full">
+          <option [ngValue]="null">Select a member</option>
+          <option *ngFor="let m of activeMembers()" [value]="m.id">{{ m.name }} ({{ m.phone }})</option>
+        </select>
+      </div>
+      <div class="form-group-modern">
+        <label>Goal *</label>
+        <input type="text" formControlName="goal" placeholder="e.g. Weight Loss, Muscle Gain">
+      </div>
+      <div class="form-group-modern">
+        <label>Duration *</label>
+        <input type="text" formControlName="duration" placeholder="e.g. 3 Months, 1 Year">
+      </div>
+      <div class="form-group-modern">
+        <label>Start Date *</label>
+        <input type="date" formControlName="startDate">
+      </div>
+      <div class="form-group-modern checkbox-group">
+        <input type="checkbox" id="ptPaid" formControlName="isPaid">
+        <label for="ptPaid">Payment Completed</label>
+      </div>
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="showAssignPTModal.set(false)"></app-button>
+        <app-button label="Assign" type="submit" variant="primary" [loading]="loading()"></app-button>
+      </div>
+    </form>
+  </app-modal>
+
+  <!-- Add Feedback Modal -->
+  <app-modal [isOpen]="showAddFeedbackModal()" title="Add Client Feedback" (close)="showAddFeedbackModal.set(false)" width="500px">
+    <form [formGroup]="feedbackForm" (ngSubmit)="onAddFeedback()" class="modal-form">
+      <div class="form-group-modern">
+        <label>Client Name *</label>
+        <input type="text" formControlName="clientName" placeholder="Name of the client">
+      </div>
+      <div class="form-group-modern">
+        <label>Rating (1-5) *</label>
+        <select formControlName="rating" class="w-full">
+          <option [value]="5">5 - Excellent</option>
+          <option [value]="4">4 - Very Good</option>
+          <option [value]="3">3 - Good</option>
+          <option [value]="2">2 - Fair</option>
+          <option [value]="1">1 - Poor</option>
+        </select>
+      </div>
+      <div class="form-group-modern">
+        <label>Comment *</label>
+        <textarea formControlName="comment" placeholder="Write the feedback here..." rows="4"></textarea>
+      </div>
+      <div class="form-group-modern">
+        <label>Date *</label>
+        <input type="date" formControlName="date">
+      </div>
+      <div class="form-actions-modern mt-24">
+        <app-button label="Cancel" variant="secondary" (onClick)="showAddFeedbackModal.set(false)"></app-button>
+        <app-button label="Save Feedback" type="submit" variant="primary" [loading]="loading()"></app-button>
+      </div>
+    </form>
+  </app-modal>
 
   <!-- Employee Modal -->
   <app-modal 

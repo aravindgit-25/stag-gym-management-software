@@ -68,6 +68,7 @@ public class SalaryService {
         int absentDays = summary.getDaysAbsent();
 
         double deductions = (baseSalary / daysInMonth) * absentDays;
+        double tillNowSalary = (baseSalary / daysInMonth) * summary.getDaysPresent();
         double netSalary = baseSalary - deductions;
 
         String monthYear = String.format("%02d-%d", month, year);
@@ -84,6 +85,7 @@ public class SalaryService {
         salary.setDaysLate(summary.getDaysLate());
         salary.setDeductions(deductions);
         salary.setBonus(0.0);
+        salary.setTillNowSalary(tillNowSalary);
         salary.setNetSalary(netSalary);
         salary.setStatus(Salary.SalaryStatus.PENDING);
 
@@ -117,6 +119,18 @@ public class SalaryService {
     }
 
     public SalaryResponseDTO mapToResponseDTO(Salary salary) {
+        String[] parts = salary.getMonthYear().split("-");
+        int month = Integer.parseInt(parts[0]);
+        int year = Integer.parseInt(parts[1]);
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+
+        List<LocalDate> absentDates = attendanceRepository.findByEmployeeIdAndDateBetween(
+                salary.getEmployee().getId(), start, end).stream()
+                .filter(a -> a.getStatus() == Attendance.AttendanceStatus.ABSENT)
+                .map(Attendance::getDate)
+                .collect(Collectors.toList());
+
         return SalaryResponseDTO.builder()
                 .id(salary.getId())
                 .employeeId(salary.getEmployee().getId())
@@ -129,7 +143,9 @@ public class SalaryService {
                 .daysLate(salary.getDaysLate())
                 .deductions(salary.getDeductions())
                 .bonus(salary.getBonus())
+                .tillNowSalary(salary.getTillNowSalary())
                 .netSalary(salary.getNetSalary())
+                .absentDates(absentDates)
                 .status(salary.getStatus())
                 .paidDate(salary.getPaidDate())
                 .paymentMethod(salary.getPaymentMethod())

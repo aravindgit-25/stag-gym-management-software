@@ -73,24 +73,35 @@ public class SalaryServiceTest {
     void testCalculateAndGenerateSalary() {
         when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employee));
         when(attendanceRepository.findByEmployeeIdAndDateBetween(anyLong(), any(), any()))
-                .thenReturn(Collections.singletonList(Attendance.builder()
-                        .employee(employee)
-                        .date(LocalDate.of(2024, 4, 1))
-                        .status(Attendance.AttendanceStatus.ABSENT)
-                        .build()));
+                .thenReturn(java.util.Arrays.asList(
+                        Attendance.builder()
+                                .employee(employee)
+                                .date(LocalDate.of(2024, 4, 1))
+                                .status(Attendance.AttendanceStatus.ABSENT)
+                                .build(),
+                        Attendance.builder()
+                                .employee(employee)
+                                .date(LocalDate.of(2024, 4, 2))
+                                .status(Attendance.AttendanceStatus.PRESENT)
+                                .build()
+                ));
 
         when(salaryRepository.findByEmployeeIdAndMonthYear(anyLong(), anyString())).thenReturn(Optional.empty());
         when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SalaryResponseDTO response = salaryService.calculateAndGenerateSalary(employeeId, 4, 2024);
 
-        // baseSalary = 30000, daysInMonth = 30, absentDays = 1
+        // baseSalary = 30000, daysInMonth = 30, absentDays = 1, presentDays = 1
         // deductions = (30000 / 30) * 1 = 1000
+        // tillNowSalary = (30000 / 30) * 1 = 1000
         // netSalary = 30000 - 1000 = 29000
         assertEquals(30000.0, response.getBaseSalary());
         assertEquals(1000.0, response.getDeductions());
+        assertEquals(1000.0, response.getTillNowSalary());
         assertEquals(29000.0, response.getNetSalary());
         assertEquals(Salary.SalaryStatus.PENDING, response.getStatus());
+        assertNotNull(response.getAbsentDates());
+        assertEquals(1, response.getAbsentDates().size());
     }
 
     @Test

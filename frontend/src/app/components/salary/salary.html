@@ -58,22 +58,115 @@
       [emptyMessage]="'No salary records for this period. Click Generate to calculate.'"
     >
       <ng-template #cell let-row let-col="column">
-        <div *ngIf="col.field === 'actions'">
+        <div *ngIf="col.field === 'actions'" class="action-buttons-cell">
+          <button 
+            class="btn-icon-mini" 
+            (click)="openDetailsModal(row)"
+            title="View Details"
+          >
+            <span class="material-icons">info</span>
+          </button>
           <button 
             *ngIf="row.status === 'PENDING'"
             class="btn-pay-mini" 
             (click)="openPayModal(row)"
-          >Pay Now</button>
+          >Pay</button>
           <span *ngIf="row.status === 'PAID'" class="paid-badge">Paid</span>
         </div>
       </ng-template>
     </app-stag-table>
   </div>
 
+  <!-- Details Modal -->
+  <app-modal 
+    [isOpen]="showDetailsModal()" 
+    [title]="'Employee Detail: ' + selectedSalary()?.employeeName"
+    (close)="showDetailsModal.set(false)"
+    [width]="'800px'"
+  >
+    <div class="details-modal-content" *ngIf="selectedSalary()">
+      <div class="details-grid">
+        <!-- Attendance Section -->
+        <div class="details-section">
+          <h3 class="section-subtitle">Attendance Summary</h3>
+          <div class="info-list">
+            <div class="info-row-modern">
+              <span class="label">Total Base Salary</span>
+              <span class="value">{{ selectedSalary()?.baseSalary | currency:'INR' }}</span>
+            </div>
+            <div class="info-row-modern mt-12">
+              <span class="label">Days Present</span>
+              <span class="value-badge success">{{ selectedSalary()?.daysPresent }} Days</span>
+            </div>
+            <div class="info-row-modern">
+              <span class="label">Days Absent</span>
+              <span class="value-badge danger">{{ selectedSalary()?.daysAbsent }} Days</span>
+            </div>
+            <div class="info-row-modern highlight-box mt-16">
+              <span class="label">Earned Till Now</span>
+              <span class="value-large">{{ selectedSalary()?.tillNowSalary | currency:'INR' }}</span>
+            </div>
+            <div class="absent-dates-section" *ngIf="selectedSalary()?.absentDates?.length">
+              <span class="label-small">Absent on:</span>
+              <div class="date-chips">
+                <span class="date-chip" *ngFor="let date of selectedSalary()?.absentDates">{{ date | date:'dd MMM' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal Training Section -->
+        <div class="details-section">
+          <h3 class="section-subtitle">Personal Training (PT)</h3>
+          <div class="pt-list" *ngIf="selectedSalary()?.employee?.personalTrainings?.length; else noPT">
+            <div class="pt-card" *ngFor="let pt of selectedSalary()?.employee?.personalTrainings">
+              <div class="pt-header">
+                <span class="pt-name">{{ pt.memberName }}</span>
+                <span class="status-badge" [class.paid]="pt.isPaid" [class.pending]="!pt.isPaid">
+                  {{ pt.isPaid ? 'Paid' : 'Pending' }}
+                </span>
+              </div>
+              <div class="pt-body">
+                <span>Goal: {{ pt.goal }}</span>
+                <span>Dur: {{ pt.duration }}</span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noPT><p class="empty-text">No PT members assigned.</p></ng-template>
+        </div>
+
+        <!-- Feedback Section -->
+        <div class="details-section full-width">
+          <h3 class="section-subtitle">Client Feedback & Rating</h3>
+          <div class="rating-summary" *ngIf="selectedSalary()?.employee?.rating">
+            <span class="rating-value">{{ selectedSalary()?.employee?.rating }}</span>
+            <span class="material-icons star">star</span>
+            <span class="rating-count">({{ selectedSalary()?.employee?.feedbacks?.length }} reviews)</span>
+          </div>
+          <div class="feedback-list">
+            <div class="feedback-item" *ngFor="let fb of selectedSalary()?.employee?.feedbacks">
+              <div class="fb-header">
+                <span class="fb-user">{{ fb.clientName }}</span>
+                <div class="fb-stars">
+                  <span class="material-icons star-mini" *ngFor="let s of starArray" [class.active]="s <= fb.rating">star</span>
+                </div>
+              </div>
+              <p class="fb-comment">"{{ fb.comment }}"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer mt-24">
+        <app-button label="Close" variant="secondary" (onClick)="showDetailsModal.set(false)"></app-button>
+      </div>
+    </div>
+  </app-modal>
+
   <!-- Payment Modal -->
   <app-modal 
     [isOpen]="showPayModal()" 
-    [title]="'Record Payment: ' + selectedSalary()?.employee?.name"
+    [title]="'Record Payment: ' + selectedSalary()?.employeeName"
     (close)="showPayModal.set(false)"
   >
     <div class="payment-details">

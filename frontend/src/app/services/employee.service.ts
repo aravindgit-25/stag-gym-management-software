@@ -28,7 +28,19 @@ export class EmployeeService {
     return this.http.put<Employee>(`${this.apiUrl}/${id}`, employee);
   }
 
+  getEmployeeProfile(id: number): Observable<Employee> {
+    return this.http.get<Employee>(`${this.apiUrl}/${id}/profile`);
+  }
+
   terminateEmployee(id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${id}/terminate`, {});
+    return this.http.patch<void>(`${this.apiUrl}/${id}/terminate`, {});
+  }
+
+  assignPTMember(employeeId: number, ptData: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${employeeId}/pt`, ptData);
+  }
+
+  addFeedback(employeeId: number, feedbackData: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${employeeId}/feedback`, feedbackData);
   }
 }

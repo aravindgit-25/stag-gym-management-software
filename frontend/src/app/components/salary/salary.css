@@ -62,17 +62,287 @@
   transition: background 0.2s;
 }
 
-.btn-pay-mini:hover {
-  background: #0284c7;
+.action-buttons-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.paid-badge {
-  background: #dcfce7;
-  color: #166534;
+.btn-icon-mini {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-icon-mini:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-icon-mini .material-icons {
+  font-size: 18px;
+}
+
+/* Details Modal Styles */
+.details-modal-content {
+  padding: 8px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.details-section {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #f3f4f6;
+}
+
+.details-section.full-width {
+  grid-column: span 2;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9375rem;
+}
+
+.info-item .label {
+  color: #6b7280;
+}
+
+.info-item .value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.info-row-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.info-row-modern:last-of-type {
+  border-bottom: none;
+}
+
+.info-row-modern .label {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.info-row-modern .value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.value-badge {
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.value-badge.success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.value-badge.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.highlight-box {
+  background: #f0f9ff;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #bae6fd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.highlight-box .label {
+  font-weight: 700;
+  color: #0369a1;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.value-large {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0c4a6e;
+}
+
+.absent-dates-section {
+  margin-top: 16px;
+}
+
+.label-small {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.date-chip {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 2px 8px;
+  border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.pt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pt-card {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.pt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.pt-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.pt-body {
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.status-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.status-badge.paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.rating-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.star {
+  color: #f59e0b;
+  font-size: 24px;
+}
+
+.star-mini {
+  font-size: 16px;
+  color: #d1d5db;
+}
+
+.star-mini.active {
+  color: #f59e0b;
+}
+
+.rating-count {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.feedback-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.feedback-item {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.fb-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.fb-user {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.fb-comment {
+  font-style: italic;
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin: 0;
+}
+
+.empty-text {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  text-align: center;
+  margin: 16px 0;
 }
 
 .payment-details {
