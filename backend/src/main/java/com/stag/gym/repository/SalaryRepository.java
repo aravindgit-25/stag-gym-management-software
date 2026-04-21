@@ -9,7 +9,10 @@ import java.util.Optional;
 
 @Repository
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
-    Optional<Salary> findByEmployeeIdAndMonthYear(Long employeeId, String monthYear);
-    List<Salary> findByEmployeeId(Long employeeId);
-    List<Salary> findByMonthYear(String monthYear);
+    Optional<Salary> findByEmployeeIdAndMonthYearAndBranchId(Long employeeId, String monthYear, Long branchId);
+    List<Salary> findByEmployeeIdAndBranchId(Long employeeId, Long branchId);
+    List<Salary> findByMonthYearAndBranchId(String monthYear, Long branchId);
+    List<Salary> findByBranchId(Long branchId);
+
+    long countByBranchId(Long branchId);
 }

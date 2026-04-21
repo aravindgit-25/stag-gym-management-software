@@ -1,31 +1,47 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, of } from 'rxjs';
+import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private baseUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) { }
+  private getBranchParams(): HttpParams {
+    let params = new HttpParams();
+    const branchId = this.auth.getBranchId();
+    if (branchId) {
+      params = params.set('branchId', branchId.toString());
+    }
+    return params;
+  }
 
   getMemberCount(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/members/count`);
+    return this.http.get<number>(`${this.baseUrl}/members/count`, { params: this.getBranchParams() }).pipe(
+      catchError(() => of(0))
+    );
   }
 
   getActiveMemberCount(): Observable<number> {
-    // Assuming /members/active/count based on your request
-    return this.http.get<number>(`${this.baseUrl}/members/active/count`);
+    return this.http.get<number>(`${this.baseUrl}/members/active/count`, { params: this.getBranchParams() }).pipe(
+      catchError(() => of(0))
+    );
   }
 
   getTotalRevenue(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/payments/total`);
+    return this.http.get<number>(`${this.baseUrl}/payments/total`, { params: this.getBranchParams() }).pipe(
+      catchError(() => of(0))
+    );
   }
 
   getTodayRevenue(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/payments/today`);
+    return this.http.get<number>(`${this.baseUrl}/payments/today`, { params: this.getBranchParams() }).pipe(
+      catchError(() => of(0))
+    );
   }
 }

@@ -4,11 +4,13 @@ import com.stag.gym.dto.AttendanceSummaryDTO;
 import com.stag.gym.dto.SalaryPaymentRequestDTO;
 import com.stag.gym.dto.SalaryResponseDTO;
 import com.stag.gym.model.Attendance;
+import com.stag.gym.model.Branch;
 import com.stag.gym.model.Employee;
 import com.stag.gym.model.Salary;
 import com.stag.gym.repository.AttendanceRepository;
 import com.stag.gym.repository.EmployeeRepository;
 import com.stag.gym.repository.SalaryRepository;
+import com.stag.gym.security.BranchContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,26 +38,33 @@ public class SalaryServiceTest {
     @Mock
     private EmployeeRepository employeeRepository;
 
+    @Mock
+    private BranchService branchService;
+
     @InjectMocks
     private SalaryService salaryService;
 
     private Employee employee;
     private Long employeeId = 1L;
+    private Long branchId = 1L;
 
     @BeforeEach
     void setUp() {
+        BranchContext.setCurrentBranchId(branchId);
+        Branch branch = Branch.builder().id(branchId).branchName("Main Branch").build();
         employee = Employee.builder()
                 .id(employeeId)
                 .name("John Doe")
                 .employeeId("SG-EMP-001")
                 .baseSalary(30000.0)
+                .branch(branch)
                 .build();
     }
 
     @Test
     void testGetMonthlyAttendanceSummary() {
         when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employee));
-        when(attendanceRepository.findByEmployeeIdAndDateBetween(anyLong(), any(), any()))
+        when(attendanceRepository.findByEmployeeIdAndDateBetweenAndBranchId(anyLong(), any(), any(), anyLong()))
                 .thenReturn(Collections.singletonList(Attendance.builder()
                         .employee(employee)
                         .date(LocalDate.of(2024, 4, 1))
@@ -72,7 +81,7 @@ public class SalaryServiceTest {
     @Test
     void testCalculateAndGenerateSalary() {
         when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employee));
-        when(attendanceRepository.findByEmployeeIdAndDateBetween(anyLong(), any(), any()))
+        when(attendanceRepository.findByEmployeeIdAndDateBetweenAndBranchId(anyLong(), any(), any(), anyLong()))
                 .thenReturn(java.util.Arrays.asList(
                         Attendance.builder()
                                 .employee(employee)
@@ -86,7 +95,7 @@ public class SalaryServiceTest {
                                 .build()
                 ));
 
-        when(salaryRepository.findByEmployeeIdAndMonthYear(anyLong(), anyString())).thenReturn(Optional.empty());
+        when(salaryRepository.findByEmployeeIdAndMonthYearAndBranchId(anyLong(), anyString(), anyLong())).thenReturn(Optional.empty());
         when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SalaryResponseDTO response = salaryService.calculateAndGenerateSalary(employeeId, 4, 2024);
@@ -109,6 +118,8 @@ public class SalaryServiceTest {
         Salary salary = Salary.builder()
                 .id(1L)
                 .employee(employee)
+                .branch(employee.getBranch())
+                .monthYear("04-2024")
                 .status(Salary.SalaryStatus.PENDING)
                 .build();
 

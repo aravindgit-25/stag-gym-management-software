@@ -35,7 +35,12 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum Role {
-        ADMIN, STAFF
+        OWNER, TRAINER
     }
 }

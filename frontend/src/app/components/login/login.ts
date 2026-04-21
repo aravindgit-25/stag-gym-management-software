@@ -15,6 +15,7 @@ import { AppButtonComponent } from '../../shared/components/app-button/app-butto
 export class LoginComponent {
   loginForm: FormGroup;
   error = signal<string>('');
+  loading = signal<boolean>(false);
 
   constructor(
     private fb: FormBuilder,
@@ -29,12 +30,19 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
+      this.loading.set(true);
+      this.error.set('');
       const { email, password } = this.loginForm.value;
-      if (this.authService.login(email, password)) {
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.error.set('Invalid email or password');
-      }
+      
+      this.authService.login(email, password).subscribe({
+        next: () => {
+          this.router.navigate(['/dashboard']);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(err.error?.error || err.error?.message || 'Invalid email or password');
+        }
+      });
     }
   }
 }

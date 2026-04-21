@@ -15,4 +15,6 @@ public class LoginResponseDTO {
     private String name;
     private String email;
     private User.Role role;
+    private Long branchId;
+    private String token;
 }

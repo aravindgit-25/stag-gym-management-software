@@ -2,12 +2,14 @@ package com.stag.gym.service;
 
 import com.stag.gym.dto.PaymentRequestDTO;
 import com.stag.gym.dto.PaymentResponseDTO;
+import com.stag.gym.model.Branch;
 import com.stag.gym.model.Member;
 import com.stag.gym.model.Payment;
 import com.stag.gym.model.Plan;
 import com.stag.gym.model.Subscription;
 import com.stag.gym.repository.PaymentRepository;
 import com.stag.gym.repository.SubscriptionRepository;
+import com.stag.gym.security.BranchContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,27 +33,37 @@ public class PaymentServiceTest {
     @Mock
     private SubscriptionRepository subscriptionRepository;
 
+    @Mock
+    private BranchService branchService;
+
     @InjectMocks
     private PaymentService paymentService;
 
     private Subscription subscription;
+    private Long branchId = 1L;
 
     @BeforeEach
     void setUp() {
+        BranchContext.setCurrentBranchId(branchId);
+        Branch branch = Branch.builder().id(branchId).branchName("Main Branch").build();
+
         Member member = Member.builder()
                 .id(1L)
                 .name("John Doe")
+                .branch(branch)
                 .build();
         
         Plan plan = Plan.builder()
                 .id(1L)
                 .name("Monthly")
+                .branch(branch)
                 .build();
 
         subscription = Subscription.builder()
                 .id(1L)
                 .member(member)
                 .plan(plan)
+                .branch(branch)
                 .build();
     }
 

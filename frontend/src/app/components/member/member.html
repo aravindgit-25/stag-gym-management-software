@@ -238,7 +238,7 @@
 
         <div class="form-actions-modern mt-24">
           <app-button label="Cancel" variant="secondary" (onClick)="closeModal()"></app-button>
-          <app-button label="Next: Select Plan" type="submit" variant="primary"></app-button>
+          <app-button label="Next: Select Plan" type="submit" variant="primary" [loading]="loading()"></app-button>
         </div>
       </form>
 

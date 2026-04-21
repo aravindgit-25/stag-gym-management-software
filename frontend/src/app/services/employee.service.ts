@@ -1,27 +1,43 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, of } from 'rxjs';
 import { Employee } from '../models/employee.model';
+import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EmployeeService {
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/employees`;
 
-  constructor(private http: HttpClient) { }
+  private getBranchParams(): HttpParams {
+    let params = new HttpParams();
+    const branchId = this.auth.getBranchId();
+    if (branchId) {
+      params = params.set('branchId', branchId.toString());
+    }
+    return params;
+  }
 
   getEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(this.apiUrl);
+    return this.http.get<Employee[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+      catchError(() => of([]))
+    );
   }
 
   getActiveEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(`${this.apiUrl}/active`);
+    return this.http.get<Employee[]>(`${this.apiUrl}/active`, { params: this.getBranchParams() }).pipe(
+      catchError(() => of([]))
+    );
   }
 
   addEmployee(employee: Employee): Observable<Employee> {
-    return this.http.post<Employee>(this.apiUrl, employee);
+    const branchId = this.auth.getBranchId();
+    const payload = { ...employee, branchId: branchId || (employee as any).branchId };
+    return this.http.post<Employee>(this.apiUrl, payload);
   }
 
   updateEmployee(id: number, employee: Employee): Observable<Employee> {

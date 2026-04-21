@@ -1,52 +1,115 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, computed } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { User } from '../models/user.model';
+import { User, AuthResponse, UserRole } from '../models/user.model';
+import { environment } from '../../environments/environment';
+import { Observable, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  currentUser = signal<User | null>(null);
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private apiUrl = `${environment.apiUrl}/auth`;
 
-  constructor(private router: Router) {
-    const savedUser = localStorage.getItem('gym_user');
-    if (savedUser) {
-      this.currentUser.set(JSON.parse(savedUser));
+  currentUser = signal<User | null>(null);
+  selectedBranchId = signal<number | null>(null);
+
+  // Optimized Computed Signals for UI performance
+  isLoggedIn = computed(() => this.currentUser() !== null && !!this.getToken());
+  
+  isOwner = computed(() => {
+    const user = this.currentUser();
+    return user?.role === UserRole.OWNER || (user?.role as any) === 'ADMIN';
+  });
+
+  isTrainer = computed(() => {
+    const user = this.currentUser();
+    return user?.role === UserRole.TRAINER || (user?.role as any) === 'STAFF';
+  });
+
+  constructor() {
+    this.initAuth();
+  }
+
+  private initAuth() {
+    try {
+      const savedUser = localStorage.getItem('gym_user');
+      const savedToken = localStorage.getItem('gym_token');
+      const savedBranch = localStorage.getItem('gym_selected_branch');
+
+      if (savedUser && savedToken && savedUser !== 'undefined') {
+        const user = JSON.parse(savedUser);
+        this.currentUser.set(user);
+        
+        // For trainers, always use their assigned branch
+        if (user.role === UserRole.TRAINER || (user.role as any) === 'STAFF') {
+          this.selectedBranchId.set(user.branchId || null);
+        } else if (savedBranch) {
+          this.selectedBranchId.set(Number(savedBranch));
+        } else if (user.branchId) {
+          // Fallback for owners to their primary branch
+          this.selectedBranchId.set(user.branchId);
+        }
+      }
+    } catch (e) {
+      console.error('Error initializing AuthService:', e);
+      this.logout();
     }
   }
 
-  login(email: string, password: string): boolean {
-    console.log('Login attempt:', { email, password });
-    // Simple hardcoded check as requested
-    let user: User | null = null;
+  login(email: string, password: string): Observable<AuthResponse> {
+    const payload = { email, password };
+    const headers = { 'Content-Type': 'application/json' };
+    
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, payload, { headers }).pipe(
+      tap(res => {
+        if (!res || !res.token) throw new Error('Invalid response');
 
-    if (email === 'admin@stag.com' && password === 'admin123') {
-      user = { id: 1, name: 'Aravind Admin', email, role: 'ADMIN' };
-    } else if (email === 'staff@stag.com' && password === 'staff123') {
-      user = { id: 2, name: 'Staff Member', email, role: 'STAFF' };
-    }
+        const user: User = {
+          id: res.id,
+          name: res.name,
+          username: res.username || res.email,
+          email: res.email,
+          role: res.role,
+          branchId: res.branchId
+        };
 
-    if (user) {
-      console.log('Login successful:', user);
-      localStorage.setItem('gym_user', JSON.stringify(user));
-      this.currentUser.set(user);
-      return true;
-    }
-    console.warn('Login failed: Invalid credentials');
-    return false;
+        localStorage.setItem('gym_token', res.token);
+        localStorage.setItem('gym_user', JSON.stringify(user));
+        this.currentUser.set(user);
+        
+        // Immediate branch selection based on login response
+        this.selectedBranchId.set(user.branchId || null);
+        if (user.branchId) {
+          localStorage.setItem('gym_selected_branch', user.branchId.toString());
+        }
+      })
+    );
   }
 
   logout() {
-    localStorage.removeItem('gym_user');
+    localStorage.clear();
     this.currentUser.set(null);
+    this.selectedBranchId.set(null);
     this.router.navigate(['/login']);
   }
 
-  isAdmin(): boolean {
-    return this.currentUser()?.role === 'ADMIN';
+  getToken(): string | null {
+    return localStorage.getItem('gym_token');
   }
 
-  isLoggedIn(): boolean {
-    return this.currentUser() !== null;
+  setBranch(branchId: number | null) {
+    if (this.isOwner()) {
+      this.selectedBranchId.set(branchId);
+      if (branchId) localStorage.setItem('gym_selected_branch', branchId.toString());
+      else localStorage.removeItem('gym_selected_branch');
+    }
+  }
+
+  getBranchId(): number | null {
+    // If signal is null, try to get it from the current user object directly
+    return this.selectedBranchId() || this.currentUser()?.branchId || null;
   }
 }

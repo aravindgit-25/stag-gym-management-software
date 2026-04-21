@@ -8,6 +8,8 @@ import com.stag.gym.model.Subscription;
 import com.stag.gym.repository.MemberRepository;
 import com.stag.gym.repository.PlanRepository;
 import com.stag.gym.repository.SubscriptionRepository;
+import com.stag.gym.security.BranchContext;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,14 +25,17 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final MemberRepository memberRepository;
     private final PlanRepository planRepository;
+    private final BranchService branchService;
 
     @Transactional
     public SubscriptionResponseDTO createSubscription(SubscriptionRequestDTO requestDTO) {
         Member member = memberRepository.findById(requestDTO.getMemberId())
-                .orElseThrow(() -> new RuntimeException("Member not found"));
+                .filter(m -> m.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Member not found in current branch"));
         
         Plan plan = planRepository.findById(requestDTO.getPlanId())
-                .orElseThrow(() -> new RuntimeException("Plan not found"));
+                .filter(p -> p.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Plan not found in current branch"));
 
         // Calculate end date based on plan duration (months)
         LocalDate endDate = requestDTO.getStartDate().plusMonths(plan.getDuration());
@@ -43,6 +48,7 @@ public class SubscriptionService {
                 .discountAmount(requestDTO.getDiscountAmount())
                 .discountReason(requestDTO.getDiscountReason())
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : Subscription.Status.ACTIVE)
+                .branch(branchService.getCurrentBranch())
                 .build();
 
         Subscription savedSubscription = subscriptionRepository.save(subscription);
@@ -50,13 +56,13 @@ public class SubscriptionService {
     }
 
     public List<SubscriptionResponseDTO> getAllSubscriptions() {
-        return subscriptionRepository.findAll().stream()
+        return subscriptionRepository.findByBranchId(BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
     public List<SubscriptionResponseDTO> getSubscriptionsByMemberId(Long memberId) {
-        return subscriptionRepository.findByMemberId(memberId).stream()
+        return subscriptionRepository.findByMemberIdAndBranchId(memberId, BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }

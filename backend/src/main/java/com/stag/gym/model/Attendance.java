@@ -33,6 +33,11 @@ public class Attendance extends BaseEntity {
     @Builder.Default
     private AttendanceStatus status = AttendanceStatus.PRESENT;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     private String notes;
 
     public enum AttendanceStatus {

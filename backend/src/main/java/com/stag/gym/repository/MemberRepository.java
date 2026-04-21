@@ -12,19 +12,23 @@ import java.util.Optional;
 
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
-    Optional<Member> findByPhone(String phone);
+    Optional<Member> findByPhoneAndBranchId(String phone, Long branchId);
+    
+    List<Member> findByBranchId(Long branchId);
+    
+    long countByBranchId(Long branchId);
 
     @Query("SELECT m.registrationId FROM Member m WHERE m.registrationId LIKE 'SG-%' ORDER BY m.id DESC LIMIT 1")
     Optional<String> findLastRegistrationId();
 
-    @Query("SELECT DISTINCT m FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.status = 'ACTIVE' AND s.endDate >= :today")
-    List<Member> findActiveMembers(@Param("today") LocalDate today);
+    @Query("SELECT DISTINCT m FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.status = 'ACTIVE' AND s.endDate >= :today AND m.branch.id = :branchId")
+    List<Member> findActiveMembers(@Param("today") LocalDate today, @Param("branchId") Long branchId);
 
-    @Query("SELECT DISTINCT m FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.endDate < :today")
-    List<Member> findExpiredMembers(@Param("today") LocalDate today);
+    @Query("SELECT DISTINCT m FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.endDate < :today AND m.branch.id = :branchId")
+    List<Member> findExpiredMembers(@Param("today") LocalDate today, @Param("branchId") Long branchId);
 
-    @Query("SELECT COUNT(DISTINCT m) FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.status = 'ACTIVE' AND s.endDate >= :today")
-    long countActiveSubscriptionMembers(@Param("today") LocalDate today);
+    @Query("SELECT COUNT(DISTINCT m) FROM Member m JOIN Subscription s ON s.member.id = m.id WHERE s.status = 'ACTIVE' AND s.endDate >= :today AND m.branch.id = :branchId")
+    long countActiveSubscriptionMembers(@Param("today") LocalDate today, @Param("branchId") Long branchId);
 
-    long countByStatus(Member.Status status);
+    long countByStatusAndBranchId(Member.Status status, Long branchId);
 }

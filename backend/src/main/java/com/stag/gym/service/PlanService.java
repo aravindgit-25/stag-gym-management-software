@@ -5,6 +5,7 @@ import com.stag.gym.dto.PlanResponseDTO;
 import com.stag.gym.model.Plan;
 import com.stag.gym.repository.PlanRepository;
 import com.stag.gym.repository.SubscriptionRepository;
+import com.stag.gym.security.BranchContext;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class PlanService {
 
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final BranchService branchService;
 
     @Transactional
     public PlanResponseDTO createPlan(PlanRequestDTO requestDTO) {
@@ -27,6 +29,7 @@ public class PlanService {
                 .duration(requestDTO.getDuration())
                 .price(requestDTO.getPrice())
                 .type(requestDTO.getType())
+                .branch(branchService.getCurrentBranch())
                 .build();
         
         Plan savedPlan = planRepository.save(plan);
@@ -34,19 +37,20 @@ public class PlanService {
     }
 
     public List<PlanResponseDTO> getAllPlans() {
-        return planRepository.findAll().stream()
+        return planRepository.findByBranchId(BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
     public List<PlanResponseDTO> getPlansByType(Plan.PlanType type) {
-        return planRepository.findByType(type).stream()
+        return planRepository.findByTypeAndBranchId(type, BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
     public PlanResponseDTO getPlanById(Long id) {
         Plan plan = planRepository.findById(id)
+                .filter(p -> p.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
                 .orElseThrow(() -> new RuntimeException("Plan not found with id: " + id));
         return mapToResponseDTO(plan);
     }
@@ -54,6 +58,7 @@ public class PlanService {
     @Transactional
     public PlanResponseDTO updatePlan(Long id, PlanRequestDTO requestDTO) {
         Plan plan = planRepository.findById(id)
+                .filter(p -> p.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
                 .orElseThrow(() -> new RuntimeException("Plan not found with id: " + id));
         
         plan.setName(requestDTO.getName());
@@ -67,15 +72,15 @@ public class PlanService {
 
     @Transactional
     public void deletePlan(Long id) {
-        if (!planRepository.existsById(id)) {
-            throw new RuntimeException("Plan not found with id: " + id);
-        }
+        Plan plan = planRepository.findById(id)
+                .filter(p -> p.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Plan not found with id: " + id));
 
-        if (subscriptionRepository.existsByPlanId(id)) {
+        if (subscriptionRepository.existsByPlanIdAndBranchId(id, BranchContext.getCurrentBranchId())) {
             throw new RuntimeException("Cannot delete plan: active subscriptions exist.");
         }
 
-        planRepository.deleteById(id);
+        planRepository.delete(plan);
     }
 
     private PlanResponseDTO mapToResponseDTO(Plan plan) {

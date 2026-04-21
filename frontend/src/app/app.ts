@@ -1,15 +1,18 @@
-import { Component, inject, signal, HostListener } from '@angular/core';
+import { Component, inject, signal, HostListener, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
-import { filter, map } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { AuthService } from './services/auth.service';
+import { BranchService } from './services/branch.service';
+import { Branch } from './models/branch.model';
 import { NotificationComponent } from './shared/components/notification/notification';
 import { ConfirmComponent } from './shared/components/confirm/confirm';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, NotificationComponent, ConfirmComponent],
+  imports: [CommonModule, RouterModule, NotificationComponent, ConfirmComponent, FormsModule],
   template: `
     <app-notification></app-notification>
     <app-confirm></app-confirm>
@@ -24,7 +27,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
             STAG <strong>GYM</strong>
           </div>
           <nav class="sidebar-nav">
-            <a *ngIf="authService.isAdmin()" class="nav-item" routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebar()">
+            <a *ngIf="authService.isOwner()" class="nav-item" routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebar()">
               <span class="nav-icon">
                 <svg viewBox="0 0 24 24">
                   <rect x="3" y="3" width="7" height="7"></rect>
@@ -164,7 +167,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                 </svg>
               </span> Plans
             </a>
-            <a *ngIf="authService.isAdmin()" class="nav-item" routerLink="/payments" routerLinkActive="active" (click)="closeSidebar()">
+            <a *ngIf="authService.isOwner()" class="nav-item" routerLink="/payments" routerLinkActive="active" (click)="closeSidebar()">
               <span class="nav-icon">
                 <svg viewBox="0 0 24 24">
                   <line x1="12" y1="1" x2="12" y2="23"></line>
@@ -196,7 +199,23 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-            <!-- Redundant brand text removed from header as requested -->
+            
+            <div class="branch-switcher" *ngIf="authService.isOwner()">
+              <select [ngModel]="authService.selectedBranchId()" (ngModelChange)="onBranchChange($event)" class="branch-select">
+                <option [ngValue]="null">🏢 All Branches</option>
+                <option *ngFor="let b of branches()" [value]="b.id">📍 {{ b.branchName }}</option>
+              </select>
+            </div>
+            
+            <div class="fixed-branch-info" *ngIf="authService.isTrainer()">
+               <span class="branch-tag">
+                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                   <circle cx="12" cy="10" r="3"></circle>
+                 </svg>
+                 {{ getTrainerBranchName() }}
+               </span>
+            </div>
           </div>
           
           <div class="user-profile-wrapper">
@@ -212,19 +231,11 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
             <div class="user-dropdown" *ngIf="userDropdownOpen()" (click)="$event.stopPropagation()">
               <div class="dropdown-header">
                 <span class="user-name">{{ authService.currentUser()?.name }}</span>
+                <div class="user-role-badge" [class.owner]="authService.isOwner()">{{ authService.currentUser()?.role }}</div>
                 <span class="user-email">{{ authService.currentUser()?.email }}</span>
               </div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-items">
-                <button class="dropdown-item">
-                  <span class="item-icon">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                  </span>
-                  Change Password
-                </button>
                 <button class="dropdown-item exit-btn" (click)="authService.logout(); closeUserDropdown()">
                   <span class="item-icon">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -233,7 +244,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
                       <line x1="21" y1="12" x2="9" y2="12"></line>
                     </svg>
                   </span>
-                  Exit
+                  Sign Out
                 </button>
               </div>
             </div>
@@ -254,6 +265,47 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
     .invoice-layout { display: block !important; }
     .full-width { width: 100%; min-height: 100vh; background: white; margin: 0; padding: 0; }
     
+    .branch-switcher { margin-left: 20px; }
+    .branch-select {
+      background: #f8fafc;
+      border: 1px solid var(--border-medium);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .branch-select:hover { border-color: var(--accent-red); background: white; }
+
+    .fixed-branch-info { margin-left: 20px; }
+    .branch-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff1f2;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-red);
+    }
+
+    .user-role-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      color: #475569;
+      width: fit-content;
+      margin: 4px 0;
+    }
+    .user-role-badge.owner { background: #fee2e2; color: #b91c1c; }
+
     .nav-icon {
       display: flex;
       align-items: center;
@@ -303,7 +355,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
     }
 
     .expanded .sub-nav {
-      max-height: 200px;
+      max-height: 250px;
       margin-bottom: 10px;
     }
 
@@ -328,21 +380,9 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
       background: var(--accent-red-light);
     }
     
-    .user-profile-wrapper {
-      position: relative;
-    }
-    
-    .user-profile {
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 50%;
-      transition: all 0.2s;
-    }
-    
-    .user-profile:hover {
-      background: var(--bg-hover);
-    }
-    
+    .user-profile-wrapper { position: relative; }
+    .user-profile { cursor: pointer; padding: 5px; border-radius: 50%; transition: all 0.2s; }
+    .user-profile:hover { background: var(--bg-hover); }
     .user-avatar {
       width: 40px;
       height: 40px;
@@ -355,11 +395,7 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
       color: var(--secondary-grey);
       transition: all 0.2s;
     }
-    
-    .user-profile:hover .user-avatar {
-      color: var(--accent-red);
-      border-color: var(--accent-red);
-    }
+    .user-profile:hover .user-avatar { color: var(--accent-red); border-color: var(--accent-red); }
 
     .user-dropdown {
       position: absolute;
@@ -380,33 +416,11 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .dropdown-header {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .user-name {
-      font-weight: 700;
-      color: var(--text-main);
-      font-size: 15px;
-    }
-
-    .user-email {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .dropdown-divider {
-      height: 1px;
-      background: var(--border-light);
-    }
-
-    .dropdown-items {
-      padding: 8px;
-    }
-
+    .dropdown-header { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .user-name { font-weight: 700; color: var(--text-main); font-size: 15px; }
+    .user-email { font-size: 13px; color: var(--text-muted); }
+    .dropdown-divider { height: 1px; background: var(--border-light); }
+    .dropdown-items { padding: 8px; }
     .dropdown-item {
       width: 100%;
       display: flex;
@@ -423,30 +437,14 @@ import { ConfirmComponent } from './shared/components/confirm/confirm';
       transition: all 0.2s;
       text-align: left;
     }
-
-    .dropdown-item:hover {
-      background: var(--bg-hover);
-      color: var(--text-main);
-    }
-
-    .exit-btn:hover {
-      color: var(--accent-red);
-      background: var(--accent-red-light);
-    }
-
-    .item-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: inherit;
-    }
+    .dropdown-item:hover { background: var(--bg-hover); color: var(--text-main); }
+    .exit-btn:hover { color: var(--accent-red); background: var(--accent-red-light); }
+    .item-icon { display: flex; align-items: center; justify-content: center; color: inherit; }
     
     .sidebar-footer { margin-top: auto; padding: 20px 15px; border-top: 1px solid var(--border-light); }
-    .logout-btn { color: var(--text-muted) !important; }
+    .logout-btn { color: var(--text-muted) !important; cursor: pointer; border-radius: 8px; }
     .logout-btn:hover { background: var(--accent-red-light) !important; color: var(--accent-red) !important; }
-    .logout-btn:hover .dot { background: var(--accent-red); }
   `]
-
 })
 export class AppComponent {
   isInvoicePage = false;
@@ -455,9 +453,14 @@ export class AppComponent {
   leadsMenuOpen = signal<boolean>(false);
   staffMenuOpen = signal<boolean>(false);
   userDropdownOpen = signal<boolean>(false);
+  
+  branches = signal<Branch[]>([]);
+  
   private router = inject(Router);
+  public authService = inject(AuthService);
+  private branchService = inject(BranchService);
 
-  constructor(public authService: AuthService) {
+  constructor() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
@@ -465,8 +468,40 @@ export class AppComponent {
       // Auto-open menus based on route
       if (event.url.includes('/members')) this.membersMenuOpen.set(true);
       if (event.url.includes('/leads')) this.leadsMenuOpen.set(true);
-      if (event.url.includes('/staff')) this.staffMenuOpen.set(true);
+      if (event.url.includes('/staff') || event.url.includes('/salary')) this.staffMenuOpen.set(true);
     });
+    
+    if (this.authService.isLoggedIn()) {
+      this.loadBranches();
+    }
+  }
+
+  loadBranches() {
+    if (this.authService.isOwner()) {
+      this.branchService.getBranches().subscribe({
+        next: data => this.branches.set(data),
+        error: () => console.error('Failed to load branches')
+      });
+    } else if (this.authService.isTrainer()) {
+      const bId = this.authService.getBranchId();
+      if (bId) {
+        this.branchService.getBranchById(bId).subscribe({
+          next: b => this.branches.set([b]),
+          error: () => console.error('Failed to load branch info')
+        });
+      }
+    }
+  }
+
+  onBranchChange(id: any) {
+    this.authService.setBranch(id ? Number(id) : null);
+    // Reload page once to clear service states and fetch for new branch
+    window.location.href = window.location.href.split('?')[0]; 
+  }
+
+  getTrainerBranchName(): string {
+    const bId = this.authService.getBranchId();
+    return this.branches().find(b => b.id === bId)?.branchName || 'Assigned Branch';
   }
 
   toggleMembersMenu(event: Event) {

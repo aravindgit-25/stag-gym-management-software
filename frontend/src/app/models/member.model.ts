@@ -37,6 +37,7 @@ export interface Member {
   idProofType?: string;
   idProofNumber?: string;
   status: MemberStatus;
+  branchId?: number;
   
   // Plan Info (Nested for UI convenience)
   currentPlanId?: number;

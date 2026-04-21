@@ -10,9 +10,13 @@ import java.util.List;
 @Repository
 public interface LeadRepository extends JpaRepository<Lead, Long> {
     
-    List<Lead> findByStatus(Lead.LeadStatus status);
+    List<Lead> findByStatusAndBranchId(Lead.LeadStatus status, Long branchId);
     
-    List<Lead> findByNextFollowUpDate(LocalDate date);
+    List<Lead> findByNextFollowUpDateAndBranchId(LocalDate date, Long branchId);
     
-    List<Lead> findByPhone(String phone);
+    List<Lead> findByPhoneAndBranchId(String phone, Long branchId);
+
+    List<Lead> findByBranchId(Long branchId);
+
+    long countByBranchId(Long branchId);
 }

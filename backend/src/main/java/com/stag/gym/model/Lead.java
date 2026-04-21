@@ -47,6 +47,11 @@ public class Lead extends BaseEntity {
     @Column(name = "last_follow_up_date")
     private LocalDate lastFollowUpDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum LeadStatus {
         NEW,
         FOLLOW_UP,

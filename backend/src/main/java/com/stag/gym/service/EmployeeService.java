@@ -5,6 +5,7 @@ import com.stag.gym.model.Employee;
 import com.stag.gym.repository.EmployeeFeedbackRepository;
 import com.stag.gym.repository.EmployeeRepository;
 import com.stag.gym.repository.PersonalTrainerMemberRepository;
+import com.stag.gym.security.BranchContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeFeedbackRepository feedbackRepository;
     private final PersonalTrainerMemberRepository trainingRepository;
+    private final BranchService branchService;
 
     @Transactional
     public Employee createEmployee(Employee employee) {
@@ -28,11 +30,13 @@ public class EmployeeService {
         }
         employee.setEmployeeId(generateEmployeeId());
         employee.setStatus(Employee.Status.ACTIVE);
+        employee.setBranch(branchService.getCurrentBranch());
         return employeeRepository.save(employee);
     }
 
     private String generateEmployeeId() {
-        Optional<String> lastId = employeeRepository.findLastEmployeeId();
+        Long branchId = BranchContext.getCurrentBranchId();
+        Optional<String> lastId = employeeRepository.findLastEmployeeId(branchId);
         int nextNumber = 1;
         if (lastId.isPresent() && lastId.get().startsWith("SG-EMP-")) {
             try {
@@ -46,16 +50,21 @@ public class EmployeeService {
     }
 
     public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+        Long branchId = BranchContext.getCurrentBranchId();
+        return employeeRepository.findByBranchId(branchId);
     }
 
     public Optional<Employee> getEmployeeById(Long id) {
-        return employeeRepository.findById(id);
+        Long branchId = BranchContext.getCurrentBranchId();
+        return employeeRepository.findById(id)
+                .filter(e -> e.getBranch().getId().equals(branchId));
     }
 
     @Transactional
     public Employee updateEmployee(Long id, Employee details) {
+        Long branchId = BranchContext.getCurrentBranchId();
         Employee employee = employeeRepository.findById(id)
+                .filter(e -> e.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         employee.setName(details.getName());
@@ -88,7 +97,9 @@ public class EmployeeService {
 
     @Transactional
     public void terminateEmployee(Long id) {
+        Long branchId = BranchContext.getCurrentBranchId();
         Employee employee = employeeRepository.findById(id)
+                .filter(e -> e.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         
         employee.setStatus(Employee.Status.TERMINATED);
@@ -98,7 +109,9 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public EmployeeProfileResponseDTO getEmployeeProfile(Long id) {
+        Long branchId = BranchContext.getCurrentBranchId();
         Employee employee = employeeRepository.findById(id)
+                .filter(e -> e.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         return EmployeeProfileResponseDTO.builder()
@@ -109,6 +122,7 @@ public class EmployeeService {
     }
 
     public List<Employee> getActiveEmployees() {
-        return employeeRepository.findByStatus(Employee.Status.ACTIVE);
+        Long branchId = BranchContext.getCurrentBranchId();
+        return employeeRepository.findByStatusAndBranchId(Employee.Status.ACTIVE, branchId);
     }
 }
