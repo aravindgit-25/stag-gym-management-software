@@ -8,5 +8,8 @@ import java.util.List;
 
 @Repository
 public interface PlanRepository extends JpaRepository<Plan, Long> {
-    List<Plan> findByType(Plan.PlanType type);
+    List<Plan> findByTypeAndBranchId(Plan.PlanType type, Long branchId);
+    List<Plan> findByBranchId(Long branchId);
+
+    long countByBranchId(Long branchId);
 }

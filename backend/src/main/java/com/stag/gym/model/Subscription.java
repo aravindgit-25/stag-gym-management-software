@@ -47,6 +47,11 @@ public class Subscription extends BaseEntity {
     @Builder.Default
     private Status status = Status.ACTIVE;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum Status {
         ACTIVE, EXPIRED
     }

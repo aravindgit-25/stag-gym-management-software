@@ -73,8 +73,7 @@ export class DietPlanComponent implements OnInit {
 
       return {
         ...m,
-        tier,
-        status: tier !== DietPlanTier.NONE ? 'Eligible' : 'Not Eligible'
+        tier
       };
     }).filter(m => m.tier !== DietPlanTier.NONE);
   });
@@ -191,10 +190,7 @@ export class DietPlanComponent implements OnInit {
   loadMemberPlan(member: Member, callback?: Function) {
     this.dietService.getDietPlanByMemberId(member.id!).subscribe({
       next: (existingPlan) => {
-        console.log('DEBUG: Diet Plan from backend:', existingPlan);
-        
         if (existingPlan) {
-          // Ensure meals array is properly structured if service grouping didn't find assignments
           if (!existingPlan.meals || existingPlan.meals.length === 0) {
             existingPlan.meals = [
               { time: 'Breakfast', foods: [], totalCalories: 0 },
@@ -203,10 +199,8 @@ export class DietPlanComponent implements OnInit {
               { time: 'Dinner', foods: [], totalCalories: 0 }
             ];
           }
-
           this.currentPlan.set(existingPlan);
           this.updatePlanTotals();
-
           this.calcForm.patchValue({
             weight: existingPlan.weight,
             height: existingPlan.height,
@@ -303,11 +297,10 @@ export class DietPlanComponent implements OnInit {
 
     const food = this.foodDatabase().find(f => f.id === Number(foodId));
     if (food) {
-      // Create request body as expected by the new backend endpoint
       const foodAssignment = {
-        foodItemId: food.id, // Exact camelCase field name as requested
-        mealTime: meal.time, // Breakfast, Lunch, etc.
-        quantity: 1 // Default to 1
+        foodItemId: food.id,
+        mealTime: meal.time,
+        quantity: 1
       };
 
       this.dietService.addFoodToMemberPlan(memberId, foodAssignment).subscribe({
@@ -333,7 +326,7 @@ export class DietPlanComponent implements OnInit {
       let totalCals = 0, totalP = 0, totalC = 0, totalF = 0;
       
       plan.meals.forEach(m => {
-        m.totalCalories = m.foods.reduce((sum, f) => sum + f.calories, 0);
+        m.totalCalories = parseFloat(m.foods.reduce((sum, f) => sum + f.calories, 0).toFixed(1));
         totalCals += m.totalCalories;
         totalP += m.foods.reduce((sum, f) => sum + f.protein, 0);
         totalC += m.foods.reduce((sum, f) => sum + f.carbs, 0);
@@ -342,10 +335,10 @@ export class DietPlanComponent implements OnInit {
 
       return {
         ...plan,
-        totalAssignedCalories: totalCals,
-        totalAssignedProtein: totalP,
-        totalAssignedCarbs: totalC,
-        totalAssignedFats: totalF
+        totalAssignedCalories: parseFloat(totalCals.toFixed(1)),
+        totalAssignedProtein: parseFloat(totalP.toFixed(1)),
+        totalAssignedCarbs: parseFloat(totalC.toFixed(1)),
+        totalAssignedFats: parseFloat(totalF.toFixed(1))
       };
     });
   }

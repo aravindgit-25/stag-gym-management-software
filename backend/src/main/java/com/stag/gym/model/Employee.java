@@ -67,6 +67,11 @@ public class Employee extends BaseEntity {
     private LocalDate dateOfJoining;
     private LocalDate dateOfTermination;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum Role {
         TRAINER, ADMIN, CLEANER, SERVICE_STAFF, MANAGER, OWNER
     }

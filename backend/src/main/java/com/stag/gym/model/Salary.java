@@ -38,6 +38,11 @@ public class Salary extends BaseEntity {
     @Builder.Default
     private SalaryStatus status = SalaryStatus.PENDING;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     private LocalDate paidDate;
     private String paymentMethod;
 

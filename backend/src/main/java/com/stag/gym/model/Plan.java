@@ -37,6 +37,11 @@ public class Plan extends BaseEntity {
     @Builder.Default
     private PlanType type = PlanType.MEMBERSHIP;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum PlanType {
         MEMBERSHIP, ADD_ON
     }

@@ -3,6 +3,7 @@ package com.stag.gym.service;
 import com.stag.gym.model.Member;
 import com.stag.gym.repository.MemberRepository;
 import com.stag.gym.repository.SubscriptionRepository;
+import com.stag.gym.security.BranchContext;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final BranchService branchService;
 
     @Transactional
     public Member registerMember(Member member) {
@@ -28,6 +30,7 @@ public class MemberService {
             member.setJoiningDate(LocalDate.now());
         }
         member.setRegistrationId(generateRegistrationId());
+        member.setBranch(branchService.getCurrentBranch());
         return memberRepository.save(member);
     }
 
@@ -50,65 +53,29 @@ public class MemberService {
         return String.format("SG-%03d", nextNumber);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Member> getAllMembers() {
-        List<Member> members = memberRepository.findAll();
-        backfillRegistrationIds(members);
-        return members;
+        return memberRepository.findByBranchId(BranchContext.getCurrentBranchId());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Member> getActiveMembers() {
-        List<Member> members = memberRepository.findActiveMembers(LocalDate.now());
-        backfillRegistrationIds(members);
-        return members;
+        return memberRepository.findActiveMembers(LocalDate.now(), BranchContext.getCurrentBranchId());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Member> getExpiredMembers() {
-        List<Member> members = memberRepository.findExpiredMembers(LocalDate.now());
-        backfillRegistrationIds(members);
-        return members;
+        return memberRepository.findExpiredMembers(LocalDate.now(), BranchContext.getCurrentBranchId());
     }
 
-    private void backfillRegistrationIds(List<Member> members) {
-        boolean needsSave = false;
-        String lastIdStr = memberRepository.findLastRegistrationId().orElse("SG-000");
-        int nextNumber = 1;
-        if (lastIdStr.startsWith("SG-")) {
-            try {
-                nextNumber = Integer.parseInt(lastIdStr.substring(3)) + 1;
-            } catch (NumberFormatException e) {
-                nextNumber = 1;
-            }
-        }
-
-        for (Member member : members) {
-            if (member.getRegistrationId() == null) {
-                member.setRegistrationId(String.format("SG-%03d", nextNumber++));
-                memberRepository.save(member);
-                needsSave = true;
-            }
-        }
-        if (needsSave) {
-            memberRepository.flush();
-        }
-    }
-
-    @Transactional
+    @Transactional(readOnly = true)
     public Optional<Member> getMemberById(Long id) {
-        return memberRepository.findById(id).map(member -> {
-            if (member.getRegistrationId() == null) {
-                member.setRegistrationId(generateRegistrationId());
-                return memberRepository.saveAndFlush(member);
-            }
-            return member;
-        });
+        return memberRepository.findById(id).filter(m -> m.getBranch().getId().equals(BranchContext.getCurrentBranchId()));
     }
 
     @Transactional
     public Member updateMember(Long id, Member memberDetails) {
-        Member member = memberRepository.findById(id)
+        Member member = getMemberById(id)
                 .orElseThrow(() -> new RuntimeException("Member not found with id: " + id));
         
         member.setName(memberDetails.getName());
@@ -128,17 +95,16 @@ public class MemberService {
         member.setIdProofType(memberDetails.getIdProofType());
         member.setIdProofNumber(memberDetails.getIdProofNumber());
         member.setStatus(memberDetails.getStatus());
-        member.setBranch(memberDetails.getBranch());
         
         return memberRepository.save(member);
     }
 
     @Transactional
     public void softDeleteMember(Long id) {
-        Member member = memberRepository.findById(id)
+        Member member = getMemberById(id)
                 .orElseThrow(() -> new RuntimeException("Member not found with id: " + id));
         
-        if (subscriptionRepository.existsByMemberId(id)) {
+        if (subscriptionRepository.existsByMemberIdAndBranchId(id, BranchContext.getCurrentBranchId())) {
             throw new RuntimeException("Cannot deactivate member: active subscriptions exist.");
         }
 
@@ -147,14 +113,14 @@ public class MemberService {
     }
 
     public long countAll() {
-        return memberRepository.count();
+        return memberRepository.countByBranchId(BranchContext.getCurrentBranchId()); // Simple count
     }
 
     public long getActiveCount() {
-        return memberRepository.countByStatus(Member.Status.ACTIVE);
+        return memberRepository.countByStatusAndBranchId(Member.Status.ACTIVE, BranchContext.getCurrentBranchId());
     }
 
     public boolean existsByPhone(String phone) {
-        return memberRepository.findByPhone(phone).isPresent();
+        return memberRepository.findByPhoneAndBranchId(phone, BranchContext.getCurrentBranchId()).isPresent();
     }
 }

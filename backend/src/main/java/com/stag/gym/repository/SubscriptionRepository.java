@@ -8,7 +8,11 @@ import java.util.List;
 
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
-    List<Subscription> findByMemberId(Long memberId);
-    boolean existsByPlanId(Long planId);
-    boolean existsByMemberId(Long memberId);
+    List<Subscription> findByMemberIdAndBranchId(Long memberId, Long branchId);
+    List<Subscription> findByBranchId(Long branchId);
+
+    long countByBranchId(Long branchId);
+
+    boolean existsByPlanIdAndBranchId(Long planId, Long branchId);
+    boolean existsByMemberIdAndBranchId(Long memberId, Long branchId);
 }

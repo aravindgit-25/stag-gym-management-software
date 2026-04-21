@@ -123,7 +123,15 @@ export class AttendanceComponent implements OnInit {
   onMark() {
     if (this.markForm.valid && this.selectedEmployee()) {
       const { status, notes } = this.markForm.value;
-      this.attendanceService.markAttendance(this.selectedEmployee()!.employeeId!, status, notes).subscribe({
+      const attendance: Attendance = {
+        employeeId: this.selectedEmployee()!.id,
+        employeeCode: this.selectedEmployee()!.employeeId,
+        date: this.selectedDate(),
+        status,
+        notes
+      };
+
+      this.attendanceService.markAttendance(attendance).subscribe({
         next: () => {
           this.notif.show('Attendance marked.', 'success');
           this.loadAttendance();
@@ -172,7 +180,7 @@ export class AttendanceComponent implements OnInit {
         catchError(() => of([])),
         finalize(() => this.historyLoading.set(false))
       )
-      .subscribe(data => {
+      .subscribe((data: Attendance[]) => {
         this.historyRecords.set(data);
       });
   }

@@ -11,11 +11,15 @@ import java.util.List;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    List<Payment> findBySubscriptionId(Long subscriptionId);
+    List<Payment> findBySubscriptionIdAndBranchId(Long subscriptionId, Long branchId);
+    
+    List<Payment> findByBranchId(Long branchId);
 
-    @Query("SELECT SUM(p.amount) FROM Payment p")
-    Double sumTotalRevenue();
+    long countByBranchId(Long branchId);
 
-    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate = :today")
-    Double sumTodayRevenue(@Param("today") LocalDate today);
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.branch.id = :branchId")
+    Double sumTotalRevenue(@Param("branchId") Long branchId);
+
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate = :today AND p.branch.id = :branchId")
+    Double sumTodayRevenue(@Param("today") LocalDate today, @Param("branchId") Long branchId);
 }

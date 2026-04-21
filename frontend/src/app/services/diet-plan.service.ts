@@ -34,17 +34,17 @@ export class DietPlanService {
         
         const foods = mealAssignments.map((a: any) => {
           // Food might be nested in foodItem, food_item, or flat in the assignment
-          const food = a.foodItem || a.food_item || a.foodItemDetails || (a.name ? a : null);
+          const food = a.foodItem || a.food_item || a.foodItemDetails || (a.name || a.foodName ? a : null);
           if (!food) return null;
 
           return {
-            id: food.id,
-            name: food.name,
-            calories: Number(food.calories || a.calories || 0),
-            protein: Number(food.protein || a.protein || 0),
-            carbs: Number(food.carbs || a.carbs || 0),
-            fats: Number(food.fats || a.fats || 0),
-            unit: food.unit || a.unit || ''
+            id: a.foodItemId || food.id,
+            name: food.name || a.foodName,
+            calories: Number(a.totalCalories || food.calories || a.calories || 0),
+            protein: Number(a.totalProtein || food.protein || a.protein || 0),
+            carbs: Number(a.totalCarbs || food.carbs || a.carbs || 0),
+            fats: Number(a.totalFats || food.fats || a.fats || 0),
+            unit: a.servingUnit || food.unit || a.unit || ''
           };
         }).filter((f: any) => f !== null);
 

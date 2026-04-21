@@ -18,6 +18,17 @@ public class AttendanceController {
 
     private final AttendanceService attendanceService;
 
+    @PostMapping
+    public ResponseEntity<AttendanceResponseDTO> saveAttendance(@RequestBody java.util.Map<String, Object> payload) {
+        String employeeCode = (String) payload.get("employeeCode");
+        String statusStr = (String) payload.get("status");
+        String notes = (String) payload.get("notes");
+        
+        Attendance.AttendanceStatus status = Attendance.AttendanceStatus.valueOf(statusStr);
+        Attendance attendance = attendanceService.markAttendance(employeeCode, status, notes);
+        return ResponseEntity.ok(attendanceService.mapToResponseDTO(attendance));
+    }
+
     @PostMapping("/{employeeId}/mark")
     public ResponseEntity<AttendanceResponseDTO> markAttendance(
             @PathVariable String employeeId,
@@ -31,6 +42,13 @@ public class AttendanceController {
     public ResponseEntity<AttendanceResponseDTO> markCheckOut(@PathVariable String employeeId) {
         Attendance attendance = attendanceService.markCheckOut(employeeId);
         return ResponseEntity.ok(attendanceService.mapToResponseDTO(attendance));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AttendanceResponseDTO>> getAttendance(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        LocalDate searchDate = (date != null) ? date : LocalDate.now();
+        return ResponseEntity.ok(attendanceService.getDailyAttendance(searchDate));
     }
 
     @GetMapping("/daily")

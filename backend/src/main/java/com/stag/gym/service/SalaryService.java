@@ -9,6 +9,8 @@ import com.stag.gym.model.Salary;
 import com.stag.gym.repository.AttendanceRepository;
 import com.stag.gym.repository.EmployeeRepository;
 import com.stag.gym.repository.SalaryRepository;
+import com.stag.gym.security.BranchContext;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +26,17 @@ public class SalaryService {
     private final SalaryRepository salaryRepository;
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final BranchService branchService;
 
     @Transactional(readOnly = true)
     public AttendanceSummaryDTO getMonthlyAttendanceSummary(Long employeeId, int month, int year) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .filter(e -> e.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Employee not found in current branch"));
 
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
-        List<Attendance> attendances = attendanceRepository.findByEmployeeIdAndDateBetween(employeeId, start, end);
+        List<Attendance> attendances = attendanceRepository.findByEmployeeIdAndDateBetweenAndBranchId(employeeId, start, end, BranchContext.getCurrentBranchId());
 
         int present = (int) attendances.stream()
                 .filter(a -> a.getStatus() == Attendance.AttendanceStatus.PRESENT)
@@ -59,7 +63,8 @@ public class SalaryService {
     @Transactional
     public SalaryResponseDTO calculateAndGenerateSalary(Long employeeId, int month, int year) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .filter(e -> e.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Employee not found in current branch"));
 
         AttendanceSummaryDTO summary = getMonthlyAttendanceSummary(employeeId, month, year);
 
@@ -73,10 +78,11 @@ public class SalaryService {
 
         String monthYear = String.format("%02d-%d", month, year);
 
-        Salary salary = salaryRepository.findByEmployeeIdAndMonthYear(employeeId, monthYear)
+        Salary salary = salaryRepository.findByEmployeeIdAndMonthYearAndBranchId(employeeId, monthYear, BranchContext.getCurrentBranchId())
                 .orElse(Salary.builder()
                         .employee(employee)
                         .monthYear(monthYear)
+                        .branch(branchService.getCurrentBranch())
                         .build());
 
         salary.setBaseSalary(baseSalary);
@@ -95,7 +101,8 @@ public class SalaryService {
     @Transactional
     public SalaryResponseDTO markAsPaid(Long salaryId, SalaryPaymentRequestDTO request) {
         Salary salary = salaryRepository.findById(salaryId)
-                .orElseThrow(() -> new RuntimeException("Salary record not found"));
+                .filter(s -> s.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Salary record not found in current branch"));
 
         salary.setStatus(Salary.SalaryStatus.PAID);
         salary.setPaidDate(request.getPaidDate() != null ? request.getPaidDate() : LocalDate.now());
@@ -106,14 +113,14 @@ public class SalaryService {
 
     @Transactional(readOnly = true)
     public List<SalaryResponseDTO> getSalariesByMonth(String monthYear) {
-        return salaryRepository.findByMonthYear(monthYear).stream()
+        return salaryRepository.findByMonthYearAndBranchId(monthYear, BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SalaryResponseDTO> getEmployeeSalaries(Long employeeId) {
-        return salaryRepository.findByEmployeeId(employeeId).stream()
+        return salaryRepository.findByEmployeeIdAndBranchId(employeeId, BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -125,8 +132,8 @@ public class SalaryService {
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
 
-        List<LocalDate> absentDates = attendanceRepository.findByEmployeeIdAndDateBetween(
-                salary.getEmployee().getId(), start, end).stream()
+        List<LocalDate> absentDates = attendanceRepository.findByEmployeeIdAndDateBetweenAndBranchId(
+                salary.getEmployee().getId(), start, end, BranchContext.getCurrentBranchId()).stream()
                 .filter(a -> a.getStatus() == Attendance.AttendanceStatus.ABSENT)
                 .map(Attendance::getDate)
                 .collect(Collectors.toList());

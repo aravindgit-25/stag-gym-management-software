@@ -19,6 +19,7 @@ public class LeadService {
 
     private final LeadRepository leadRepository;
     private final MemberService memberService;
+    private final BranchService branchService;
 
     @Transactional
     public LeadResponseDTO createLead(LeadRequestDTO request) {
@@ -31,6 +32,7 @@ public class LeadService {
                 .status(request.getStatus() != null ? request.getStatus() : Lead.LeadStatus.NEW)
                 .notes(request.getNotes())
                 .nextFollowUpDate(request.getNextFollowUpDate())
+                .branch(branchService.getCurrentBranch())
                 .build();
 
         Lead savedLead = leadRepository.save(lead);
@@ -39,21 +41,26 @@ public class LeadService {
 
     @Transactional(readOnly = true)
     public List<LeadResponseDTO> getAllLeads() {
-        return leadRepository.findAll().stream()
+        Long branchId = com.stag.gym.security.BranchContext.getCurrentBranchId();
+        return leadRepository.findByBranchId(branchId).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public LeadResponseDTO getLeadById(Long id) {
+        Long branchId = com.stag.gym.security.BranchContext.getCurrentBranchId();
         Lead lead = leadRepository.findById(id)
+                .filter(l -> l.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + id));
         return mapToResponseDTO(lead);
     }
 
     @Transactional
     public LeadResponseDTO updateLead(Long id, LeadRequestDTO request) {
+        Long branchId = com.stag.gym.security.BranchContext.getCurrentBranchId();
         Lead lead = leadRepository.findById(id)
+                .filter(l -> l.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + id));
 
         lead.setName(request.getName());
@@ -73,7 +80,9 @@ public class LeadService {
 
     @Transactional
     public LeadResponseDTO addFollowUp(Long id, String notes, LocalDate nextFollowUpDate, Lead.LeadStatus status) {
+        Long branchId = com.stag.gym.security.BranchContext.getCurrentBranchId();
         Lead lead = leadRepository.findById(id)
+                .filter(l -> l.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + id));
 
         String newNotes = lead.getNotes() != null ? lead.getNotes() + "\n---\n" : "";
@@ -94,7 +103,9 @@ public class LeadService {
 
     @Transactional
     public Member convertToMember(Long id) {
+        Long branchId = com.stag.gym.security.BranchContext.getCurrentBranchId();
         Lead lead = leadRepository.findById(id)
+                .filter(l -> l.getBranch().getId().equals(branchId))
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + id));
 
         if (lead.getStatus() == Lead.LeadStatus.JOINED) {
@@ -112,6 +123,7 @@ public class LeadService {
                 .phone(lead.getPhone())
                 .joinDate(LocalDate.now())
                 .status(Member.Status.ACTIVE)
+                .branch(branchService.getCurrentBranch())
                 .build();
 
         // Register as member
@@ -130,7 +142,11 @@ public class LeadService {
 
     @Transactional
     public void deleteLead(Long id) {
-        leadRepository.deleteById(id);
+        Long branchId = com.stag.gym.security.BranchContext.getCurrentBranchId();
+        Lead lead = leadRepository.findById(id)
+                .filter(l -> l.getBranch().getId().equals(branchId))
+                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + id));
+        leadRepository.delete(lead);
     }
 
     private LeadResponseDTO mapToResponseDTO(Lead lead) {

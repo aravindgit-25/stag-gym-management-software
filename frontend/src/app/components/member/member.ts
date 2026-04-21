@@ -234,21 +234,50 @@ export class MemberComponent implements OnInit {
 
   onSubmitMember() {
     if (this.memberForm.valid) {
+      this.loading.set(true);
       const data = this.memberForm.value;
       if (this.isEditing()) {
-        this.memberService.updateMember(this.editingId()!, data).subscribe(() => {
-          this.notif.show('Profile updated!', 'success');
-          this.loadData();
-          this.currentStep.set(2);
+        this.memberService.updateMember(this.editingId()!, data).pipe(
+          finalize(() => this.loading.set(false))
+        ).subscribe({
+          next: () => {
+            this.notif.show('Profile updated!', 'success');
+            this.loadData();
+            this.currentStep.set(2);
+          },
+          error: () => this.notif.show('Failed to update member.', 'error')
         });
       } else {
-        this.memberService.addMember(data).subscribe(newMember => {
-          this.createdMemberId.set(newMember.id!);
-          this.notif.show('Basic Info Saved!', 'success');
-          this.loadData();
-          this.currentStep.set(2);
+        this.memberService.addMember(data).pipe(
+          finalize(() => this.loading.set(false))
+        ).subscribe({
+          next: (newMember: any) => {
+            // Check if backend returned an error object inside a 201/200 response
+            if (newMember && newMember.error && newMember.error.includes('recursion')) {
+              this.notif.show('Backend Error: Circular reference detected. Please fix Member/Branch relationship.', 'error');
+              return;
+            }
+
+            const id = newMember?.id || newMember?.memberId;
+            if (id) {
+              this.createdMemberId.set(id);
+              this.notif.show('Basic Info Saved!', 'success');
+              this.loadData();
+              this.currentStep.set(2);
+            } else {
+              this.notif.show('Member saved, but server returned invalid data format.', 'error');
+            }
+          },
+          error: (err) => {
+            console.error('Member creation error:', err);
+            const msg = err.error?.error || err.error?.message || 'Error saving member info.';
+            this.notif.show(msg, 'error');
+          }
         });
       }
+    } else {
+      this.memberForm.markAllAsTouched();
+      this.notif.show('Please fill all required fields.', 'error');
     }
   }
 

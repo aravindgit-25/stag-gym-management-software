@@ -5,6 +5,8 @@ import com.stag.gym.model.Attendance;
 import com.stag.gym.model.Employee;
 import com.stag.gym.repository.AttendanceRepository;
 import com.stag.gym.repository.EmployeeRepository;
+import com.stag.gym.security.BranchContext;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,20 +21,22 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final BranchService branchService;
 
     @Transactional
     public Attendance markAttendance(String employeeId, Attendance.AttendanceStatus status, String notes) {
-        Employee employee = employeeRepository.findByEmployeeId(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId));
+        Employee employee = employeeRepository.findByEmployeeIdAndBranchId(employeeId, BranchContext.getCurrentBranchId())
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId + " in current branch"));
 
         if (employee.getStatus() == Employee.Status.TERMINATED) {
             throw new RuntimeException("Cannot mark attendance for terminated employee");
         }
 
-        Attendance attendance = attendanceRepository.findByEmployeeIdAndDate(employee.getId(), LocalDate.now())
+        Attendance attendance = attendanceRepository.findByEmployeeIdAndDateAndBranchId(employee.getId(), LocalDate.now(), BranchContext.getCurrentBranchId())
                 .orElse(Attendance.builder()
                         .employee(employee)
                         .date(LocalDate.now())
+                        .branch(branchService.getCurrentBranch())
                         .build());
 
         attendance.setStatus(status);
@@ -48,10 +52,10 @@ public class AttendanceService {
 
     @Transactional
     public Attendance markCheckOut(String employeeId) {
-        Employee employee = employeeRepository.findByEmployeeId(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId));
+        Employee employee = employeeRepository.findByEmployeeIdAndBranchId(employeeId, BranchContext.getCurrentBranchId())
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId + " in current branch"));
 
-        Attendance attendance = attendanceRepository.findByEmployeeIdAndDate(employee.getId(), LocalDate.now())
+        Attendance attendance = attendanceRepository.findByEmployeeIdAndDateAndBranchId(employee.getId(), LocalDate.now(), BranchContext.getCurrentBranchId())
                 .orElseThrow(() -> new RuntimeException("No attendance record found for today. Mark check-in first."));
 
         attendance.setCheckOutTime(LocalTime.now());
@@ -60,14 +64,14 @@ public class AttendanceService {
 
     @Transactional(readOnly = true)
     public List<AttendanceResponseDTO> getEmployeeAttendance(Long employeeId, LocalDate start, LocalDate end) {
-        return attendanceRepository.findByEmployeeIdAndDateBetween(employeeId, start, end).stream()
+        return attendanceRepository.findByEmployeeIdAndDateBetweenAndBranchId(employeeId, start, end, BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<AttendanceResponseDTO> getDailyAttendance(LocalDate date) {
-        return attendanceRepository.findByDate(date).stream()
+        return attendanceRepository.findByDateAndBranchId(date, BranchContext.getCurrentBranchId()).stream()
                 .map(this::mapToResponseDTO)
                 .toList();
     }

@@ -1,26 +1,32 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, map, of } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, forkJoin, map, of, catchError } from 'rxjs';
 import { Subscription } from '../models/subscription.model';
-
+import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SubscriptionService {
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/subscriptions`;
 
-  constructor(private http: HttpClient) { }
+  private getBranchParams(): HttpParams {
+    let params = new HttpParams();
+    const branchId = this.auth.getBranchId();
+    if (branchId) {
+      params = params.set('branchId', branchId.toString());
+    }
+    return params;
+  }
 
-  /**
-   * Supports multiple planIds by creating separate subscription records.
-   * Ensures backend receives Numeric (Long) planId, not comma-separated string.
-   */
   addSubscription(subscription: any): Observable<Subscription> {
+    const bId = this.auth.getBranchId();
+    const params = this.getBranchParams();
     const rawPlanId = subscription.planId || subscription.plan_id;
     
-    // Normalize planIds to an array of numbers
     let planIds: number[] = [];
     if (typeof rawPlanId === 'string' && rawPlanId.includes(',')) {
       planIds = rawPlanId.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id));
@@ -30,38 +36,34 @@ export class SubscriptionService {
       planIds = [Number(rawPlanId)];
     }
 
-    // Filter out zeros/NaNs
     planIds = planIds.filter(id => id > 0);
 
-    if (planIds.length === 0) {
-      return of({} as Subscription); // Should be caught by component validation
-    }
+    if (planIds.length === 0) return of({} as Subscription);
 
     if (planIds.length === 1) {
       const finalSub = { 
         ...subscription, 
         planId: planIds[0],
-        plan_id: planIds[0] 
+        branchId: bId || subscription.branchId 
       };
-      return this.http.post<Subscription>(this.apiUrl, finalSub);
+      return this.http.post<Subscription>(this.apiUrl, finalSub, { params });
     }
 
-    // For multiple plans, create a request for each
     const requests = planIds.map(id => {
       const singleSub = { 
         ...subscription, 
         planId: id,
-        plan_id: id 
+        branchId: bId || subscription.branchId 
       };
-      return this.http.post<Subscription>(this.apiUrl, singleSub);
+      return this.http.post<Subscription>(this.apiUrl, singleSub, { params });
     });
 
-    return forkJoin(requests).pipe(
-      map(results => results[0]) // Return the first one to satisfy component expected signature
-    );
+    return forkJoin(requests).pipe(map(results => results[0]));
   }
 
   getSubscriptions(): Observable<Subscription[]> {
-    return this.http.get<Subscription[]>(this.apiUrl);
+    return this.http.get<Subscription[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+      catchError(() => of([]))
+    );
   }
 }

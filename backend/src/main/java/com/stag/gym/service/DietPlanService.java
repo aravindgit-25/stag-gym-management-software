@@ -8,6 +8,8 @@ import com.stag.gym.repository.DietPlanDetailRepository;
 import com.stag.gym.repository.DietPlanRepository;
 import com.stag.gym.repository.FoodItemRepository;
 import com.stag.gym.repository.MemberRepository;
+import com.stag.gym.security.BranchContext;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class DietPlanService {
     private final MemberRepository memberRepository;
     private final FoodItemRepository foodItemRepository;
     private final DietPlanDetailRepository dietPlanDetailRepository;
+    private final BranchService branchService;
 
     public Double calculateBMI(Double weight, Double heightInCm) {
         if (weight == null || heightInCm == null || heightInCm == 0) return 0.0;
@@ -50,11 +53,13 @@ public class DietPlanService {
     @Transactional
     public DietPlanResponseDTO createOrUpdateDietPlan(Long memberId, DietPlan.PlanType type, DietPlan.DietCategory category) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Member not found with ID: " + memberId));
+                .filter(m -> m.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Member not found in current branch"));
 
-        DietPlan dietPlan = dietPlanRepository.findByMemberId(memberId)
+        DietPlan dietPlan = dietPlanRepository.findByMemberIdAndBranchId(memberId, BranchContext.getCurrentBranchId())
                 .orElse(DietPlan.builder()
                         .member(member)
+                        .branch(branchService.getCurrentBranch())
                         .details(new ArrayList<>())
                         .modificationCount(0)
                         .build());
@@ -101,12 +106,14 @@ public class DietPlanService {
         }
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Member not found with ID: " + memberId));
+                .filter(m -> m.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("Member not found in current branch"));
 
-        DietPlan dietPlan = dietPlanRepository.findByMemberId(memberId)
+        DietPlan dietPlan = dietPlanRepository.findByMemberIdAndBranchId(memberId, BranchContext.getCurrentBranchId())
                 .orElseGet(() -> {
                     DietPlan newPlan = DietPlan.builder()
                             .member(member)
+                            .branch(branchService.getCurrentBranch())
                             .type(DietPlan.PlanType.STANDARD)
                             .category(DietPlan.DietCategory.VEG)
                             .details(new ArrayList<>())
@@ -152,8 +159,8 @@ public class DietPlanService {
 
     @Transactional
     public DietPlanResponseDTO removeFoodFromPlan(Long memberId, Long detailId) {
-        DietPlan dietPlan = dietPlanRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new RuntimeException("Diet Plan not found"));
+        DietPlan dietPlan = dietPlanRepository.findByMemberIdAndBranchId(memberId, BranchContext.getCurrentBranchId())
+                .orElseThrow(() -> new RuntimeException("Diet Plan not found in current branch"));
 
         if (dietPlan.getType() == DietPlan.PlanType.BASIC) {
             throw new RuntimeException("Basic plans cannot be modified.");
@@ -174,9 +181,9 @@ public class DietPlanService {
 
     @Transactional(readOnly = true)
     public DietPlanResponseDTO getDietPlanByMember(Long memberId) {
-        return dietPlanRepository.findByMemberId(memberId)
+        return dietPlanRepository.findByMemberIdAndBranchId(memberId, BranchContext.getCurrentBranchId())
                 .map(this::mapToResponseDTO)
-                .orElseThrow(() -> new RuntimeException("Diet Plan not found for this member"));
+                .orElseThrow(() -> new RuntimeException("Diet Plan not found for this member in current branch"));
     }
 
     private DietPlanResponseDTO mapToResponseDTO(DietPlan plan) {

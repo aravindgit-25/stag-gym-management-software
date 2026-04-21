@@ -45,6 +45,11 @@ public class DietPlan extends BaseEntity {
     @OneToMany(mappedBy = "dietPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DietPlanDetail> details;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum PlanType {
         BASIC, STANDARD, PREMIUM
     }

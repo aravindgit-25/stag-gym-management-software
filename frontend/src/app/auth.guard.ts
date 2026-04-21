@@ -17,9 +17,10 @@ export const adminGuard = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAdmin()) {
+  if (authService.isOwner()) {
     return true;
   }
 
-  return router.parseUrl('/dashboard');
+  // If not an owner, redirect to a safe page (Members) instead of the restricted dashboard
+  return router.parseUrl('/members');
 };

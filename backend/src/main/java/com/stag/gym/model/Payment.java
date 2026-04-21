@@ -53,6 +53,11 @@ public class Payment extends BaseEntity {
     @NotNull(message = "Payment mode is required")
     private PaymentMode paymentMode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
     public enum PaymentMode {
         CASH, UPI, CARD;
 
