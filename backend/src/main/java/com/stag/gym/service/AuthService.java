@@ -9,6 +9,7 @@ import com.stag.gym.repository.UserRepository;
 import com.stag.gym.security.JwtUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,7 +19,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final BranchRepository branchRepository;
     private final JwtUtils jwtUtils;
-    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
     public void init() {
