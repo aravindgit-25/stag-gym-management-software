@@ -18,6 +18,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final BranchRepository branchRepository;
     private final JwtUtils jwtUtils;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @PostConstruct
     public void init() {
@@ -35,13 +36,14 @@ public class AuthService {
             branchRepository.save(branch2);
         }
 
-        Branch mainBranch = branchRepository.findAll().get(0);
+        // Ensure we have a branch with ID 1 if possible, otherwise use the first one
+        Branch mainBranch = branchRepository.findById(1L).orElse(branchRepository.findAll().get(0));
 
-        if (!userRepository.existsByRole(User.Role.OWNER)) {
+        if (userRepository.findByEmail("owner@gym.com").isEmpty()) {
             User owner = User.builder()
                     .name("Owner")
                     .email("owner@gym.com")
-                    .password("owner123") // Should be hashed in real scenario
+                    .password(passwordEncoder.encode("owner123"))
                     .role(User.Role.OWNER)
                     .branch(mainBranch)
                     .build();
@@ -52,7 +54,7 @@ public class AuthService {
             User trainer = User.builder()
                     .name("Trainer")
                     .email("trainer@gym.com")
-                    .password("trainer123") // Should be hashed in real scenario
+                    .password(passwordEncoder.encode("trainer123"))
                     .role(User.Role.TRAINER)
                     .branch(mainBranch)
                     .build();
@@ -64,8 +66,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        // Match password (plaintext comparison for now as requested)
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
         }
 
