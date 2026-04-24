@@ -24,5 +24,6 @@ public class Branch extends BaseEntity {
     private String location;
 
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Member> members;
 }
