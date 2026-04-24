@@ -190,7 +190,17 @@ export class MemberComponent implements OnInit {
   loadData(): void {
     this.loading.set(true);
     forkJoin({
-      members: this.memberService.getMembers().pipe(catchError(() => of([]))),
+      members: this.memberService.getMembers().pipe(
+        catchError((err) => {
+          console.error('Member Fetch Error:', err);
+          if (err.status === 200 || err.status === 201) {
+            this.notif.show('Backend Recursion Error: The server sent broken JSON.', 'error');
+          } else {
+            this.notif.show('Failed to load members.', 'error');
+          }
+          return of([]);
+        })
+      ),
       plans: this.planService.getPlans().pipe(catchError(() => of([]))),
       subscriptions: this.subscriptionService.getSubscriptions().pipe(catchError(() => of([]))),
     }).pipe(finalize(() => this.loading.set(false)))
