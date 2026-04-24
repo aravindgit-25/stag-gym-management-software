@@ -23,6 +23,7 @@ export class MemberService {
   }
 
   getMembers(): Observable<Member[]> {
+    // Removed silent catchError so you can see the real backend crash in the console
     return this.http.get<Member[]>(this.apiUrl, { params: this.getBranchParams() });
   }
 
