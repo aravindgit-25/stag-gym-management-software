@@ -19,8 +19,18 @@ export class BranchService {
     return this.http.get<Branch>(`${this.apiUrl}/${id}`);
   }
 
-  createBranch(branch: Partial<Branch>): Observable<Branch> {
-    return this.http.post<Branch>(this.apiUrl, branch);
+  createBranch(branch: any): Observable<Branch> {
+    const payload = {
+      branchName: branch.branchName,
+      location: branch.location,
+      email: branch.email,
+      password: branch.password
+    };
+    return this.http.post<Branch>(this.apiUrl, payload);
+  }
+
+  getBranchCredentials(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/credentials/${id}`);
   }
 
   updateBranch(id: number, branch: Partial<Branch>): Observable<Branch> {
