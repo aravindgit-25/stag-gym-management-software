@@ -23,7 +23,8 @@ export class PlanService {
   }
 
   getPlans(): Observable<Plan[]> {
-    return this.http.get<any[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<any[]>(this.apiUrl, { params }).pipe(
       map(plans => plans.map(p => ({
         ...p,
         type: p.type || p.planType || p.plan_type || PlanType.MEMBERSHIP

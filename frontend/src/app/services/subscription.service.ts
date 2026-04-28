@@ -62,7 +62,8 @@ export class SubscriptionService {
   }
 
   getSubscriptions(): Observable<Subscription[]> {
-    return this.http.get<Subscription[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<Subscription[]>(this.apiUrl, { params }).pipe(
       catchError(() => of([]))
     );
   }

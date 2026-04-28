@@ -29,7 +29,8 @@ export class PaymentService {
   }
 
   getPayments(): Observable<Payment[]> {
-    return this.http.get<Payment[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<Payment[]>(this.apiUrl, { params }).pipe(
       catchError(() => of([]))
     );
   }

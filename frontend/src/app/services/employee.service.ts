@@ -22,8 +22,9 @@ export class EmployeeService {
     return params;
   }
 
-  getEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+  getEmployees(): Observable<any[]> {
+    const params = this.getBranchParams();
+    return this.http.get<any[]>(this.apiUrl, { params }).pipe(
       catchError(() => of([]))
     );
   }

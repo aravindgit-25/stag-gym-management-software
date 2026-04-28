@@ -22,25 +22,29 @@ export class DashboardService {
   }
 
   getMemberCount(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/members/count`, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<number>(`${this.baseUrl}/members/count`, { params }).pipe(
       catchError(() => of(0))
     );
   }
 
   getActiveMemberCount(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/members/active/count`, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<number>(`${this.baseUrl}/members/active/count`, { params }).pipe(
       catchError(() => of(0))
     );
   }
 
   getTotalRevenue(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/payments/total`, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<number>(`${this.baseUrl}/payments/total`, { params }).pipe(
       catchError(() => of(0))
     );
   }
 
   getTodayRevenue(): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/payments/today`, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<number>(`${this.baseUrl}/payments/today`, { params }).pipe(
       catchError(() => of(0))
     );
   }

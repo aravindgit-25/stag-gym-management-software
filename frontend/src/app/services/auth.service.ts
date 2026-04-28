@@ -60,7 +60,7 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    const payload = { email, password };
+    const payload = { email, username: email, emailid: email, emailId: email, password };
     const headers = { 'Content-Type': 'application/json' };
     
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, payload, { headers }).pipe(
@@ -97,7 +97,9 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('gym_token');
+    const token = localStorage.getItem('gym_token');
+    if (!token || token === 'undefined' || token === 'null') return null;
+    return token;
   }
 
   setBranch(branchId: number | null) {

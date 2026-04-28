@@ -23,7 +23,8 @@ export class LeadService {
   }
 
   getLeads(): Observable<Lead[]> {
-    return this.http.get<Lead[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<Lead[]>(this.apiUrl, { params }).pipe(
       catchError(() => of([]))
     );
   }
