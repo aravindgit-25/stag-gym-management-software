@@ -1119,7 +1119,7 @@ export class AppComponent {
   onBranchChange(id: any) {
     const branchId = id ? Number(id) : null;
     this.authService.setBranch(branchId);
-    // Remove the window.location.href reload to allow reactive updates
+    window.location.reload();
   }
 
   getTrainerBranchName(): string {

@@ -1,9 +1,10 @@
-import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { Component, OnInit, signal, inject, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { DashboardService } from '../../services/dashboard.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,7 +13,7 @@ import { DashboardService } from '../../services/dashboard.service';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   totalMembers = signal<number>(0);
   activeMembers = signal<number>(0);
   totalRevenue = signal<number>(0);
@@ -21,6 +22,8 @@ export class DashboardComponent implements OnInit {
 
   private router = inject(Router);
   private dashboardService = inject(DashboardService);
+  private authService = inject(AuthService);
+  private branchSub?: Subscription;
 
   // Mock data for Growth Graph
   growthData = signal<{month: string, value: number}[]>([
@@ -55,7 +58,16 @@ export class DashboardComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.loadStats();
+    // Listen for branch changes and reload stats
+    this.branchSub = this.authService.branchChange$.subscribe(() => {
+      this.loadStats();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.branchSub) {
+      this.branchSub.unsubscribe();
+    }
   }
 
   loadStats(): void {
