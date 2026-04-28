@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { User, AuthResponse, UserRole } from '../models/user.model';
 import { environment } from '../../environments/environment';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +15,8 @@ export class AuthService {
 
   currentUser = signal<User | null>(null);
   selectedBranchId = signal<number | null>(null);
+  private branchChangeSubject = new BehaviorSubject<number | null>(null);
+  branchChange$ = this.branchChangeSubject.asObservable();
 
   // Optimized Computed Signals for UI performance
   isLoggedIn = computed(() => this.currentUser() !== null && !!this.getToken());
@@ -45,12 +47,17 @@ export class AuthService {
         
         // For trainers, always use their assigned branch
         if (user.role === UserRole.TRAINER || (user.role as any) === 'STAFF') {
-          this.selectedBranchId.set(user.branchId || null);
+          const bId = user.branchId || null;
+          this.selectedBranchId.set(bId);
+          this.branchChangeSubject.next(bId);
         } else if (savedBranch) {
-          this.selectedBranchId.set(Number(savedBranch));
+          const bId = Number(savedBranch);
+          this.selectedBranchId.set(bId);
+          this.branchChangeSubject.next(bId);
         } else if (user.branchId) {
           // Fallback for owners to their primary branch
           this.selectedBranchId.set(user.branchId);
+          this.branchChangeSubject.next(user.branchId);
         }
       }
     } catch (e) {
@@ -60,7 +67,7 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    const payload = { email, password };
+    const payload = { email, username: email, emailid: email, emailId: email, password };
     const headers = { 'Content-Type': 'application/json' };
     
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, payload, { headers }).pipe(
@@ -81,7 +88,9 @@ export class AuthService {
         this.currentUser.set(user);
         
         // Immediate branch selection based on login response
-        this.selectedBranchId.set(user.branchId || null);
+        const bId = user.branchId || null;
+        this.selectedBranchId.set(bId);
+        this.branchChangeSubject.next(bId);
         if (user.branchId) {
           localStorage.setItem('gym_selected_branch', user.branchId.toString());
         }
@@ -93,23 +102,32 @@ export class AuthService {
     localStorage.clear();
     this.currentUser.set(null);
     this.selectedBranchId.set(null);
+    this.branchChangeSubject.next(null);
     this.router.navigate(['/login']);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('gym_token');
+    const token = localStorage.getItem('gym_token');
+    if (!token || token === 'undefined' || token === 'null') return null;
+    return token;
   }
 
   setBranch(branchId: number | null) {
     if (this.isOwner()) {
       this.selectedBranchId.set(branchId);
+      this.branchChangeSubject.next(branchId);
       if (branchId) localStorage.setItem('gym_selected_branch', branchId.toString());
       else localStorage.removeItem('gym_selected_branch');
     }
   }
 
   getBranchId(): number | null {
-    // If signal is null, try to get it from the current user object directly
-    return this.selectedBranchId() || this.currentUser()?.branchId || null;
+    // If Owner has specifically selected a branch, use it. 
+    // If they selected 'All Branches' (null), return null.
+    if (this.isOwner()) {
+      return this.selectedBranchId();
+    }
+    // For Trainers, always return their assigned branchId
+    return this.currentUser()?.branchId || null;
   }
 }

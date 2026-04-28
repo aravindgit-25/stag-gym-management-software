@@ -9,11 +9,13 @@ import com.stag.gym.repository.UserRepository;
 import com.stag.gym.security.JwtUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -23,54 +25,76 @@ public class AuthService {
 
     @PostConstruct
     public void init() {
-        if (branchRepository.count() == 0) {
-            Branch defaultBranch = Branch.builder()
-                    .branchName("Main Branch")
-                    .location("Downtown")
-                    .build();
-            branchRepository.save(defaultBranch);
+        try {
+            Branch mainBranch;
+            Branch northBranch;
+            if (branchRepository.count() == 0) {
+                log.info("Initializing default branches...");
+                mainBranch = Branch.builder()
+                        .branchName("Main Branch")
+                        .location("Downtown")
+                        .build();
+                mainBranch = branchRepository.save(mainBranch);
+                
+                northBranch = Branch.builder()
+                        .branchName("North Branch")
+                        .location("North Side")
+                        .build();
+                northBranch = branchRepository.save(northBranch);
+            } else {
+                java.util.List<Branch> branches = branchRepository.findAll();
+                mainBranch = branches.get(0);
+                northBranch = branches.size() > 1 ? branches.get(1) : mainBranch;
+            }
+
+            createOrUpdateDefaultUser("owner@gym.com", "owner123", User.Role.OWNER, mainBranch);
+            createOrUpdateDefaultUser("trainer@gym.com", "trainer123", User.Role.TRAINER, northBranch);
             
-            Branch branch2 = Branch.builder()
-                    .branchName("North Branch")
-                    .location("North Side")
-                    .build();
-            branchRepository.save(branch2);
-        }
-
-        // Ensure we have a branch with ID 1 if possible, otherwise use the first one
-        Branch mainBranch = branchRepository.findById(1L).orElse(branchRepository.findAll().get(0));
-
-        if (userRepository.findByEmail("owner@gym.com").isEmpty()) {
-            User owner = User.builder()
-                    .name("Owner")
-                    .email("owner@gym.com")
-                    .password(passwordEncoder.encode("owner123"))
-                    .role(User.Role.OWNER)
-                    .branch(mainBranch)
-                    .build();
-            userRepository.save(owner);
-        }
-        
-        if (userRepository.findByEmail("trainer@gym.com").isEmpty()) {
-            User trainer = User.builder()
-                    .name("Trainer")
-                    .email("trainer@gym.com")
-                    .password(passwordEncoder.encode("trainer123"))
-                    .role(User.Role.TRAINER)
-                    .branch(mainBranch)
-                    .build();
-            userRepository.save(trainer);
+            log.info("Registered users in DB: {}", userRepository.findAll().stream().map(User::getEmail).toList());
+        } catch (Exception e) {
+            log.error("Error during AuthService initialization", e);
         }
     }
 
+    private void createOrUpdateDefaultUser(String email, String password, User.Role role, Branch branch) {
+        userRepository.findByEmail(email).ifPresentOrElse(
+            user -> {
+                user.setPassword(passwordEncoder.encode(password));
+                user.setRole(role);
+                user.setBranch(branch);
+                userRepository.save(user);
+                log.info("User {} synchronized.", email);
+            },
+            () -> {
+                User user = User.builder()
+                        .name(role.name())
+                        .email(email)
+                        .password(passwordEncoder.encode(password))
+                        .role(role)
+                        .branch(branch)
+                        .build();
+                userRepository.save(user);
+                log.info("User {} created.", email);
+            }
+        );
+    }
+
     public LoginResponseDTO login(LoginRequestDTO request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        String email = request.getEmail().toLowerCase().trim();
+        log.info("Login attempt for email: {}", email);
+        
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Login failed: User not found - {}", email);
+                    return new RuntimeException("Invalid email or password");
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            log.warn("Login failed: Password mismatch for user - {}", email);
             throw new RuntimeException("Invalid email or password");
         }
 
+        log.info("User logged in successfully: {}", email);
         String token = jwtUtils.generateToken(user);
 
         return LoginResponseDTO.builder()

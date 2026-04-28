@@ -23,7 +23,8 @@ export class SalaryService {
   }
 
   getSalaries(): Observable<Salary[]> {
-    return this.http.get<Salary[]>(this.apiUrl, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<Salary[]>(this.apiUrl, { params }).pipe(
       catchError(() => of([]))
     );
   }
@@ -49,7 +50,8 @@ export class SalaryService {
   }
 
   getEmployeeSalaryHistory(employeeId: number): Observable<Salary[]> {
-    return this.http.get<Salary[]>(`${this.apiUrl}/employee/${employeeId}`, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<Salary[]>(`${this.apiUrl}/employee/${employeeId}`, { params }).pipe(
       catchError(() => of([]))
     );
   }

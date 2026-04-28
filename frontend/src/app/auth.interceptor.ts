@@ -10,19 +10,22 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const token = authService.getToken();
-
-  // If we don't have a token, just continue
-  if (!token) {
-    return next(req);
+  let url = req.url;
+  // Safety check for malformed URLs missing '?' before branchId
+  if (url.includes('branchId=') && !url.includes('?')) {
+    url = url.replace('branchId=', '?branchId=');
   }
 
-  // Only add Authorization header. 
-  // We use query parameters in services for branch filtering as requested by backend priority.
+  const token = authService.getToken();
+
+  const headers: any = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const authReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`
-    }
+    url,
+    setHeaders: headers
   });
 
   return next(authReq);
