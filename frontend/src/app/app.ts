@@ -7,12 +7,15 @@ import { BranchService } from './services/branch.service';
 import { Branch } from './models/branch.model';
 import { NotificationComponent } from './shared/components/notification/notification';
 import { ConfirmComponent } from './shared/components/confirm/confirm';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { AppModalComponent } from './shared/components/app-modal/app-modal';
+import { NotificationService } from './services/notification.service';
+import { ConfirmService } from './services/confirm.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, NotificationComponent, ConfirmComponent, FormsModule],
+  imports: [CommonModule, RouterModule, NotificationComponent, ConfirmComponent, FormsModule, ReactiveFormsModule, AppModalComponent],
   template: `
     <app-notification></app-notification>
     <app-confirm></app-confirm>
@@ -36,6 +39,13 @@ import { FormsModule } from '@angular/forms';
                   <rect x="3" y="14" width="7" height="7"></rect>
                 </svg>
               </span> Dashboard
+            </a>
+
+            <!-- Manage Branches Link -->
+            <a *ngIf="authService.isOwner()" class="nav-item" (click)="openBranchModal(); closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              </span> Manage Branches
             </a>
             
             <div class="nav-group" [class.expanded]="membersMenuOpen()">
@@ -260,11 +270,81 @@ import { FormsModule } from '@angular/forms';
     <ng-template #loginView>
       <router-outlet></router-outlet>
     </ng-template>
+
+    <!-- Branch Management Modal -->
+    <app-modal [isOpen]="branchModalOpen()" title="Manage Gym Branches" (close)="closeBranchModal()" width="600px">
+      <div class="branch-mgmt-container">
+        <form [formGroup]="branchForm" (ngSubmit)="addBranch()" class="branch-add-form">
+          <div class="form-row">
+            <div class="form-col">
+              <label>Branch Name</label>
+              <input type="text" formControlName="branchName" placeholder="e.g. Saravanampatti">
+            </div>
+            <div class="form-col">
+              <label>Location</label>
+              <input type="text" formControlName="location" placeholder="e.g. Coimbatore North">
+            </div>
+            <div class="form-col-btn">
+              <button type="submit" [disabled]="branchForm.invalid" class="btn-add-branch">
+                <svg viewBox="0 0 24 24" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="branch-list">
+          <div class="branch-item" *ngFor="let b of branches()">
+            <div class="branch-info">
+              <span class="b-name">{{ b.branchName }}</span>
+              <span class="b-loc">{{ b.location }}</span>
+            </div>
+            <button class="btn-delete-branch" (click)="deleteBranch(b.id)" title="Delete Branch">
+              <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+          <div *ngIf="branches().length === 0" class="empty-state">No branches added yet.</div>
+        </div>
+      </div>
+    </app-modal>
   `,
   styles: [`
     .invoice-layout { display: block !important; }
     .full-width { width: 100%; min-height: 100vh; background: white; margin: 0; padding: 0; }
     
+    .branch-mgmt-container { padding: 10px; }
+    .branch-add-form { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+    .form-row { display: flex; gap: 15px; align-items: flex-end; }
+    .form-col { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .form-col label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    .form-col input { 
+      padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; 
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-col input:focus { border-color: var(--accent-red); }
+    .btn-add-branch {
+      background: var(--accent-red); color: white; border: none; padding: 10px 20px;
+      border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; transition: background 0.2s; height: 42px;
+    }
+    .btn-add-branch:disabled { background: #cbd5e1; cursor: not-allowed; }
+    
+    .branch-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; }
+    .branch-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 12px 15px;
+      background: white; border: 1px solid #e2e8f0; border-radius: 10px; transition: all 0.2s;
+    }
+    .branch-item:hover { border-color: #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .branch-info { display: flex; flex-direction: column; }
+    .b-name { font-weight: 700; color: var(--text-main); font-size: 14px; }
+    .b-loc { font-size: 12px; color: var(--text-muted); }
+    .btn-delete-branch {
+      background: #fee2e2; color: #ef4444; border: none; padding: 8px; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-delete-branch:hover { background: #ef4444; color: white; }
+    .empty-state { text-align: center; padding: 20px; color: #64748b; font-style: italic; }
+
     .branch-switcher { margin-left: 20px; }
     .branch-select {
       background: #f8fafc;
@@ -454,13 +534,24 @@ export class AppComponent {
   staffMenuOpen = signal<boolean>(false);
   userDropdownOpen = signal<boolean>(false);
   
+  // Branch Management
+  branchModalOpen = signal<boolean>(false);
+  branchForm: FormGroup;
   branches = signal<Branch[]>([]);
   
   private router = inject(Router);
   public authService = inject(AuthService);
   private branchService = inject(BranchService);
+  private fb = inject(FormBuilder);
+  private notif = inject(NotificationService);
+  private confirm = inject(ConfirmService);
 
   constructor() {
+    this.branchForm = this.fb.group({
+      branchName: ['', Validators.required],
+      location: ['', Validators.required]
+    });
+
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
@@ -477,26 +568,54 @@ export class AppComponent {
   }
 
   loadBranches() {
-    if (this.authService.isOwner()) {
-      this.branchService.getBranches().subscribe({
-        next: data => this.branches.set(data),
-        error: () => console.error('Failed to load branches')
+    this.branchService.getBranches().subscribe({
+      next: data => this.branches.set(data),
+      error: () => console.error('Failed to load branches')
+    });
+  }
+
+  // Branch Methods
+  openBranchModal() {
+    this.branchModalOpen.set(true);
+    this.loadBranches();
+  }
+
+  closeBranchModal() {
+    this.branchModalOpen.set(false);
+    this.branchForm.reset();
+  }
+
+  addBranch() {
+    if (this.branchForm.valid) {
+      this.branchService.createBranch(this.branchForm.value).subscribe({
+        next: () => {
+          this.notif.show('Branch added successfully!', 'success');
+          this.branchForm.reset();
+          this.loadBranches();
+        },
+        error: () => this.notif.show('Failed to add branch.', 'error')
       });
-    } else if (this.authService.isTrainer()) {
-      const bId = this.authService.getBranchId();
-      if (bId) {
-        this.branchService.getBranchById(bId).subscribe({
-          next: b => this.branches.set([b]),
-          error: () => console.error('Failed to load branch info')
-        });
-      }
     }
   }
 
+  deleteBranch(id: number) {
+    this.confirm.ask('Are you sure you want to delete this branch?').then(ok => {
+      if (ok) {
+        this.branchService.deleteBranch(id).subscribe({
+          next: () => {
+            this.notif.show('Branch deleted.', 'success');
+            this.loadBranches();
+          },
+          error: () => this.notif.show('Failed to delete branch.', 'error')
+        });
+      }
+    });
+  }
+
   onBranchChange(id: any) {
-    this.authService.setBranch(id ? Number(id) : null);
-    // Reload page once to clear service states and fetch for new branch
-    window.location.href = window.location.href.split('?')[0]; 
+    const branchId = id ? Number(id) : null;
+    this.authService.setBranch(branchId);
+    // Remove the window.location.href reload to allow reactive updates
   }
 
   getTrainerBranchName(): string {

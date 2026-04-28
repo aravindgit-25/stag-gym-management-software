@@ -30,14 +30,18 @@ export class EmployeeService {
   }
 
   getActiveEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(`${this.apiUrl}/active`, { params: this.getBranchParams() }).pipe(
+    const params = this.getBranchParams();
+    return this.http.get<Employee[]>(`${this.apiUrl}/active`, { params }).pipe(
       catchError(() => of([]))
     );
   }
 
   addEmployee(employee: Employee): Observable<Employee> {
-    const branchId = this.auth.getBranchId();
-    const payload = { ...employee, branchId: branchId || (employee as any).branchId };
+    // Priority: 1. Branch selected in the form, 2. Current active branch selection, 3. Null (Backend default)
+    const payload = { 
+      ...employee, 
+      branchId: employee.branchId || this.auth.getBranchId() 
+    };
     return this.http.post<Employee>(this.apiUrl, payload);
   }
 

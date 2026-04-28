@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -15,6 +15,9 @@ import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { Employee, EmployeeStatus, EmployeeRole } from '../../models/employee.model';
 import { Member } from '../../models/member.model';
+import { Branch } from '../../models/branch.model';
+import { BranchService } from '../../services/branch.service';
+import { AuthService } from '../../services/auth.service';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import {
   AppStagTableComponent,
@@ -43,6 +46,7 @@ export class EmployeeComponent implements OnInit {
   
   employees = signal<Employee[]>([]);
   activeMembers = signal<Member[]>([]);
+  branches = signal<Branch[]>([]);
   
   searchTerm = signal<string>('');
   loading = signal<boolean>(false);
@@ -66,6 +70,8 @@ export class EmployeeComponent implements OnInit {
   private confirm = inject(ConfirmService);
   private employeeService = inject(EmployeeService);
   private memberService = inject(MemberService);
+  private branchService = inject(BranchService);
+  public authService = inject(AuthService);
   private location = inject(Location);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -81,6 +87,12 @@ export class EmployeeComponent implements OnInit {
   ]);
 
   constructor(private fb: FormBuilder) {
+    // Reactive auto-reload when branch changes
+    effect(() => {
+      this.authService.selectedBranchId(); // Track the signal
+      this.loadEmployees();
+    });
+
     this.employeeForm = this.fb.group({
       name: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
@@ -102,6 +114,7 @@ export class EmployeeComponent implements OnInit {
       dateOfJoining: [new Date().toISOString().split('T')[0], Validators.required],
       status: [EmployeeStatus.ACTIVE, Validators.required],
       role: [EmployeeRole.TRAINER, Validators.required],
+      branchId: [null, Validators.required]
     });
 
     this.ptForm = this.fb.group({
@@ -123,12 +136,13 @@ export class EmployeeComponent implements OnInit {
   ngOnInit(): void {
     this.loadEmployees();
     this.loadMembers();
+    this.loadBranches();
+
     this.route.queryParams.subscribe(params => {
       if (params['filter']) {
         const filter = params['filter'];
         if (filter === 'active') this.setTab('active');
         else if (filter === 'archive') this.setTab('archive');
-        else this.setTab('active'); // Default
       }
       if (params['action'] === 'add') {
         this.openAddModal();
@@ -138,6 +152,9 @@ export class EmployeeComponent implements OnInit {
   }
 
   loadEmployees(): void {
+    const bId = this.authService.getBranchId();
+    console.log('Loading employees for branch:', bId);
+    
     this.loading.set(true);
     const obs = this.activeTab() === 'active' 
       ? this.employeeService.getActiveEmployees() 
@@ -146,18 +163,26 @@ export class EmployeeComponent implements OnInit {
     obs.pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (data) => {
+          console.log('Employees received:', data.length);
           if (this.activeTab() === 'archive') {
             this.employees.set(data.filter(e => e.status === EmployeeStatus.TERMINATED));
           } else {
             this.employees.set(data);
           }
         },
-        error: (err) => this.notif.show('Error fetching employees.', 'error'),
+        error: (err) => {
+          console.error('Error fetching employees:', err);
+          this.notif.show('Error fetching employees.', 'error');
+        },
       });
   }
 
   loadMembers() {
     this.memberService.getActiveMembers().subscribe(data => this.activeMembers.set(data));
+  }
+
+  loadBranches() {
+    this.branchService.getBranches().subscribe(data => this.branches.set(data));
   }
 
   setTab(tab: 'active' | 'archive') {
@@ -334,5 +359,10 @@ export class EmployeeComponent implements OnInit {
       case EmployeeStatus.ON_LEAVE: return 'status-leave';
       default: return '';
     }
+  }
+
+  getBranchName(id?: number): string {
+    if (!id) return 'No Branch';
+    return this.branches().find(b => b.id === id)?.branchName || 'Unknown Branch';
   }
 }

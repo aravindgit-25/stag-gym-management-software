@@ -90,6 +90,7 @@
           <div class="info-group">
             <h4 class="info-label">Professional</h4>
             <div class="info-row"><span>Role:</span> {{ selectedEmployee()?.role }}</div>
+            <div class="info-row"><span>Branch:</span> <strong>{{ getBranchName(selectedEmployee()?.branchId) }}</strong></div>
             <div class="info-row"><span>Salary:</span> {{ selectedEmployee()?.baseSalary | currency:'INR' }}</div>
             <div class="info-row"><span>Joined:</span> {{ selectedEmployee()?.dateOfJoining | date }}</div>
             <div class="info-row"><span>Exp:</span> {{ selectedEmployee()?.experience }}</div>
@@ -325,6 +326,13 @@
           <label>Role *</label>
           <select formControlName="role" [class.invalid]="employeeForm.get('role')?.invalid && employeeForm.get('role')?.touched">
             <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+          </select>
+        </div>
+        <div class="form-group-modern">
+          <label>Assign Branch *</label>
+          <select formControlName="branchId" [class.invalid]="employeeForm.get('branchId')?.invalid && employeeForm.get('branchId')?.touched">
+            <option [ngValue]="null">Select Branch</option>
+            <option *ngFor="let b of branches()" [value]="b.id">{{ b.branchName }}</option>
           </select>
         </div>
         <div class="form-group-modern">

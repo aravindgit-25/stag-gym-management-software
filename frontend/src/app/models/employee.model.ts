@@ -54,6 +54,7 @@ export interface Employee {
   dateOfTermination?: string;
   status: EmployeeStatus;
   role: EmployeeRole;
+  branchId?: number;
   rating?: number;
   feedbacks?: Feedback[];
   personalTrainings?: PersonalTraining[];

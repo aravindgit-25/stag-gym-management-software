@@ -18,4 +18,16 @@ export class BranchService {
   getBranchById(id: number): Observable<Branch> {
     return this.http.get<Branch>(`${this.apiUrl}/${id}`);
   }
+
+  createBranch(branch: Partial<Branch>): Observable<Branch> {
+    return this.http.post<Branch>(this.apiUrl, branch);
+  }
+
+  updateBranch(id: number, branch: Partial<Branch>): Observable<Branch> {
+    return this.http.put<Branch>(`${this.apiUrl}/${id}`, branch);
+  }
+
+  deleteBranch(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

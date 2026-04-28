@@ -111,7 +111,12 @@ export class AuthService {
   }
 
   getBranchId(): number | null {
-    // If signal is null, try to get it from the current user object directly
-    return this.selectedBranchId() || this.currentUser()?.branchId || null;
+    // If Owner has specifically selected a branch, use it. 
+    // If they selected 'All Branches' (null), return null.
+    if (this.isOwner()) {
+      return this.selectedBranchId();
+    }
+    // For Trainers, always return their assigned branchId
+    return this.currentUser()?.branchId || null;
   }
 }
