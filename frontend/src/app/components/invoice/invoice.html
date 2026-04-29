@@ -82,6 +82,7 @@
         <tr>
           <th>DESCRIPTION</th>
           <th>DURATION</th>
+          <th>SESSIONS</th>
           <th class="text-right">CGST</th>
           <th class="text-right">SGST</th>
           <th class="text-right">AMOUNT</th>
@@ -94,6 +95,7 @@
             <div class="date-range">{{ invoiceData().startDate }} to {{ invoiceData().endDate }}</div>
           </td>
           <td>{{ plan.duration }} Days</td>
+          <td>{{ plan.totalSessions || '-' }}</td>
           <td class="text-right">₹0.00</td>
           <td class="text-right">₹0.00</td>
           <td class="text-right">₹{{ plan.price | number }}</td>
