@@ -31,6 +31,8 @@ public class Plan extends BaseEntity {
     @Min(value = 0, message = "Price must be at least 0")
     private Double price;
 
+    private Integer totalSessions; // 0 for general plans, >0 for PT plans
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @NotNull(message = "Plan type is required")

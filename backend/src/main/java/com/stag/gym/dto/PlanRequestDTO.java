@@ -30,4 +30,6 @@ public class PlanRequestDTO {
     @NotNull(message = "Plan type is required")
     @JsonProperty("type")
     private Plan.PlanType type;
+
+    private Integer totalSessions;
 }

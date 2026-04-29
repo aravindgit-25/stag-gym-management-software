@@ -1,7 +1,7 @@
 package com.stag.gym.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.stag.gym.model.Subscription;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,24 +14,27 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubscriptionRequestDTO {
+public class PTSubscriptionRequestDTO {
 
     @NotNull(message = "Member ID is required")
+    @JsonProperty("memberId")
+    @JsonAlias("member_id")
     private Long memberId;
 
+    @NotNull(message = "Trainer ID is required")
+    @JsonProperty("trainerId")
+    @JsonAlias("trainer_id")
+    private Long trainerId;
+
     @NotNull(message = "Plan ID is required")
+    @JsonProperty("planId")
+    @JsonAlias("plan_id")
     private Long planId;
 
     @NotNull(message = "Start date is required")
+    @JsonProperty("startDate")
+    @JsonAlias("start_date")
     private LocalDate startDate;
 
-    @JsonAlias("discount_amount")
-    private Double discountAmount;
-
-    @JsonAlias("discount_reason")
-    private String discountReason;
-
-    private Long trainerId; // Added for PT Add-ons
-
-    private Subscription.Status status;
+    private String goal;
 }

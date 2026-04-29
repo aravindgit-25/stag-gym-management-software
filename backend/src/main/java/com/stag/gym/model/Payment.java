@@ -21,9 +21,12 @@ public class Payment extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_id", nullable = false)
-    @NotNull(message = "Subscription is required")
+    @JoinColumn(name = "subscription_id")
     private Subscription subscription;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pt_subscription_id")
+    private PersonalTrainerMember ptSubscription;
 
     @NotNull(message = "Amount is required")
     @Min(value = 0, message = "Amount must be at least 0")

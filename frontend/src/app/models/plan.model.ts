@@ -10,4 +10,5 @@ export interface Plan {
   price: number;
   description?: string;
   type: PlanType;
+  totalSessions?: number;
 }

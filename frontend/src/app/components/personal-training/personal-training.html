@@ -1,0 +1,148 @@
+<div class="pt-container">
+  <div class="header-section">
+    <div class="title-group">
+      <h1 class="section-title">Personal Training Dashboard</h1>
+      <p class="section-subtitle">Manage active personal training sessions and logs</p>
+    </div>
+    <div class="action-group">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" class="search-icon">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search members or trainers..." 
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        >
+      </div>
+      <app-button label="Refresh" variant="secondary" (onClick)="loadData()"></app-button>
+    </div>
+  </div>
+
+  <div class="content-card">
+    <app-stag-table
+      [columns]="columns"
+      [data]="filteredMembers()"
+      [loading]="loading()"
+      emptyMessage="No active PT members found."
+    >
+      <ng-template #cell let-row let-column="column">
+        @if (column.field === 'actions') {
+          <div class="table-actions">
+            <button class="btn-action log" (click)="openLogSession(row)" title="Log Session">
+              <svg viewBox="0 0 24 24" class="svg-icon">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Log Session
+            </button>
+            <button class="btn-action history" (click)="viewHistory(row)" title="View History">
+              <svg viewBox="0 0 24 24" class="svg-icon">
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              History
+            </button>
+          </div>
+        } @else if (column.field === 'sessionsRemaining') {
+          <div class="session-badge" [class.low]="row.sessionsRemaining <= 3" [class.zero]="row.sessionsRemaining === 0">
+            {{ row.sessionsRemaining }} / {{ row.totalSessions }}
+          </div>
+        } @else {
+          {{ row[column.field] }}
+        }
+      </ng-template>
+    </app-stag-table>
+  </div>
+
+  <!-- Log Session Modal -->
+  <app-modal [isOpen]="showLogModal()" [title]="'Log PT Session: ' + selectedMember()?.memberName" (close)="closeLogModal()">
+    <div class="session-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Session Date</label>
+          <input type="date" [ngModel]="sessionDate()" (ngModelChange)="sessionDate.set($event)">
+        </div>
+        <div class="form-group">
+          <label>Trainer</label>
+          <select [ngModel]="trainerId()" (ngModelChange)="trainerId.set($event)">
+            <option *ngFor="let t of trainers()" [value]="t.id">{{ t.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Notes (Optional)</label>
+        <textarea rows="3" placeholder="Session details, exercises covered..." [ngModel]="notes()" (ngModelChange)="notes.set($event)"></textarea>
+      </div>
+
+      <div class="verification-section">
+        <h3 class="subsection-title">Verification Status</h3>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [ngModel]="trainerVerification()" (ngModelChange)="trainerVerification.set($event)">
+            Trainer Verified
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [ngModel]="clientVerification()" (ngModelChange)="clientVerification.set($event)">
+            Client Verified (OTP/Signature)
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeLogModal()"></app-button>
+        <app-button label="Log Session" variant="primary" (onClick)="submitSession()" [disabled]="!trainerId()"></app-button>
+      </div>
+    </div>
+  </app-modal>
+
+  <!-- History Modal -->
+  <app-modal [isOpen]="showHistoryModal()" [title]="'Session History: ' + selectedMember()?.memberName" (close)="closeHistoryModal()">
+    <div class="history-content">
+      <div class="history-summary">
+        <div class="summary-item">
+          <span class="label">Total Sessions</span>
+          <span class="value">{{ selectedMember()?.totalSessions }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Completed</span>
+          <span class="value">{{ (selectedMember()?.totalSessions || 0) - (selectedMember()?.sessionsRemaining || 0) }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Remaining</span>
+          <span class="value highlighting">{{ selectedMember()?.sessionsRemaining }}</span>
+        </div>
+      </div>
+
+      <div class="history-list">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Trainer</th>
+              <th>Verification</th>
+              <th>Remaining</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of sessionHistory()">
+              <td>{{ log.date }}</td>
+              <td>{{ log.trainerName || 'Assigned Trainer' }}</td>
+              <td>
+                <div class="verification-badges">
+                  <span class="badge" [class.verified]="log.trainerVerification">T</span>
+                  <span class="badge" [class.verified]="log.clientVerification">C</span>
+                </div>
+              </td>
+              <td>{{ log.sessionsRemainingAfter }}</td>
+            </tr>
+            <tr *ngIf="sessionHistory().length === 0">
+              <td colspan="4" class="empty-history">No sessions logged yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </app-modal>
+</div>

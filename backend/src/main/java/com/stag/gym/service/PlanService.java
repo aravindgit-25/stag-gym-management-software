@@ -29,6 +29,7 @@ public class PlanService {
                 .duration(requestDTO.getDuration())
                 .price(requestDTO.getPrice())
                 .type(requestDTO.getType())
+                .totalSessions(requestDTO.getTotalSessions())
                 .branch(branchService.getCurrentBranch())
                 .build();
         
@@ -65,6 +66,7 @@ public class PlanService {
         plan.setDuration(requestDTO.getDuration());
         plan.setPrice(requestDTO.getPrice());
         plan.setType(requestDTO.getType());
+        plan.setTotalSessions(requestDTO.getTotalSessions());
         
         Plan updatedPlan = planRepository.save(plan);
         return mapToResponseDTO(updatedPlan);
@@ -90,6 +92,7 @@ public class PlanService {
                 .duration(plan.getDuration())
                 .price(plan.getPrice())
                 .type(plan.getType())
+                .totalSessions(plan.getTotalSessions())
                 .createdAt(plan.getCreatedAt())
                 .updatedAt(plan.getUpdatedAt())
                 .build();

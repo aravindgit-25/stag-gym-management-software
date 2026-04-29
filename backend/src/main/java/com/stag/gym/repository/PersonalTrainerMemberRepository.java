@@ -10,4 +10,6 @@ import java.util.List;
 public interface PersonalTrainerMemberRepository extends JpaRepository<PersonalTrainerMember, Long> {
     List<PersonalTrainerMember> findByTrainerId(Long trainerId);
     List<PersonalTrainerMember> findByMemberId(Long memberId);
+    List<PersonalTrainerMember> findByBranchId(Long branchId);
+    List<PersonalTrainerMember> findByStatusAndBranchId(PersonalTrainerMember.Status status, Long branchId);
 }

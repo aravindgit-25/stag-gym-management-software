@@ -20,6 +20,7 @@ public class PlanResponseDTO {
     private Double price;
     @JsonProperty("type")
     private Plan.PlanType type;
+    private Integer totalSessions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

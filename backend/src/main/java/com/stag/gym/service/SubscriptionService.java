@@ -5,9 +5,13 @@ import com.stag.gym.dto.SubscriptionResponseDTO;
 import com.stag.gym.model.Member;
 import com.stag.gym.model.Plan;
 import com.stag.gym.model.Subscription;
+import com.stag.gym.model.PersonalTrainerMember;
+import com.stag.gym.model.Employee;
 import com.stag.gym.repository.MemberRepository;
 import com.stag.gym.repository.PlanRepository;
 import com.stag.gym.repository.SubscriptionRepository;
+import com.stag.gym.repository.PersonalTrainerMemberRepository;
+import com.stag.gym.repository.EmployeeRepository;
 import com.stag.gym.security.BranchContext;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,8 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final MemberRepository memberRepository;
     private final PlanRepository planRepository;
+    private final PersonalTrainerMemberRepository ptRepository;
+    private final EmployeeRepository employeeRepository;
     private final BranchService branchService;
 
     @Transactional
@@ -37,8 +43,14 @@ public class SubscriptionService {
                 .filter(p -> p.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
                 .orElseThrow(() -> new RuntimeException("Plan not found in current branch"));
 
-        // Calculate end date based on plan duration (months)
-        LocalDate endDate = requestDTO.getStartDate().plusMonths(plan.getDuration());
+        // Calculate end date
+        // Membership plans use Months, PT Add-ons use Days
+        LocalDate endDate;
+        if (plan.getType() == Plan.PlanType.ADD_ON) {
+            endDate = requestDTO.getStartDate().plusDays(plan.getDuration());
+        } else {
+            endDate = requestDTO.getStartDate().plusMonths(plan.getDuration());
+        }
 
         Subscription subscription = Subscription.builder()
                 .member(member)
@@ -52,7 +64,35 @@ public class SubscriptionService {
                 .build();
 
         Subscription savedSubscription = subscriptionRepository.save(subscription);
+
+        // AUTO-CREATE PT RECORD IF PLAN IS ADD_ON
+        if (plan.getType() == Plan.PlanType.ADD_ON) {
+            createPTRecord(requestDTO, member, plan, savedSubscription);
+        }
+
         return mapToResponseDTO(savedSubscription);
+    }
+
+    private void createPTRecord(SubscriptionRequestDTO request, Member member, Plan plan, Subscription sub) {
+        Employee trainer = null;
+        if (request.getTrainerId() != null) {
+            trainer = employeeRepository.findById(request.getTrainerId()).orElse(null);
+        }
+
+        PersonalTrainerMember ptMember = PersonalTrainerMember.builder()
+                .member(member)
+                .trainer(trainer)
+                .plan(plan)
+                .startDate(request.getStartDate())
+                .expiryDate(sub.getEndDate())
+                .totalSessions(plan.getTotalSessions() != null ? plan.getTotalSessions() : 0)
+                .sessionsRemaining(plan.getTotalSessions() != null ? plan.getTotalSessions() : 0)
+                .status(PersonalTrainerMember.Status.ACTIVE)
+                .isPaid(false) // Will be updated when payment is processed
+                .branch(branchService.getCurrentBranch())
+                .build();
+        
+        ptRepository.save(ptMember);
     }
 
     public List<SubscriptionResponseDTO> getAllSubscriptions() {
