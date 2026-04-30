@@ -126,20 +126,31 @@ export class PersonalTrainingComponent implements OnInit {
     const log: PTSessionLog = {
       ptMemberId: member.id,
       date: this.sessionDate(),
-      trainerId: this.trainerId()!,
+      trainerId: Number(this.trainerId()!),
       trainerVerification: this.trainerVerification(),
       clientVerification: this.clientVerification(),
       notes: this.notes()
     };
 
+    console.log('Submitting session log:', log);
+
     this.ptService.logSession(log).subscribe({
-      next: () => {
+      next: (res) => {
+        console.log('Session log response:', res);
         this.notificationService.show('Session logged successfully', 'success');
         this.closeLogModal();
         this.loadData();
       },
       error: (err) => {
-        this.notificationService.show(err.error?.message || 'Failed to log session', 'error');
+        console.error('Session log error:', err);
+        // If the status is 200 or 201, it's actually a success even if RxJS thinks it's an error
+        if (err.status === 200 || err.status === 201) {
+          this.notificationService.show('Session logged successfully', 'success');
+          this.closeLogModal();
+          this.loadData();
+        } else {
+          this.notificationService.show(err.error?.message || 'Failed to log session', 'error');
+        }
       }
     });
   }

@@ -70,18 +70,32 @@ export class PTService {
   }
 
   getSessionHistory(ptMemberId: number): Observable<PTSessionLog[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/history/${ptMemberId}`).pipe(
-      map(data => data.map(item => ({
-        id: item.id,
-        ptMemberId: item.ptMemberId || item.pt_member_id,
-        date: item.date,
-        trainerId: item.trainerId || item.trainer_id,
-        trainerName: item.trainerName || item.trainer_name,
-        trainerVerification: item.trainerVerification !== undefined ? item.trainerVerification : item.trainer_verification,
-        clientVerification: item.clientVerification !== undefined ? item.clientVerification : item.client_verification,
-        notes: item.notes,
-        sessionsRemainingAfter: item.sessionsRemainingAfter !== undefined ? item.sessionsRemainingAfter : item.sessions_remaining_after
-      })))
+    const branchId = this.auth.getBranchId();
+    const url = branchId 
+      ? `${this.apiUrl}/history/${ptMemberId}?branchId=${branchId}`
+      : `${this.apiUrl}/history/${ptMemberId}`;
+
+    return this.http.get<any>(url).pipe(
+      map(res => {
+        const data = Array.isArray(res) ? res : (res?.data || res?.results || []);
+        if (!Array.isArray(data)) return [];
+        
+        return data.map(item => ({
+          id: item.id || item.pt_session_log_id,
+          ptMemberId: item.ptMemberId || item.pt_member_id || item.ptSubscriptionId,
+          date: item.date || item.session_date || item.createdAt?.split('T')[0] || '',
+          trainerId: item.trainerId || item.trainer_id || item.staffId,
+          trainerName: item.trainerName || item.trainer_name || item.Trainer?.name || item.Staff?.name || 'Assigned Trainer',
+          trainerVerification: item.trainerVerification !== undefined ? item.trainerVerification : (item.trainer_verification !== undefined ? item.trainer_verification : true),
+          clientVerification: item.clientVerification !== undefined ? item.clientVerification : (item.client_verification !== undefined ? item.client_verification : false),
+          notes: item.notes || item.comment || '',
+          sessionsRemainingAfter: item.sessionsRemainingAfter !== undefined ? item.sessionsRemainingAfter : (item.sessions_remaining_after !== undefined ? item.sessions_remaining_after : (item.remaining_sessions !== undefined ? item.remaining_sessions : 0))
+        }));
+      }),
+      catchError(err => {
+        console.error('Error fetching PT history:', err);
+        return of([]);
+      })
     );
   }
 

@@ -67,6 +67,14 @@ public class PersonalTrainerService {
                 .filter(s -> s.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
                 .orElseThrow(() -> new RuntimeException("PT Subscription not found"));
 
+        // Update trainer if provided during session logging
+        if (request.getTrainerId() != null) {
+            Employee trainer = employeeRepository.findById(request.getTrainerId())
+                    .filter(e -> e.getRole() == Employee.Role.TRAINER)
+                    .orElseThrow(() -> new RuntimeException("Trainer not found or is not a trainer"));
+            ptSubscription.setTrainer(trainer);
+        }
+
         if (ptSubscription.getStatus() != PersonalTrainerMember.Status.ACTIVE) {
             throw new RuntimeException("PT Subscription is not active");
         }

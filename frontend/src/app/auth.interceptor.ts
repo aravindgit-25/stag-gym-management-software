@@ -11,10 +11,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   let url = req.url;
-  // Safety check for malformed URLs missing '?' before branchId
-  if (url.includes('branchId=') && !url.includes('?')) {
-    url = url.replace('branchId=', '?branchId=');
-  }
 
   const token = authService.getToken();
 
