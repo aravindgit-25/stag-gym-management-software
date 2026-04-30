@@ -76,6 +76,22 @@ public class AttendanceService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<AttendanceResponseDTO> getMonthlyAttendance(Long employeeId, Integer month, Integer year) {
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+        
+        if (employeeId != null) {
+            return attendanceRepository.findByEmployeeIdAndDateBetweenAndBranchId(employeeId, start, end, BranchContext.getCurrentBranchId()).stream()
+                    .map(this::mapToResponseDTO)
+                    .toList();
+        } else {
+            return attendanceRepository.findByDateBetweenAndBranchId(start, end, BranchContext.getCurrentBranchId()).stream()
+                    .map(this::mapToResponseDTO)
+                    .toList();
+        }
+    }
+
     public AttendanceResponseDTO mapToResponseDTO(Attendance attendance) {
         return AttendanceResponseDTO.builder()
                 .id(attendance.getId())

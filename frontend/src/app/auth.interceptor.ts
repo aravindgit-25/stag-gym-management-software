@@ -10,8 +10,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  let url = req.url;
-
   const token = authService.getToken();
 
   const headers: any = {};
@@ -20,7 +18,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const authReq = req.clone({
-    url,
     setHeaders: headers
   });
 

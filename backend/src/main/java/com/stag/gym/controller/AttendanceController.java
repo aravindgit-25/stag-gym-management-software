@@ -64,4 +64,12 @@ public class AttendanceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
         return ResponseEntity.ok(attendanceService.getEmployeeAttendance(employeeId, start, end));
     }
+
+    @GetMapping("/monthly")
+    public ResponseEntity<List<AttendanceResponseDTO>> getMonthlyAttendance(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam Integer month,
+            @RequestParam Integer year) {
+        return ResponseEntity.ok(attendanceService.getMonthlyAttendance(employeeId, month, year));
+    }
 }
