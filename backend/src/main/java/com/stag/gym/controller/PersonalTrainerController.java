@@ -3,6 +3,7 @@ package com.stag.gym.controller;
 import com.stag.gym.dto.PTSubscriptionRequestDTO;
 import com.stag.gym.dto.PTSubscriptionResponseDTO;
 import com.stag.gym.dto.PTSessionLogRequestDTO;
+import com.stag.gym.dto.UpdateTrainerRequestDTO;
 import com.stag.gym.service.PersonalTrainerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,13 @@ public class PersonalTrainerController {
     @PostMapping("/subscribe")
     public ResponseEntity<PTSubscriptionResponseDTO> subscribe(@Valid @RequestBody PTSubscriptionRequestDTO request) {
         return ResponseEntity.ok(ptService.createPTSubscription(request));
+    }
+
+    @PostMapping("/{ptSubscriptionId}/trainer")
+    public ResponseEntity<PTSubscriptionResponseDTO> updateTrainer(
+            @PathVariable Long ptSubscriptionId,
+            @Valid @RequestBody UpdateTrainerRequestDTO request) {
+        return ResponseEntity.ok(ptService.updateTrainer(ptSubscriptionId, request.getTrainerId()));
     }
 
     @PostMapping("/log-session")

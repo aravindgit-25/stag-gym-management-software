@@ -128,6 +128,21 @@ public class PersonalTrainerService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public PTSubscriptionResponseDTO updateTrainer(Long ptSubscriptionId, Long trainerId) {
+        PersonalTrainerMember ptSubscription = ptRepository.findById(ptSubscriptionId)
+                .filter(s -> s.getBranch().getId().equals(BranchContext.getCurrentBranchId()))
+                .orElseThrow(() -> new RuntimeException("PT Subscription not found in this branch"));
+
+        Employee trainer = employeeRepository.findById(trainerId)
+                .filter(e -> e.getRole() == Employee.Role.TRAINER)
+                .orElseThrow(() -> new RuntimeException("Trainer not found or is not a trainer"));
+
+        ptSubscription.setTrainer(trainer);
+        PersonalTrainerMember saved = ptRepository.save(ptSubscription);
+        return mapToResponseDTO(saved);
+    }
+
     private PTSubscriptionResponseDTO mapToResponseDTO(PersonalTrainerMember model) {
         return PTSubscriptionResponseDTO.builder()
                 .id(model.getId())

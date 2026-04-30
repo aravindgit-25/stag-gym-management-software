@@ -43,8 +43,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 Long finalBranchId = tokenBranchId;
                 
-                // If OWNER, allow X-Branch-ID header or branchId query param to override
-                if ("OWNER".equals(role)) {
+                // If OWNER or ADMIN, allow X-Branch-ID header or branchId query param to override
+                if ("OWNER".equals(role) || "ADMIN".equals(role)) {
                     String headerBranchId = request.getHeader("X-Branch-ID");
                     String queryBranchId = request.getParameter("branchId");
                     

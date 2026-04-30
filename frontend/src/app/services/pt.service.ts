@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, catchError, of } from 'rxjs';
 import { PTMember, PTSessionLog } from '../models/pt.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
@@ -24,25 +24,43 @@ export class PTService {
 
   getActivePTMembers(): Observable<PTMember[]> {
     const params = this.getBranchParams();
-    return this.http.get<any[]>(`${this.apiUrl}/active-participants`, { params }).pipe(
-      map(data => data.map(item => this.mapToPTMember(item)))
+    return this.http.get<any>(`${this.apiUrl}/active-participants`, { params }).pipe(
+      map(res => {
+        // Handle both direct array and wrapped object responses
+        const data = Array.isArray(res) ? res : (res?.data || res?.results || []);
+        if (!Array.isArray(data)) return [];
+        return data.map(item => this.mapToPTMember(item));
+      }),
+      catchError(err => {
+        console.error('Error fetching PT members:', err);
+        return of([]);
+      })
     );
   }
 
   private mapToPTMember(item: any): PTMember {
+    if (!item) return {} as PTMember;
+    
+    // Normalize IDs and Names from various possible backend naming conventions
+    const id = item.id || item.pt_subscription_id || item.ptSubscriptionId || item.subscriptionId;
+    const memberId = item.memberId || item.member_id;
+    const memberName = item.memberName || item.member_name || item.name || item.Member?.name || 'Unknown Member';
+    const trainerId = item.trainerId || item.trainer_id || item.staffId || item.staff_id;
+    const trainerName = item.trainerName || item.trainer_name || item.Trainer?.name || item.Staff?.name || 'Unassigned';
+    
     return {
-      id: item.id || item.pt_subscription_id,
-      memberId: item.memberId || item.member_id,
-      memberName: item.memberName || item.member_name,
-      memberPhone: item.memberPhone || item.member_phone,
-      trainerId: item.trainerId || item.trainer_id,
-      trainerName: item.trainerName || item.trainer_name,
-      planId: item.planId || item.plan_id,
-      planName: item.planName || item.plan_name,
-      totalSessions: item.totalSessions || item.total_sessions,
-      sessionsRemaining: item.sessionsRemaining !== undefined ? item.sessionsRemaining : item.sessions_remaining,
-      expiryDate: item.expiryDate || item.expiry_date,
-      startDate: item.startDate || item.start_date,
+      id: Number(id),
+      memberId: Number(memberId),
+      memberName,
+      memberPhone: item.memberPhone || item.member_phone || item.Member?.phone || '',
+      trainerId: trainerId ? Number(trainerId) : 0,
+      trainerName,
+      planId: item.planId || item.plan_id || 0,
+      planName: item.planName || item.plan_name || item.Plan?.name || 'N/A',
+      totalSessions: item.totalSessions || item.total_sessions || 0,
+      sessionsRemaining: item.sessionsRemaining !== undefined ? item.sessionsRemaining : (item.sessions_remaining !== undefined ? item.sessions_remaining : 0),
+      expiryDate: item.expiryDate || item.expiry_date || '',
+      startDate: item.startDate || item.start_date || '',
       status: item.status || 'ACTIVE'
     };
   }
@@ -80,5 +98,13 @@ export class PTService {
     };
     // The requirement states payments are sent to /api/v1/payments
     return this.http.post<any>(`${environment.apiUrl}/payments`, payload);
+  }
+
+  updatePTTrainer(ptSubscriptionId: number, trainerId: number): Observable<any> {
+    const payload = {
+      trainerId,
+      branchId: this.auth.getBranchId()
+    };
+    return this.http.post(`${this.apiUrl}/${ptSubscriptionId}/trainer`, payload);
   }
 }

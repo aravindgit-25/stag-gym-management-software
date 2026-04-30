@@ -35,7 +35,15 @@
               <svg viewBox="0 0 24 24" class="svg-icon">
                 <path d="M12 5v14M5 12h14"></path>
               </svg>
-              Log Session
+              Log
+            </button>
+            <button class="btn-action trainer" (click)="openUpdateTrainer(row)" title="Change Trainer">
+              <svg viewBox="0 0 24 24" class="svg-icon">
+                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <path d="M17 11l2 2 4-4"></path>
+              </svg>
+              Trainer
             </button>
             <button class="btn-action history" (click)="viewHistory(row)" title="View History">
               <svg viewBox="0 0 24 24" class="svg-icon">
@@ -142,6 +150,24 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </app-modal>
+
+  <!-- Update Trainer Modal -->
+  <app-modal [isOpen]="showUpdateTrainerModal()" [title]="'Update Trainer: ' + selectedMember()?.memberName" (close)="closeUpdateTrainerModal()">
+    <div class="session-form">
+      <div class="form-group">
+        <label>Select New Trainer</label>
+        <select [ngModel]="newTrainerId()" (ngModelChange)="newTrainerId.set($event)">
+          <option *ngFor="let t of trainers()" [value]="t.id">{{ t.name }}</option>
+        </select>
+        <p class="form-hint">This will reassign all future sessions to this trainer.</p>
+      </div>
+
+      <div class="modal-footer">
+        <app-button label="Cancel" variant="secondary" (onClick)="closeUpdateTrainerModal()"></app-button>
+        <app-button label="Update Trainer" variant="primary" (onClick)="submitTrainerUpdate()" [disabled]="!newTrainerId()"></app-button>
       </div>
     </div>
   </app-modal>

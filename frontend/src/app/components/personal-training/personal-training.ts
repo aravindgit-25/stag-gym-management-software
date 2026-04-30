@@ -33,6 +33,7 @@ export class PersonalTrainingComponent implements OnInit {
   // Modals
   showLogModal = signal<boolean>(false);
   showHistoryModal = signal<boolean>(false);
+  showUpdateTrainerModal = signal<boolean>(false);
   
   // Selected data
   selectedMember = signal<PTMember | null>(null);
@@ -41,6 +42,7 @@ export class PersonalTrainingComponent implements OnInit {
   // Form data
   sessionDate = signal<string>(new Date().toISOString().split('T')[0]);
   trainerId = signal<number | null>(null);
+  newTrainerId = signal<number | null>(null);
   notes = signal<string>('');
   trainerVerification = signal<boolean>(true);
   clientVerification = signal<boolean>(false);
@@ -57,12 +59,24 @@ export class PersonalTrainingComponent implements OnInit {
   ];
 
   filteredMembers = computed(() => {
-    const term = this.searchTerm().toLowerCase();
-    return this.activePTMembers().filter(m => 
-      m.memberName.toLowerCase().includes(term) || 
-      m.trainerName.toLowerCase().includes(term) ||
-      m.memberPhone?.includes(term)
-    );
+    try {
+      const term = (this.searchTerm() || '').toLowerCase();
+      const members = this.activePTMembers() || [];
+      
+      return members.filter(m => {
+        if (!m) return false;
+        const memberName = (m.memberName || '').toLowerCase();
+        const trainerName = (m.trainerName || '').toLowerCase();
+        const phone = (m.memberPhone || '').toLowerCase();
+        
+        return memberName.includes(term) || 
+               trainerName.includes(term) || 
+               phone.includes(term);
+      });
+    } catch (e) {
+      console.error('Error in filteredMembers calculation:', e);
+      return [];
+    }
   });
 
   ngOnInit() {
@@ -146,5 +160,33 @@ export class PersonalTrainingComponent implements OnInit {
   closeHistoryModal() {
     this.showHistoryModal.set(false);
     this.selectedMember.set(null);
+  }
+
+  openUpdateTrainer(member: PTMember) {
+    this.selectedMember.set(member);
+    this.newTrainerId.set(member.trainerId);
+    this.showUpdateTrainerModal.set(true);
+  }
+
+  closeUpdateTrainerModal() {
+    this.showUpdateTrainerModal.set(false);
+    this.selectedMember.set(null);
+  }
+
+  submitTrainerUpdate() {
+    const member = this.selectedMember();
+    const trainerId = this.newTrainerId();
+    if (!member || !trainerId) return;
+
+    this.ptService.updatePTTrainer(member.id, trainerId).subscribe({
+      next: () => {
+        this.notificationService.show('Trainer updated successfully', 'success');
+        this.closeUpdateTrainerModal();
+        this.loadData();
+      },
+      error: (err) => {
+        this.notificationService.show(err.error?.message || 'Failed to update trainer', 'error');
+      }
+    });
   }
 }
