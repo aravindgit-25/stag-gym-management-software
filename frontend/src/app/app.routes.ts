@@ -10,11 +10,17 @@ import { PaymentComponent } from './components/payment/payment';
 import { LoginComponent } from './components/login/login';
 import { InvoiceComponent } from './components/invoice/invoice';
 import { PersonalTrainingComponent } from './components/personal-training/personal-training';
+import { BranchSelectionComponent } from './components/branch-selection/branch-selection';
 import { authGuard, adminGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'invoice/:id', component: InvoiceComponent },
+  { 
+    path: 'branch-selection', 
+    component: BranchSelectionComponent,
+    canActivate: [authGuard, adminGuard]
+  },
   { 
     path: '', 
     canActivate: [authGuard],

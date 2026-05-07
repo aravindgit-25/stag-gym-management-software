@@ -369,15 +369,14 @@ import { ConfirmService } from './services/confirm.service';
               </svg>
             </button>
 
-            <div class="branch-switcher" *ngIf="authService.isOwner()">
-              <select
-                [ngModel]="authService.selectedBranchId()"
-                (ngModelChange)="onBranchChange($event)"
-                class="branch-select"
-              >
-                <option [ngValue]="null">🏢 All Branches</option>
-                <option *ngFor="let b of branches()" [value]="b.id">📍 {{ b.branchName }}</option>
-              </select>
+            <div class="branch-info-display" *ngIf="authService.isOwner()">
+              <span class="current-branch-name">
+                {{ getSelectedBranchName() }}
+              </span>
+              <button class="btn-switch-branch" routerLink="/branch-selection">
+                <svg viewBox="0 0 24 24" width="14" height="14"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                Switch
+              </button>
             </div>
 
             <div class="fixed-branch-info" *ngIf="authService.isTrainer()">
@@ -801,6 +800,42 @@ import { ConfirmService } from './services/confirm.service';
         color: var(--accent-red);
       }
 
+      .branch-info-display {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-left: 20px;
+        background: #f8fafc;
+        padding: 5px 5px 5px 15px;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+      }
+      .current-branch-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #1e293b;
+      }
+      .btn-switch-branch {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: white;
+        color: #dc2626;
+        border: 1.5px solid #fecaca;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+      }
+      .btn-switch-branch:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+      }
+
       .user-role-badge {
         display: inline-block;
         font-size: 10px;
@@ -1139,6 +1174,12 @@ export class AppComponent {
   getTrainerBranchName(): string {
     const bId = this.authService.getBranchId();
     return this.branches().find((b) => b.id === bId)?.branchName || 'Assigned Branch';
+  }
+
+  getSelectedBranchName(): string {
+    const bId = this.authService.selectedBranchId();
+    if (!bId) return '🏢 All Branches';
+    return '📍 ' + (this.branches().find((b) => b.id === bId)?.branchName || 'Branch');
   }
 
   toggleMembersMenu(event: Event) {
