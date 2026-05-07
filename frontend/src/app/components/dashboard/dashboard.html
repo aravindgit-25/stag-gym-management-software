@@ -114,10 +114,15 @@
       <div class="svg-container">
         <svg viewBox="0 0 1000 200" preserveAspectRatio="none" class="main-svg">
           <defs>
-            <linearGradient id="graphGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--accent-red)" stop-opacity="0.2"/>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent-red)" stop-opacity="0.3"/>
+              <stop offset="50%" stop-color="var(--accent-red)" stop-opacity="0.1"/>
               <stop offset="100%" stop-color="var(--accent-red)" stop-opacity="0"/>
             </linearGradient>
+            <filter id="lineGlow">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
           </defs>
 
           <!-- Grid Lines (horizontal) -->
@@ -126,17 +131,26 @@
           <line x1="0" y1="133" x2="1000" y2="133" class="svg-grid-line" />
           <line x1="0" y1="200" x2="1000" y2="200" class="svg-grid-line" />
 
-          <!-- Shaded Area -->
-          <polyline [attr.points]="svgAreaPoints()" class="graph-area" />
+          <!-- Shaded Curved Area -->
+          <path [attr.d]="svgCurveAreaPath()" class="graph-curved-area" />
           
-          <!-- The Line -->
-          <polyline [attr.points]="svgPoints()" class="graph-line" />
+          <!-- Smooth Curved Line -->
+          <path [attr.d]="svgCurvePath()" class="graph-curved-line" />
           
-          <!-- Data Points (dots) -->
-          <circle *ngFor="let point of svgPoints().split(' '); let i = index" 
-            [attr.cx]="point.split(',')[0]" 
-            [attr.cy]="point.split(',')[1]" 
-            r="6" class="graph-point" />
+          <!-- Interactive Data Points -->
+          <g *ngFor="let point of chartPoints(); let i = index" class="point-group">
+            <circle 
+              [attr.cx]="point.x" 
+              [attr.cy]="point.y" 
+              r="6" class="graph-point-modern" 
+            />
+            <text 
+              [attr.x]="point.x" 
+              [attr.y]="point.y - 15" 
+              text-anchor="middle" 
+              class="point-value-modern"
+            >{{ point.value }}</text>
+          </g>
         </svg>
       </div>
       

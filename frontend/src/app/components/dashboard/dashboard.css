@@ -209,38 +209,85 @@
   border-radius: 24px;
 }
 
+.section-header-standard {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 24px;
+  flex-wrap: wrap; /* Fix overlapping */
+}
+
+.section-header-standard .header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .section-header-standard h2 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
-  margin-bottom: 4px;
+  margin: 0 0 8px 0;
   letter-spacing: -0.02em;
+  color: var(--text-main);
+  line-height: 1.2;
 }
 
 .section-header-standard .subtitle {
   color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
+  margin: 0 0 16px 0; /* Increased space below subtitle */
 }
 
-/* Modern Graph Styles */
+/* Curved Area Chart Styles */
 .graph-container-modern {
   position: relative;
-  height: 300px;
-  margin-top: 48px;
+  height: 320px; /* Increased height for better label clearance */
+  margin-top: 40px;
   padding-left: 50px;
-  padding-bottom: 40px;
+  padding-bottom: 60px; /* More room for x-axis */
+}
+.graph-curved-line {
+  fill: none;
+  stroke: var(--accent-red);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: url(#lineGlow);
 }
 
-.svg-container {
-  width: 100%;
-  height: 220px;
-  position: relative;
+.graph-curved-area {
+  fill: url(#areaGradient);
+  pointer-events: none;
 }
 
-.main-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.graph-point-modern {
+  fill: white;
+  stroke: var(--accent-red);
+  stroke-width: 4;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+.point-group:hover .graph-point-modern {
+  r: 9;
+  stroke-width: 5;
+  filter: drop-shadow(0 0 8px var(--accent-red));
+}
+
+.point-value-modern {
+  font-size: 14px;
+  font-weight: 800;
+  fill: var(--text-main);
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+.point-group:hover .point-value-modern {
+  opacity: 1;
+  transform: translateY(-5px);
 }
 
 .svg-grid-line {
@@ -249,32 +296,19 @@
   stroke-dasharray: 4;
 }
 
-.graph-area {
-  fill: url(#graphGradient);
-  pointer-events: none;
+.line-symbol {
+  width: 24px;
+  height: 4px;
+  background: var(--accent-red);
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(225, 29, 72, 0.2);
 }
 
-.graph-line {
-  fill: none;
-  stroke: var(--accent-red);
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 8px 12px rgba(225, 29, 72, 0.25));
-}
-
-.graph-point {
-  fill: white;
-  stroke: var(--accent-red);
-  stroke-width: 4;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  cursor: pointer;
-}
-
-.graph-point:hover {
-  r: 9;
-  stroke-width: 5;
-  filter: drop-shadow(0 0 8px var(--accent-red));
+@media screen and (max-width: 768px) {
+  .graph-container-modern { height: 260px; }
+  .svg-container { height: 180px; }
+  .graph-y-axis { height: 180px; }
+  .digital-bar { width: 30px !important; } /* Responsive bar width */
 }
 
 .graph-y-axis {
@@ -307,11 +341,20 @@
 }
 
 .graph-x-axis span {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 600px) {
+  .graph-x-axis span {
+    transform: rotate(-45deg);
+    transform-origin: left top;
+    margin-top: 10px;
+  }
 }
 
 .graph-legend {
@@ -327,14 +370,6 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--secondary-grey);
-}
-
-.line-symbol {
-  width: 24px;
-  height: 4px;
-  background: var(--accent-red);
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(225, 29, 72, 0.2);
 }
 
 .refresh-link-btn {
