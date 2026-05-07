@@ -12,14 +12,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const token = authService.getToken();
 
-  const headers: any = {};
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    const authReq = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return next(authReq);
   }
 
-  const authReq = req.clone({
-    setHeaders: headers
-  });
-
-  return next(authReq);
+  return next(req);
 };

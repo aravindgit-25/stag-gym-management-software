@@ -1055,7 +1055,7 @@ export class AppComponent {
           this.staffMenuOpen.set(true);
       });
 
-    if (this.authService.isLoggedIn()) {
+    if (this.authService.isLoggedIn() && this.authService.isOwner()) {
       this.loadBranches();
     }
   }
