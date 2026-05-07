@@ -23,6 +23,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private dashboardService = inject(DashboardService);
   private authService = inject(AuthService);
+  currentUser = this.authService.currentUser;
   private branchSub?: Subscription;
 
   // Mock data for Growth Graph
