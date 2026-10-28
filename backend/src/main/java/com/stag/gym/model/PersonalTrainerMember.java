@@ -19,18 +19,37 @@ public class PersonalTrainerMember extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trainer_id", nullable = false)
+    @JoinColumn(name = "trainer_id") // Removed nullable = false
     private Employee trainer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id")
+    private Plan plan;
+
     private String goal;
-    private String duration; // e.g., "3 months"
+    private Integer totalSessions;
+    private Integer sessionsRemaining;
+    private LocalDate expiryDate;
     
     @Builder.Default
     private Boolean isPaid = false;
 
     private LocalDate startDate;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Status status = Status.ACTIVE;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Branch branch;
+
+    public enum Status {
+        ACTIVE, COMPLETED, EXPIRED
+    }
 }

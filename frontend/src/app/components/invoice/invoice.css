@@ -341,11 +341,12 @@
 .text-right { text-align: right !important; }
 
 /* Set explicit widths for table columns */
-.invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 35%; }
-.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 20%; }
+.invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 30%; }
+.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 15%; }
 .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 15%; }
-.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 15%; }
-.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 15%; }
+.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 13%; }
+.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 13%; }
+.invoice-table th:nth-child(6), .invoice-table td:nth-child(6) { width: 14%; }
 
 /* Mobile Responsiveness for Screen */
 @media screen and (max-width: 210mm) {

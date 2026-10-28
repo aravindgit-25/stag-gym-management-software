@@ -107,6 +107,14 @@
         </select>
       </div>
 
+      <div class="form-group-modern mt-16" *ngIf="addonForm.get('trainerId')?.validator">
+        <label>Assign Trainer</label>
+        <select formControlName="trainerId">
+          <option [ngValue]="null">-- Select Trainer --</option>
+          <option *ngFor="let t of trainers()" [value]="t.id">{{ t.name }}</option>
+        </select>
+      </div>
+
       <div class="form-grid-2 mt-20">
         <div class="form-group-modern">
           <label>Discount Amount (₹)</label>

@@ -41,6 +41,6 @@ public class User extends BaseEntity {
     private Branch branch;
 
     public enum Role {
-        OWNER, TRAINER
+        OWNER, TRAINER, ADMIN
     }
 }

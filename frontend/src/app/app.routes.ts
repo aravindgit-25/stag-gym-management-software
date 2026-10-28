@@ -9,11 +9,18 @@ import { SubscriptionComponent } from './components/subscription/subscription';
 import { PaymentComponent } from './components/payment/payment';
 import { LoginComponent } from './components/login/login';
 import { InvoiceComponent } from './components/invoice/invoice';
+import { PersonalTrainingComponent } from './components/personal-training/personal-training';
+import { BranchSelectionComponent } from './components/branch-selection/branch-selection';
 import { authGuard, adminGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'invoice/:id', component: InvoiceComponent },
+  { 
+    path: 'branch-selection', 
+    component: BranchSelectionComponent,
+    canActivate: [authGuard, adminGuard]
+  },
   { 
     path: '', 
     canActivate: [authGuard],
@@ -28,6 +35,10 @@ export const routes: Routes = [
       { path: 'leads', component: LeadComponent },
       { path: 'staff', component: EmployeeComponent },
       { path: 'attendance', component: AttendanceComponent },
+      { 
+        path: 'personal-training', 
+        component: PersonalTrainingComponent 
+      },
       { 
         path: 'diet-plans', 
         loadComponent: () => import('./components/diet-plan/diet-plan').then(m => m.DietPlanComponent),

@@ -7,6 +7,7 @@ import { PaymentService } from '../../services/payment.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { MemberService } from '../../services/member.service';
 import { PlanService } from '../../services/plan.service';
+import { PTService } from '../../services/pt.service';
 
 @Component({
   selector: 'app-invoice',
@@ -21,6 +22,7 @@ export class InvoiceComponent implements OnInit {
   private subService = inject(SubscriptionService);
   private memberService = inject(MemberService);
   private planService = inject(PlanService);
+  private ptService = inject(PTService);
 
   invoiceData = signal<any>(null);
   loading = signal<boolean>(true);
@@ -43,6 +45,7 @@ export class InvoiceComponent implements OnInit {
     forkJoin({
       payments: this.paymentService.getPayments().pipe(retry(2), catchError(() => of([]))),
       subs: this.subService.getSubscriptions().pipe(retry(2), catchError(() => of([]))),
+      ptSubs: this.ptService.getActivePTMembers().pipe(retry(2), catchError(() => of([]))),
       members: this.memberService.getMembers().pipe(retry(2), catchError(() => of([]))),
       plans: this.planService.getPlans().pipe(retry(2), catchError(() => of([])))
     }).subscribe({
@@ -57,7 +60,7 @@ export class InvoiceComponent implements OnInit {
           ).subscribe(retryPayments => {
             const retryPayment = retryPayments.find(p => Number(p.id || (p as any).payment_id) === Number(paymentId));
             if (retryPayment) {
-              this.processData(retryPayment, result.subs, result.members, result.plans);
+              this.processData(retryPayment, result.subs, result.ptSubs, result.members, result.plans);
             } else {
               this.error.set('Invoice not found. Please check if the payment was successful.');
               this.loading.set(false);
@@ -66,7 +69,7 @@ export class InvoiceComponent implements OnInit {
           return;
         }
 
-        this.processData(payment, result.subs, result.members, result.plans);
+        this.processData(payment, result.subs, result.ptSubs, result.members, result.plans);
       },
       error: (err) => {
         this.error.set('Failed to load invoice data. Please refresh.');
@@ -75,9 +78,17 @@ export class InvoiceComponent implements OnInit {
     });
   }
 
-  private processData(payment: any, subs: any[], members: any[], allPlans: any[]) {
+  private processData(payment: any, subs: any[], ptSubs: any[], members: any[], allPlans: any[]) {
     const subId = payment.subscriptionId || (payment as any).subscription_id;
-    const mainSub = subs.find(s => Number(s.id) === Number(subId));
+    const ptSubId = payment.ptSubscriptionId || (payment as any).pt_subscription_id;
+    
+    let mainSub = subs.find(s => Number(s.id) === Number(subId));
+    let isPT = false;
+
+    if (!mainSub && ptSubId) {
+      mainSub = ptSubs.find(s => Number(s.id) === Number(ptSubId));
+      isPT = true;
+    }
     
     if (!mainSub) {
       this.error.set('Subscription details not found for this invoice.');
@@ -91,7 +102,6 @@ export class InvoiceComponent implements OnInit {
     const startDate = mainSub.startDate || (mainSub as any).start_date;
     
     // Fix: Only show the specific subscription linked to this payment
-    // Instead of filtering by startDate (which groups unrelated add-ons), we use only mainSub
     const relatedSubs = [mainSub];
 
     const selectedPlans: any[] = [];
@@ -103,14 +113,20 @@ export class InvoiceComponent implements OnInit {
       pIds.forEach(id => {
         const plan = allPlans.find(p => Number(p.id) === id);
         if (plan && !selectedPlans.find(sp => sp.id === plan.id)) {
-          selectedPlans.push(plan);
+          // For PT, we might already have totalSessions on the plan, 
+          // but we can also use totalSessions from mainSub if it's PT
+          const enrichedPlan = { ...plan };
+          if (isPT && mainSub.totalSessions) {
+            enrichedPlan.totalSessions = mainSub.totalSessions;
+          }
+          selectedPlans.push(enrichedPlan);
         }
       });
     });
 
     const maxDuration = Math.max(...selectedPlans.map(p => p.duration || 0), 0);
     const expDate = new Date(startDate);
-    expDate.setDate(expDate.getDate() + maxDuration);
+    expDate.setDate(expDate.getDate() + (maxDuration || 0));
 
     this.invoiceData.set({
       receiptNo: `REC-${(payment.id || payment.payment_id)?.toString().padStart(4, '0')}`,

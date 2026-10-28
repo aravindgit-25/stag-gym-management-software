@@ -31,5 +31,7 @@ public class SubscriptionRequestDTO {
     @JsonAlias("discount_reason")
     private String discountReason;
 
+    private Long trainerId; // Added for PT Add-ons
+
     private Subscription.Status status;
 }

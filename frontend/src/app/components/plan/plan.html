@@ -55,7 +55,17 @@
       (delete)="onDelete($event)"
       [loading]="loading()"
       [emptyMessage]="loading() ? 'Loading plans...' : 'No plans configured.'"
-    ></app-stag-table>
+    >
+      <ng-template #cell let-row let-col="column">
+        @if (col.field === 'totalSessions') {
+          <span class="session-count">{{ row.totalSessions || '-' }}</span>
+        } @else if (col.field === 'price') {
+          ₹{{ row.price }}
+        } @else {
+          {{ row[col.field] }}
+        }
+      </ng-template>
+    </app-stag-table>
   </div>
 
   <app-modal 
@@ -76,6 +86,11 @@
             <option value="MEMBERSHIP">Membership</option>
             <option value="ADD_ON">Add-on Service</option>
           </select>
+        </div>
+
+        <div class="form-group-modern" *ngIf="planForm.get('type')?.value === 'ADD_ON'">
+          <label for="totalSessions">Total Sessions</label>
+          <input id="totalSessions" type="number" formControlName="totalSessions" placeholder="e.g. 24">
         </div>
 
         <div class="form-group-modern">

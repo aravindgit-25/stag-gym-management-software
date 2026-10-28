@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, of, map } from 'rxjs';
 import { Attendance, AttendanceStatus } from '../models/attendance.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
@@ -24,8 +24,13 @@ export class AttendanceService {
   }
 
   getAttendanceByDate(date: string): Observable<Attendance[]> {
-    const params = this.getBranchParams().set('date', date);
-    return this.http.get<Attendance[]>(this.apiUrl, { params }).pipe(
+    let params = this.getBranchParams().set('date', date);
+
+    return this.http.get<any>(this.apiUrl, { params }).pipe(
+      map(res => {
+        const data = Array.isArray(res) ? res : (res?.data || res?.results || []);
+        return Array.isArray(data) ? data : [];
+      }),
       catchError(() => of([]))
     );
   }
@@ -36,20 +41,24 @@ export class AttendanceService {
 
   markAttendance(attendance: Attendance): Observable<Attendance> {
     const bId = this.auth.getBranchId();
-    const params = this.getBranchParams(); 
     const payload = { 
       ...attendance, 
       branchId: bId || (attendance as any).branchId 
     };
-    return this.http.post<Attendance>(this.apiUrl, payload, { params });
+    return this.http.post<Attendance>(this.apiUrl, payload);
   }
 
   getMonthlyAttendance(employeeId: number, month: number, year: number): Observable<Attendance[]> {
-    const params = this.getBranchParams()
+    let params = this.getBranchParams()
       .set('employeeId', employeeId.toString())
       .set('month', month.toString())
       .set('year', year.toString());
-    return this.http.get<Attendance[]>(`${this.apiUrl}/monthly`, { params }).pipe(
+
+    return this.http.get<any>(`${this.apiUrl}/monthly`, { params }).pipe(
+      map(res => {
+        const data = Array.isArray(res) ? res : (res?.data || res?.results || []);
+        return Array.isArray(data) ? data : [];
+      }),
       catchError(() => of([]))
     );
   }

@@ -1,6 +1,7 @@
 package com.stag.gym.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stag.gym.model.Payment;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -17,8 +18,13 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class PaymentRequestDTO {
 
-    @NotNull(message = "Subscription ID is required")
+    @JsonProperty("subscriptionId")
+    @JsonAlias("subscription_id")
     private Long subscriptionId;
+
+    @JsonProperty("ptSubscriptionId")
+    @JsonAlias("pt_subscription_id")
+    private Long ptSubscriptionId;
 
     @NotNull(message = "Amount is required")
     @Min(value = 0, message = "Amount must be at least 0")

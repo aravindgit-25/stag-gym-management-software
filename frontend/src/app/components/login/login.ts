@@ -36,7 +36,11 @@ export class LoginComponent {
       
       this.authService.login(email, password).subscribe({
         next: () => {
-          this.router.navigate(['/dashboard']);
+          if (this.authService.isOwner()) {
+            this.router.navigate(['/branch-selection']);
+          } else {
+            this.router.navigate(['/dashboard']);
+          }
         },
         error: (err) => {
           this.loading.set(false);

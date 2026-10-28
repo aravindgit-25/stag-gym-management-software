@@ -36,6 +36,7 @@ export class PlanComponent implements OnInit {
     { field: 'name', header: 'Plan Name', minWidth: '200px' },
     { field: 'type', header: 'Type', width: '120px' },
     { field: 'duration', header: 'Duration (Days)', width: '120px' },
+    { field: 'totalSessions', header: 'Sessions', width: '100px' },
     { field: 'price', header: 'Price (₹)', width: '120px' }
   ];
 
@@ -51,8 +52,20 @@ export class PlanComponent implements OnInit {
       name: ['', Validators.required],
       type: [PlanType.MEMBERSHIP, Validators.required],
       duration: ['', [Validators.required, Validators.min(1)]],
+      totalSessions: [null],
       price: ['', [Validators.required, Validators.min(0)]],
       description: ['']
+    });
+
+    // Handle conditional validation for totalSessions
+    this.planForm.get('type')?.valueChanges.subscribe(type => {
+      const sessionsControl = this.planForm.get('totalSessions');
+      if (type === PlanType.ADD_ON) {
+        sessionsControl?.setValidators([Validators.required, Validators.min(1)]);
+      } else {
+        sessionsControl?.clearValidators();
+      }
+      sessionsControl?.updateValueAndValidity();
     });
   }
 

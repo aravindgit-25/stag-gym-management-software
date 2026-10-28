@@ -13,12 +13,16 @@ import { catchError, finalize } from 'rxjs/operators';
 import { MemberService } from '../../services/member.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { PlanService } from '../../services/plan.service';
+import { EmployeeService } from '../../services/employee.service';
+import { AuthService } from '../../services/auth.service';
+import { PTService } from '../../services/pt.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { PaymentService } from '../../services/payment.service';
 import { Member, Gender, MemberStatus } from '../../models/member.model';
 import { Subscription } from '../../models/subscription.model';
 import { Plan, PlanType } from '../../models/plan.model';
+import { Employee } from '../../models/employee.model';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button';
 import {
   AppStagTableComponent,
@@ -73,6 +77,7 @@ export class MemberComponent implements OnInit {
   addonForm: FormGroup;
   showAddonModal = signal<boolean>(false);
   availableAddons = computed(() => this.plans().filter(p => p.type === PlanType.ADD_ON));
+  trainers = signal<Employee[]>([]);
 
   members = signal<Member[]>([]);
   plans = signal<Plan[]>([]);
@@ -103,6 +108,9 @@ export class MemberComponent implements OnInit {
   private subscriptionService = inject(SubscriptionService);
   private paymentService = inject(PaymentService);
   private planService = inject(PlanService);
+  private employeeService = inject(EmployeeService);
+  private authService = inject(AuthService);
+  private ptService = inject(PTService);
   private fb = inject(FormBuilder);
 
   tableColumns = signal<StagTableColumn[]>([
@@ -147,10 +155,23 @@ export class MemberComponent implements OnInit {
 
     this.addonForm = this.fb.group({
       planId: ['', Validators.required],
+      trainerId: [null],
       discountAmount: [0, [Validators.min(0)]],
       discountReason: [''],
       paidAmount: [0, [Validators.required, Validators.min(0)]],
       paymentMode: ['Cash', Validators.required]
+    });
+
+    // Handle conditional validation for trainerId
+    this.addonForm.get('planId')?.valueChanges.subscribe(planId => {
+      const plan = this.plans().find(p => p.id === Number(planId));
+      const trainerControl = this.addonForm.get('trainerId');
+      if (plan && plan.name.toLowerCase().includes('personal training') || plan?.name.toLowerCase().includes('pt')) {
+        trainerControl?.setValidators([Validators.required]);
+      } else {
+        trainerControl?.clearValidators();
+      }
+      trainerControl?.updateValueAndValidity();
     });
 
     // Auto-calculate paid amount on addon form when discount changes
@@ -203,11 +224,13 @@ export class MemberComponent implements OnInit {
       ),
       plans: this.planService.getPlans().pipe(catchError(() => of([]))),
       subscriptions: this.subscriptionService.getSubscriptions().pipe(catchError(() => of([]))),
+      trainers: this.employeeService.getActiveEmployees().pipe(catchError(() => of([])))
     }).pipe(finalize(() => this.loading.set(false)))
       .subscribe((res) => {
         this.members.set(res.members);
         this.plans.set(res.plans);
         this.subscriptions.set(res.subscriptions);
+        this.trainers.set(res.trainers.filter(e => e.role === 'TRAINER'));
       });
   }
 
@@ -351,7 +374,7 @@ export class MemberComponent implements OnInit {
   // Add-on logic
   openAddonModal(member: Member) {
     this.editingId.set(member.id!);
-    this.addonForm.reset({ paymentMode: 'Cash' });
+    this.addonForm.reset({ paymentMode: 'Cash', discountAmount: 0, paidAmount: 0 });
     this.showAddonModal.set(true);
   }
 
@@ -365,39 +388,86 @@ export class MemberComponent implements OnInit {
 
   onSubmitAddon() {
     if (this.addonForm.valid) {
-      const { planId, paidAmount, paymentMode } = this.addonForm.value;
-      const subData = {
-        memberId: this.editingId()!,
-        planId: Number(planId),
-        startDate: new Date().toISOString().split('T')[0]
-      };
+      const { planId, trainerId, paidAmount, paymentMode } = this.addonForm.value;
+      const plan = this.plans().find(p => p.id === Number(planId));
 
-      this.subscriptionService.addSubscription(subData as any).subscribe(sub => {
-        const payData = {
-          subscriptionId: sub.id!,
-          amount: (this.plans().find(p => p.id === Number(planId))?.price || 0),
-          discountAmount: this.addonForm.value.discountAmount || 0,
-          discountReason: this.addonForm.value.discountReason || '',
-          paidAmount: paidAmount,
-          paymentMode: paymentMode
+      if (plan && (plan.name.toLowerCase().includes('personal training') || plan.name.toLowerCase().includes('pt'))) {
+        // Step 1: Create PT Subscription
+        const ptSubData = {
+          memberId: this.editingId()!,
+          planId: Number(planId),
+          trainerId: Number(trainerId),
+          branchId: this.authService.getBranchId()
         };
-        this.paymentService.addPayment(payData as any).subscribe(pay => {
-          this.notif.show('Add-on Service Activated!', 'success');
-          this.loadData();
-          this.showAddonModal.set(false);
 
-          // Open invoice in new tab
-          const id = pay.id || (pay as any).payment_id;
-          const url = this.location.prepareExternalUrl(`/invoice/${id}`);
-          window.open(url, '_blank');
+        this.ptService.subscribeMember(ptSubData).subscribe({
+          next: (ptMember) => {
+            // Step 2: Process PT Payment using ptSubscriptionId
+            const ptPaymentData = {
+              ptSubscriptionId: ptMember.id, // Use the returned PT record ID
+              amount: plan.price,
+              discountAmount: this.addonForm.value.discountAmount || 0,
+              discountReason: this.addonForm.value.discountReason || '',
+              paidAmount: paidAmount,
+              paymentMode: paymentMode,
+              branchId: this.authService.getBranchId()
+            };
 
-          // Redirect to Diet Plans if it was a diet plan
-          const plan = this.plans().find(p => p.id === Number(planId));
-          if (plan?.name.toLowerCase().includes('diet')) {
-            this.router.navigate(['/diet-plans']);
-          }
+            this.ptService.processPTPayment(ptPaymentData).subscribe({
+              next: (pay) => {
+                this.notif.show('PT Subscription & Payment Successful!', 'success');
+                this.loadData();
+                this.showAddonModal.set(false);
+
+                // Open invoice
+                const id = pay.id || (pay as any).payment_id;
+                const url = this.location.prepareExternalUrl(`/invoice/${id}`);
+                window.open(url, '_blank');
+                
+                // Navigate to PT Dashboard
+                this.router.navigate(['/personal-training']);
+              },
+              error: (err) => this.notif.show('PT Subscribed but Payment failed.', 'error')
+            });
+          },
+          error: (err) => this.notif.show(err.error?.message || 'Failed to subscribe to PT.', 'error')
         });
-      });
+      } else {
+        // Standard Add-on (e.g., Diet, etc.)
+        const { trainerId } = this.addonForm.value;
+        const subData = {
+          memberId: this.editingId()!,
+          planId: Number(planId),
+          trainerId: trainerId ? Number(trainerId) : null, // Include trainerId if selected
+          startDate: new Date().toISOString().split('T')[0],
+          branchId: this.authService.getBranchId()
+        };
+
+        this.subscriptionService.addSubscription(subData as any).subscribe(sub => {
+          const payData = {
+            subscriptionId: sub.id!,
+            amount: plan?.price || 0,
+            discountAmount: this.addonForm.value.discountAmount || 0,
+            discountReason: this.addonForm.value.discountReason || '',
+            paidAmount: paidAmount,
+            paymentMode: paymentMode,
+            branchId: this.authService.getBranchId()
+          };
+          this.paymentService.addPayment(payData as any).subscribe(pay => {
+            this.notif.show('Add-on Service Activated!', 'success');
+            this.loadData();
+            this.showAddonModal.set(false);
+
+            const id = pay.id || (pay as any).payment_id;
+            const url = this.location.prepareExternalUrl(`/invoice/${id}`);
+            window.open(url, '_blank');
+
+            if (plan?.name.toLowerCase().includes('diet')) {
+              this.router.navigate(['/diet-plans']);
+            }
+          });
+        });
+      }
     }
   }
 

@@ -2,8 +2,8 @@
 
 :root {
   /* International Standard Palette: White, Grey, Subtle Red */
-  --bg-main: #f8fafc; /* Subtle grey-blue background */
-  --bg-subtle: #f1f5f9;
+  --bg-main: #f0f4f8; /* Slightly deeper grey-blue for better contrast with white cards */
+  --bg-subtle: #f8fafc;
   --bg-card: #ffffff;
   --bg-hover: #f1f5f9;
   
@@ -23,7 +23,10 @@
   --header-height: 70px;
   
   --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-premium: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  --shadow-premium: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+    0 2px 4px -2px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.03);
 }
 
 body {
@@ -31,6 +34,11 @@ body {
   padding: 0;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-main);
+  /* Subtle mesh gradient for global background */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(225, 29, 72, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(30, 41, 59, 0.03) 0px, transparent 50%);
+  background-attachment: fixed;
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
 }

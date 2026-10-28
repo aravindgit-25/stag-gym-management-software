@@ -15,7 +15,7 @@ export class DashboardService {
   private getBranchParams(): HttpParams {
     let params = new HttpParams();
     const branchId = this.auth.getBranchId();
-    if (branchId) {
+    if (branchId !== null && branchId !== undefined) {
       params = params.set('branchId', branchId.toString());
     }
     return params;
@@ -24,28 +24,40 @@ export class DashboardService {
   getMemberCount(): Observable<number> {
     const params = this.getBranchParams();
     return this.http.get<number>(`${this.baseUrl}/members/count`, { params }).pipe(
-      catchError(() => of(0))
+      catchError(err => {
+        console.error('Error fetching member count:', err);
+        return of(0);
+      })
     );
   }
 
   getActiveMemberCount(): Observable<number> {
     const params = this.getBranchParams();
     return this.http.get<number>(`${this.baseUrl}/members/active/count`, { params }).pipe(
-      catchError(() => of(0))
+      catchError(err => {
+        console.error('Error fetching active member count:', err);
+        return of(0);
+      })
     );
   }
 
   getTotalRevenue(): Observable<number> {
     const params = this.getBranchParams();
     return this.http.get<number>(`${this.baseUrl}/payments/total`, { params }).pipe(
-      catchError(() => of(0))
+      catchError(err => {
+        console.error('Error fetching total revenue:', err);
+        return of(0);
+      })
     );
   }
 
   getTodayRevenue(): Observable<number> {
     const params = this.getBranchParams();
     return this.http.get<number>(`${this.baseUrl}/payments/today`, { params }).pipe(
-      catchError(() => of(0))
+      catchError(err => {
+        console.error('Error fetching today revenue:', err);
+        return of(0);
+      })
     );
   }
 }

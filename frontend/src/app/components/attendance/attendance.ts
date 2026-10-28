@@ -172,10 +172,10 @@ export class AttendanceComponent implements OnInit {
 
   loadHistory() {
     const emp = this.selectedHistoryEmployee();
-    if (!emp?.employeeId) return;
+    if (!emp?.id) return;
 
     this.historyLoading.set(true);
-    this.attendanceService.getEmployeeAttendanceHistory(emp.employeeId, this.historyMonth(), this.historyYear())
+    this.attendanceService.getEmployeeAttendanceHistory(emp.id, this.historyMonth(), this.historyYear())
       .pipe(
         catchError(() => of([])),
         finalize(() => this.historyLoading.set(false))
